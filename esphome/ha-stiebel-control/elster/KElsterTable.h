@@ -25,8 +25,6 @@
 
   const ElsterIndex * GetElsterIndex(unsigned short Index);
   const ElsterIndex * GetElsterIndex(const char * str);
-  // HA metadata of a row with hasMetadata = true, NULL otherwise (#57 side table)
-  const ElsterMeta * GetElsterMeta(const ElsterIndex * ei);
   ElsterType GetElsterType(const char * str);
   void SetValueType(char * Val, unsigned char Type, unsigned short Value);
   void SetDoubleType(char * Val, unsigned char Type, double Value);

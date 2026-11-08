@@ -7,9 +7,11 @@
  *
  * To add a translation: #undef LNAME_FOO, then #define LNAME_FOO "English"
  *
- * NOTE: This file is listed in esphome: includes: so ESPHome copies it to src/, and
- * ESPHome then includes it from main.cpp in every build. The overrides below are
- * guarded by HA_LANGUAGE_EN so a German build stays German.
+ * NOTE: This file is listed in esphome: includes: so ESPHome copies it to src/.
+ * The overrides below are guarded by HA_LANGUAGE_EN (build flag from the
+ * `language` substitution), so the auto-include from main.cpp is a no-op in
+ * German builds. The old LANGUAGE_SELECT_ACTIVE sentinel was always defined
+ * and turned all later LNAME_* English (upstream fix 598fbde, v2.6.0).
  */
 
 #pragma once
@@ -24,8 +26,8 @@
 #define LNAME_BRENNER                          "Boiler"
 #undef  LNAME_KESSELSOLLTEMP
 #define LNAME_KESSELSOLLTEMP                   "Boiler Target Temperature"
-#undef  LNAME_SPEICHERSOLLTEMP
-#define LNAME_SPEICHERSOLLTEMP                 "Storage Target Temperature"
+#undef  LNAME_WW_SOLLTEMPERATUR
+#define LNAME_WW_SOLLTEMPERATUR                "DHW Target Temperature"
 #undef  LNAME_RAUMSOLLTEMP_I
 #define LNAME_RAUMSOLLTEMP_I                   "Room Target Temperature I"
 #undef  LNAME_RAUMSOLLTEMP_II
@@ -36,20 +38,16 @@
 #define LNAME_RAUMSOLLTEMP_NACHT               "Room Target Temperature Night"
 #undef  LNAME_AUSSENTEMP
 #define LNAME_AUSSENTEMP                       "Outside Temperature"
-#undef  LNAME_FEHLERMELDUNG
-#define LNAME_FEHLERMELDUNG                    "Fault"
-#undef  LNAME_LUFTANSAUGTEMP
-#define LNAME_LUFTANSAUGTEMP                   "Air Intake Temperature"
 #undef  LNAME_SAMMLERISTTEMP
 #define LNAME_SAMMLERISTTEMP                   "Collector Actual Temperature"
-#undef  LNAME_SPEICHERISTTEMP
-#define LNAME_SPEICHERISTTEMP                  "Storage Actual Temperature"
+#undef  LNAME_WW_ISTTEMPERATUR
+#define LNAME_WW_ISTTEMPERATUR                 "DHW Actual Temperature"
 #undef  LNAME_VORLAUFISTTEMP
 #define LNAME_VORLAUFISTTEMP                   "Flow Actual Temperature"
-#undef  LNAME_EINSTELL_SPEICHERSOLLTEMP
-#define LNAME_EINSTELL_SPEICHERSOLLTEMP        "DHW Target Temperature Setting"
-#undef  LNAME_EINSTELL_SPEICHERSOLLTEMP2
-#define LNAME_EINSTELL_SPEICHERSOLLTEMP2       "DHW Target Temperature 2 Setting"
+#undef  LNAME_WW_KOMFORT_TEMPERATUR
+#define LNAME_WW_KOMFORT_TEMPERATUR            "DHW Comfort Temperature"
+#undef  LNAME_WW_ECO_TEMPERATUR
+#define LNAME_WW_ECO_TEMPERATUR                "DHW Eco Temperature"
 #undef  LNAME_VERDAMPFERTEMP
 #define LNAME_VERDAMPFERTEMP                   "Evaporator Temperature"
 #undef  LNAME_RUECKLAUFISTTEMP
@@ -119,7 +117,9 @@
 #undef  LNAME_WAERMEERTRAG_RUECKGE_SUMME_MWH
 #define LNAME_WAERMEERTRAG_RUECKGE_SUMME_MWH   "Heat Recovery Total Yield MWh"
 #undef  LNAME_VERDICHTER
-#define LNAME_VERDICHTER                       "Compressor"
+#define LNAME_VERDICHTER                       "Compressor status word"
+#undef  LNAME_PUMPENSTATUS_ROH
+#define LNAME_PUMPENSTATUS_ROH                 "Pump status (bit field)"
 #undef  LNAME_LZ_VERD_1_HEIZBETRIEB
 #define LNAME_LZ_VERD_1_HEIZBETRIEB            "Compressor 1 Heating Runtime"
 #undef  LNAME_LZ_VERD_2_HEIZBETRIEB
@@ -185,7 +185,7 @@
 #undef  LNAME_WP_STATUS
 #define LNAME_WP_STATUS                        "Heat Pump Status"
 #undef  LNAME_SOMMERBETRIEB
-#define LNAME_SOMMERBETRIEB                    "Summer Mode Automatic"
+#define LNAME_SOMMERBETRIEB                    "Summer Mode"
 #undef  LNAME_BETRIEBSART_WP
 #define LNAME_BETRIEBSART_WP                   "Heat Pump Operating Mode"
 
@@ -196,6 +196,8 @@
 #define LNAME_CALC_DATE                        "Date"
 #undef  LNAME_CALC_TIME
 #define LNAME_CALC_TIME                        "Time"
+#undef  LNAME_CALC_BETRIEBSART
+#define LNAME_CALC_BETRIEBSART                 "Operating Mode"
 #undef  LNAME_CALC_DELTA_T_CONTINUOUS
 #define LNAME_CALC_DELTA_T_CONTINUOUS          "Delta T HP (continuous)"
 #undef  LNAME_CALC_DELTA_T_RUNNING
@@ -210,60 +212,22 @@
 #define LNAME_CALC_CAN_BUS_ERRORS              "CAN Bus Errors"
 #undef  LNAME_CALC_CAN_STATE
 #define LNAME_CALC_CAN_STATE                   "CAN Bus State"
-#undef  LNAME_CALC_ENERGIE_HEIZ_TOTAL_KWH
-#define LNAME_CALC_ENERGIE_HEIZ_TOTAL_KWH      "Heating Electrical Energy Total kWh"
-#undef  LNAME_CALC_ENERGIE_WW_TOTAL_KWH
-#define LNAME_CALC_ENERGIE_WW_TOTAL_KWH        "DHW Electrical Energy Total kWh"
-#undef  LNAME_CALC_WAERME_HEIZ_TOTAL_KWH
-#define LNAME_CALC_WAERME_HEIZ_TOTAL_KWH       "Heating Heat Output Total kWh"
-#undef  LNAME_CALC_WAERME_WW_TOTAL_KWH
-#define LNAME_CALC_WAERME_WW_TOTAL_KWH         "DHW Heat Output Total kWh"
-#undef  LNAME_CALC_EL_LEISTUNG_W
-#define LNAME_CALC_EL_LEISTUNG_W               "Current Electrical Power"
+#undef  LNAME_CALC_VERDICHTER_STARTS
+#define LNAME_CALC_VERDICHTER_STARTS           "Compressor starts total"
 #undef  LNAME_CALC_BETRIEBSSTATUS
-#define LNAME_CALC_BETRIEBSSTATUS              "Operating State"
-#undef  LNAME_CALC_ENERGIE_HEIZ_TAG_KWH
-#define LNAME_CALC_ENERGIE_HEIZ_TAG_KWH        "Heating Energy Today"
-#undef  LNAME_CALC_ENERGIE_WW_TAG_KWH
-#define LNAME_CALC_ENERGIE_WW_TAG_KWH          "DHW Energy Today"
-#undef  LNAME_CALC_WAERME_HEIZ_TAG_KWH
-#define LNAME_CALC_WAERME_HEIZ_TAG_KWH         "Heating Heat Output Today"
-#undef  LNAME_CALC_WAERME_WW_TAG_KWH
-#define LNAME_CALC_WAERME_WW_TAG_KWH           "DHW Heat Output Today"
-#undef  LNAME_CALC_EL_LEISTUNG_HEIZ_W
-#define LNAME_CALC_EL_LEISTUNG_HEIZ_W          "Current Electrical Power Heating"
-#undef  LNAME_CALC_EL_LEISTUNG_WW_W
-#define LNAME_CALC_EL_LEISTUNG_WW_W            "Current Electrical Power DHW"
-#undef  LNAME_CALC_SOMMERBETRIEB_AKTIV
-#define LNAME_CALC_SOMMERBETRIEB_AKTIV         "Summer Mode Active"
-#undef  LNAME_CALC_FEHLERLISTE
-#define LNAME_CALC_FEHLERLISTE                 "Fault History"
-#undef  LNAME_CALC_AUSSENTEMP_GEDAEMPFT
-#define LNAME_CALC_AUSSENTEMP_GEDAEMPFT        "Outside Temperature Damped"
-#undef  LNAME_CALC_REGELABWEICHUNG
-#define LNAME_CALC_REGELABWEICHUNG             "Control Deviation (Return - Setpoint)"
-#undef  LNAME_CALC_CAN_RX_MISSED
-#define LNAME_CALC_CAN_RX_MISSED               "CAN RX Missed (Queue Full)"
-#undef  LNAME_CALC_CAN_RX_OVERRUN
-#define LNAME_CALC_CAN_RX_OVERRUN              "CAN RX Overrun (FIFO)"
-#undef  LNAME_CALC_CAN_RX_QUEUE
-#define LNAME_CALC_CAN_RX_QUEUE                "CAN RX Queue"
-#undef  LNAME_CALC_MQTT_PUBLISH_FAILURES
-#define LNAME_CALC_MQTT_PUBLISH_FAILURES       "MQTT Publish Failures"
-#undef  LNAME_SOMMERBETRIEB_TEMP
-#define LNAME_SOMMERBETRIEB_TEMP               "Summer Mode Threshold"
-#undef  LNAME_ANZEIGE_HOCHDRUCK
-#define LNAME_ANZEIGE_HOCHDRUCK                "High Pressure"
-#undef  LNAME_ANZEIGE_NIEDERDRUCK
-#define LNAME_ANZEIGE_NIEDERDRUCK              "Low Pressure"
+#define LNAME_CALC_BETRIEBSSTATUS              "Operating status"
+#undef  LNAME_CALC_STATUS_WPLA
+#define LNAME_CALC_STATUS_WPLA                 "WPL-A status"
+#undef  LNAME_CALC_PUMPENSTATUS
+#define LNAME_CALC_PUMPENSTATUS                "Pump status"
 
 // ============================================================================
 // Writable number friendly names
 // ============================================================================
-#undef  LNAME_NUM_SPEICHERSOLLTEMP
-#define LNAME_NUM_SPEICHERSOLLTEMP             "DHW Target Temperature Setting"
-#undef  LNAME_NUM_SPEICHERSOLLTEMP2
-#define LNAME_NUM_SPEICHERSOLLTEMP2            "DHW Target Temperature 2 Setting"
+#undef  LNAME_NUM_WW_KOMFORT_TEMPERATUR
+#define LNAME_NUM_WW_KOMFORT_TEMPERATUR        "DHW Comfort Temperature Setting"
+#undef  LNAME_NUM_WW_ECO_TEMPERATUR
+#define LNAME_NUM_WW_ECO_TEMPERATUR             "DHW Eco Temperature Setting"
 #undef  LNAME_NUM_SG_READY_BOOST3
 #define LNAME_NUM_SG_READY_BOOST3              "SG Ready Boost State 3"
 #undef  LNAME_NUM_SG_READY_BOOST4
@@ -276,16 +240,6 @@
 #define LNAME_NUM_RAUMSOLLTEMP_III             "Room Target Temperature III Setting"
 #undef  LNAME_NUM_RAUMSOLLTEMP_NACHT
 #define LNAME_NUM_RAUMSOLLTEMP_NACHT           "Room Target Temperature Night Setting"
-#undef  LNAME_NUM_REGLERDYNAMIK
-#define LNAME_NUM_REGLERDYNAMIK                "Controller Dynamics Setting"
-#undef  LNAME_NUM_BIVALENZ_HZG
-#define LNAME_NUM_BIVALENZ_HZG                 "Bivalence Point Heating Setting"
-#undef  LNAME_NUM_BIVALENZ_WW
-#define LNAME_NUM_BIVALENZ_WW                  "Bivalence Point Hot Water Setting"
-#undef  LNAME_NUM_STILLSTANDZEIT
-#define LNAME_NUM_STILLSTANDZEIT               "Compressor Minimum Off Time Setting"
-#undef  LNAME_NUM_SOMMERBETRIEB_TEMP
-#define LNAME_NUM_SOMMERBETRIEB_TEMP           "Summer Mode Threshold Setting"
 
 // ============================================================================
 // Writable select friendly names
@@ -322,8 +276,34 @@
 #define LNAME_COP_HEIZ                         "COP Heating"
 #undef  LNAME_COP_GESAMT
 #define LNAME_COP_GESAMT                       "COP Total"
-#undef  LNAME_CLIMATE_HEIZUNG
-#define LNAME_CLIMATE_HEIZUNG                  "Heating"
-#undef  LNAME_CLIMATE_WARMWASSER
-#define LNAME_CLIMATE_WARMWASSER               "Hot Water"
+#undef  LNAME_COP_HEIZ_TAG
+#define LNAME_COP_HEIZ_TAG                    "COP Heating Today"
+#undef  LNAME_COP_WW_TAG
+#define LNAME_COP_WW_TAG                      "COP Hot Water Today"
+#undef  LNAME_COP_GESAMT_TAG
+#define LNAME_COP_GESAMT_TAG                  "COP Total Today"
+#undef  LNAME_EN_EL_HEIZ_SUM
+#define LNAME_EN_EL_HEIZ_SUM                  "Electricity Heating Total"
+#undef  LNAME_EN_EL_WW_SUM
+#define LNAME_EN_EL_WW_SUM                    "Electricity Hot Water Total"
+#undef  LNAME_EN_WAERME_HEIZ_SUM
+#define LNAME_EN_WAERME_HEIZ_SUM              "Heat Heating Total"
+#undef  LNAME_EN_WAERME_WW_SUM
+#define LNAME_EN_WAERME_WW_SUM                "Heat Hot Water Total"
+#undef  LNAME_EN_WAERME_2WE_HEIZ_SUM
+#define LNAME_EN_WAERME_2WE_HEIZ_SUM          "Heat Backup Heating Total"
+#undef  LNAME_EN_WAERME_2WE_WW_SUM
+#define LNAME_EN_WAERME_2WE_WW_SUM            "Heat Backup Hot Water Total"
+#undef  LNAME_EN_EL_HEIZ_TAG
+#define LNAME_EN_EL_HEIZ_TAG                  "Electricity Heating Today"
+#undef  LNAME_EN_EL_WW_TAG
+#define LNAME_EN_EL_WW_TAG                    "Electricity Hot Water Today"
+#undef  LNAME_EN_WAERME_HEIZ_TAG
+#define LNAME_EN_WAERME_HEIZ_TAG              "Heat Heating Today"
+#undef  LNAME_EN_WAERME_WW_TAG
+#define LNAME_EN_WAERME_WW_TAG                "Heat Hot Water Today"
+#undef  LNAME_EN_WAERME_2WE_HEIZ_TAG
+#define LNAME_EN_WAERME_2WE_HEIZ_TAG          "Heat Backup Heating Today"
+#undef  LNAME_EN_WAERME_2WE_WW_TAG
+#define LNAME_EN_WAERME_2WE_WW_TAG            "Heat Backup Hot Water Today"
 #endif // HA_LANGUAGE_EN

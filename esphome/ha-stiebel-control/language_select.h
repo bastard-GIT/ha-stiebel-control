@@ -17,6 +17,9 @@
 
 #pragma once
 
+// lang_en.h guards its overrides with HA_LANGUAGE_EN itself, so the
+// auto-include from esphome: includes: is harmless in German builds.
+
 #if defined(HA_LANGUAGE_EN)
   #include "lang_en.h"
 #else

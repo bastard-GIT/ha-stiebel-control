@@ -1,0 +1,14 @@
+#
+#  WPL-A Heat Pump — Model Package
+#
+#  Selects the WPL-A signal request table (SIGNAL_REQUESTS_BASE + WPL-A-specific
+#  signals, air-source family). All universal sensors live in common.yaml.
+#
+#  Verified on WPL-A 07 230 Premium hardware. Uses three CAN members not shared
+#  by other models: SPEICHER (0x201, DHW), WPUMPE (0x514, compressor/inverter),
+#  FES (0x100, date/time + tuning params). See signal_requests_wpla.h.
+#
+
+esphome:
+  includes:
+    - signal_requests_wpla.h

@@ -18,28 +18,16 @@
  */
 
 
-#include <stdint.h>
 #include <string.h>
 #include <unordered_map>
-// This is the one translation unit that holds the Elster tables (see ElsterTable.h).
-#define ELSTER_TABLE_DEFINITIONS
+#include <string>
 #include "NUtils.h"
 #include "KElsterTable.h"
 #include "ElsterTable.h"
 
-// Lazy-initialized caches for O(1) lookups after first access. The name cache is
-// keyed by the DJB2 hash of the name (no std::string per lookup); a hit is
-// confirmed with strcmp, so a hash collision only costs a table scan.
+// Lazy-initialized caches for O(1) lookups after first access
 static std::unordered_map<unsigned short, const ElsterIndex*> indexCache;
-static std::unordered_map<uint32_t, const ElsterIndex*> nameCache;
-
-static uint32_t ElsterNameHash(const char * str)
-{
-  uint32_t h = 5381;
-  while (*str)
-    h = ((h << 5) + h) + (uint32_t)(unsigned char)*str++;
-  return h;
-}
+static std::unordered_map<std::string, const ElsterIndex*> nameCache;
 
 
 void SetValueType(char * Val, unsigned char Type, unsigned short Value)
@@ -65,26 +53,31 @@ void SetValueType(char * Val, unsigned char Type, unsigned short Value)
        sprintf(Val, "%.3f", ((double)((signed short)Value)) / 1000.0);
        break;
 
-     case et_hours:
-       sprintf(Val, "%u", static_cast<unsigned>(Value));
-       break;
-
      case et_little_endian:
        sprintf(Val, "%d", (Value >> 8) + 256*(Value & 0xff));
        break;
        
+     // Both bool types accept 0x0001 and 0x0100 as on (upstream 2.3.0/2.4.0):
+     // the same value can arrive in either byte order depending on the member.
      case et_little_bool:
+       if (Value == 0x0100 || Value == 0x0001)
+         strcpy(Val, "on");
+       else
+       if (!Value)
+         strcpy(Val, "off");
+       else
+         strcpy(Val, "?");
+       break;
+       
      case et_bool:
-        // WPL13 sends 0x0001 = on; WPL17/WPC7 send 0x0100 = on (little-endian bool).
-        // Accept BOTH for both types so a shared table entry works on every model.
-        if (Value == 0x0001 || Value == 0x0100)
-          strcpy(Val, "on");
-        else
-        if (!Value)
-          strcpy(Val, "off");
-        else
-          strcpy(Val, "?");
-        break;
+       if (Value == 0x0001 || Value == 0x0100)
+         strcpy(Val, "on");
+       else
+       if (!Value)
+         strcpy(Val, "off");
+       else
+         strcpy(Val, "?");
+       break;
      
      case et_betriebsart:
        if ((Value & 0xff) == 0 && (Value >> 8) <= (int) High(BetriebsartList))
@@ -207,44 +200,28 @@ const ElsterIndex * GetElsterIndex(unsigned short Index)
 
 const ElsterIndex * GetElsterIndex(const char* str)
 {
-  if (!str)
-    return &ElsterTable[0];
-
-  // Check cache first - O(1) for subsequent lookups, no allocation
-  const uint32_t h = ElsterNameHash(str);
-  auto it = nameCache.find(h);
-  if (it != nameCache.end() && !strcmp(it->second->Name, str)) {
+  // Convert to std::string for cache key
+  std::string key(str);
+  
+  // Check cache first - O(1) for subsequent lookups
+  auto it = nameCache.find(key);
+  if (it != nameCache.end()) {
     return it->second;
   }
 
-  // Cache miss - do linear search O(n); the first row with this name wins
+  // Cache miss - do linear search O(n)
   int i;
   for (i = 0; i <= High(ElsterTable); i++) {
     if (!strcmp(ElsterTable[i].Name, str)) {
       const ElsterIndex* result = &ElsterTable[i];
-      if (it == nameCache.end())
-        nameCache.emplace(h, result);  // Cache for next time (a colliding name stays uncached)
+      nameCache[key] = result;  // Cache for next time
       return result;
     }
   }
 
-  // Not found: unknown names are not cached (only typos/other-model names, looked
-  // up rarely since the request table is resolved once at startup)
+  // Not found - cache default and return
+  nameCache[key] = &ElsterTable[0];
   return &ElsterTable[0];
-}
-
-const ElsterMeta * GetElsterMeta(const ElsterIndex * ei)
-{
-  if (!ei || !ei->hasMetadata)
-    return NULL;
-  // ~110 entries, only read when a discovery config is built
-  for (unsigned i = 0; i < ElsterMetaCount; i++)
-  {
-    const ElsterMeta & m = ElsterMetaTable[i];
-    if (m.Index == ei->Index && (m.Name == ei->Name || !strcmp(m.Name, ei->Name)))
-      return &m;
-  }
-  return NULL;
 }
 
 static bool Get_Time(const char * & str, int & hour, int & min)

@@ -12,14 +12,6 @@
 #include <string>
 #include <cstring>
 
-// Operating mode written by SG Ready when boosting back to normal operation.
-// The WPM3 (WPL 10 AC) calls this mode "Komfortbetrieb", older WPM2 "Tagbetrieb".
-#ifdef HA_MODEL_wpl10ac
-#define SG_READY_NORMAL_MODE "Komfortbetrieb"
-#else
-#define SG_READY_NORMAL_MODE "Tagbetrieb"
-#endif
-
 // ============================================================================
 // IO INTERFACE — injected in production, stubbed in tests
 // ============================================================================
@@ -181,7 +173,7 @@ private:
         if (state_.active && state_.originalDhwTemp > 0.0f) {
             char buf[16];
             snprintf(buf, sizeof(buf), "%.1f", state_.originalDhwTemp);
-            io_.writeCanSignal("EINSTELL_SPEICHERSOLLTEMP", buf);
+            io_.writeCanSignal("WW_KOMFORT_TEMPERATUR", buf);
             state_.originalDhwTemp = 0.0f;
         }
     }
@@ -211,7 +203,7 @@ private:
         if (state_.active) {
             restoreDhw();
             restoreRoom();
-            io_.writeCanSignal("PROGRAMMSCHALTER", SG_READY_NORMAL_MODE);
+            io_.writeCanSignal("PROGRAMMSCHALTER", "Tagbetrieb");
             state_.active = false;
             persistState();
         }
@@ -222,14 +214,14 @@ private:
         state_.active = true;
         persistState();
 
-        io_.writeCanSignal("PROGRAMMSCHALTER", SG_READY_NORMAL_MODE);
+        io_.writeCanSignal("PROGRAMMSCHALTER", "Tagbetrieb");
 
         if (config_.boostState3 > 0.1f) {
             float boosted = state_.originalDhwTemp + config_.boostState3;
             if (boosted > MAX_DHW_TEMP) boosted = MAX_DHW_TEMP;
             char buf[16];
             snprintf(buf, sizeof(buf), "%.1f", boosted);
-            io_.writeCanSignal("EINSTELL_SPEICHERSOLLTEMP", buf);
+            io_.writeCanSignal("WW_KOMFORT_TEMPERATUR", buf);
         }
 
         float boostedRoom = state_.originalRoomTemp + ROOM_BOOST_STATE3;
@@ -244,14 +236,14 @@ private:
         state_.active = true;
         persistState();
 
-        io_.writeCanSignal("PROGRAMMSCHALTER", SG_READY_NORMAL_MODE);
+        io_.writeCanSignal("PROGRAMMSCHALTER", "Tagbetrieb");
 
         if (config_.boostState4 > 0.1f) {
             float boosted = state_.originalDhwTemp + config_.boostState4;
             if (boosted > MAX_DHW_TEMP) boosted = MAX_DHW_TEMP;
             char buf[16];
             snprintf(buf, sizeof(buf), "%.1f", boosted);
-            io_.writeCanSignal("EINSTELL_SPEICHERSOLLTEMP", buf);
+            io_.writeCanSignal("WW_KOMFORT_TEMPERATUR", buf);
         }
 
         float boostedRoom = state_.originalRoomTemp + ROOM_BOOST_STATE4;

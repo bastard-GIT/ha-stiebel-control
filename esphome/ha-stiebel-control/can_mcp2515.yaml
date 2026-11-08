@@ -1,9 +1,9 @@
 #
 #  MCP2515 SPI CAN Controller Configuration
-#  For the classic ESP32 (board_esp32.yaml) and other boards using an external MCP2515
+#  For ESP32-S2 and other boards using external MCP2515 transceiver
 #
 
-# Default — override in heatingpump.yaml (WPL17/WPL23/WPL10AC need 50kbps, CAN-B)
+# Default - override in the top-level config (WPL17/WPL23/WPL10AC/WPL-A need 50kbps)
 substitutions:
   can_bit_rate: 20kbps
 
@@ -36,4 +36,5 @@ canbus:
         can_id_mask: 0
         then:
           - lambda: |-
+              STIEBEL_DEBUG_RX(can_id, x);
               processAndUpdate(can_id, x);

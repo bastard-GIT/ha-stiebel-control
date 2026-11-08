@@ -14,6 +14,7 @@ substitutions:
 
 packages:
   board: !include ha-stiebel-control/board_esp32.yaml
+  network: !include ha-stiebel-control/network_wifi.yaml
   can: !include ha-stiebel-control/can_mcp2515.yaml
   base: !include ha-stiebel-control/common.yaml
   sensors: !include ha-stiebel-control/wpl13e.yaml

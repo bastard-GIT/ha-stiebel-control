@@ -26,14 +26,14 @@ extern const SignalRequest signalRequests[] = {
     {"QUELLENEINTRITTSTEMPERATUR",  FREQ_30S,  cm_heizmodul}, // brine source inlet temp
     {"QUELLENAUSTRITTSTEMP",        FREQ_30S,  cm_heizmodul}, // brine source outlet temp
     {"KESSELSOLLTEMP",              FREQ_30S,  cm_manager},
-    {"SPEICHERSOLLTEMP",            FREQ_30S,  cm_manager},
-    {"SPEICHERISTTEMP",             FREQ_30S,  cm_kessel},
+    {"WW_SOLLTEMPERATUR",            FREQ_30S,  cm_manager},
+    {"WW_ISTTEMPERATUR",             FREQ_30S,  cm_kessel},
     {"AUSSENTEMP",                  FREQ_30S,  cm_other},    // cm_other: varies by install
     {"RUECKLAUFISTTEMP",            FREQ_30S,  cm_manager},
     {"RUECKLAUFISTTEMP",            FREQ_30S,  cm_kessel},
     {"WPVORLAUFIST",                FREQ_30S,  cm_kessel},
-    {"EINSTELL_SPEICHERSOLLTEMP",   FREQ_30S,  cm_manager},
-    {"EINSTELL_SPEICHERSOLLTEMP",   FREQ_30S,  cm_kessel},
+    {"WW_KOMFORT_TEMPERATUR",   FREQ_30S,  cm_manager},
+    {"WW_KOMFORT_TEMPERATUR",   FREQ_30S,  cm_kessel},
     {"ABTAUUNGAKTIV",               FREQ_1MIN, cm_heizmodul},
     {"BETRIEBSART_WP",              FREQ_10MIN, cm_manager},
 

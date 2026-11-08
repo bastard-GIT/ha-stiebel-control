@@ -8,6 +8,24 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <stdint.h>
+#include <vector>
+
+// ============================================================================
+// DEBUG HOOKS (optional package stiebel-debug)
+// ============================================================================
+#ifdef STIEBEL_DEBUG
+// Defined in package stiebel-debug (stiebel_debug/can_rx_stream.h), same translation unit
+void dbgrx_on_frame(uint32_t can_id, const std::vector<uint8_t> &x);
+void dbgrx_note_tx(uint32_t can_id, const std::vector<uint8_t> &data);
+#define STIEBEL_DEBUG_RX(id, x) dbgrx_on_frame((id), (x))
+#define STIEBEL_DEBUG_TX(id, x) dbgrx_note_tx((id), (x))
+#else
+#define STIEBEL_DEBUG_RX(id, x) ((void)0)
+#define STIEBEL_DEBUG_TX(id, x) ((void)0)
+#endif
+
+
 // ============================================================================
 // DEVICE MODEL
 // ============================================================================
@@ -63,34 +81,11 @@
 // Date/Time sensors update frequency (based on date/time signal frequency)
 #define CALC_DATETIME_FREQUENCY FREQ_1MIN
 
+// Betriebsart sensor update frequency (based on SOMMERBETRIEB frequency)
+#define CALC_BETRIEBSART_FREQUENCY FREQ_1MIN
 
 // CAN diagnostic sensors update frequency (ESP32-S3 / TWAI only)
 #define CALC_CAN_DIAG_FREQUENCY FREQ_30S
-
-// ============================================================================
-// MQTT STATE PUBLISHING (publish on change + heartbeat, #55)
-// ============================================================================
-
-// Raw signal and calculated sensor states are published when the value changes.
-// An unchanged value is sent again at most this often (milliseconds), so HA sees
-// the device alive and a broker without persistence gets the value back.
-#ifndef STATE_HEARTBEAT_MS
-#define STATE_HEARTBEAT_MS (10UL * 60UL * 1000UL)
-#endif
-
-// Optional deadband for measured temperatures, in 0.1 K. Smaller changes wait for
-// the heartbeat. 0 = off, every change is published.
-#ifndef STATE_DEADBAND_TENTHS
-#define STATE_DEADBAND_TENTHS 0
-#endif
-
-// After every MQTT (re)connect all cached states are published once again,
-// this many per stateRepublishStep() call (250 ms interval in common.yaml).
-#define STATE_REPUBLISH_BATCH 4
-
-// Upper bound of the per-topic state cache (one entry per raw signal/member and
-// calculated sensor). Topics beyond it are published without change detection.
-#define STATE_CACHE_MAX_ENTRIES 400
 
 // ============================================================================
 // COP CALCULATION SETTINGS

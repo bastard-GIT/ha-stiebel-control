@@ -1,0 +1,48 @@
+#
+#  Example: Stiebel Eltron WPL-A 07 (branch wpla07) on the ESP32-S3 "technik-mk1" rig.
+#  ESP-IDF, built-in CAN (TWAI) at 50 kbps, Ethernet W5500, MQTT only (no native API client).
+#
+#  Credentials: copy secrets.yaml.example to secrets.yaml (see the keys used in
+#  ha-stiebel-control/common.yaml: api_encryption_key, ota_password, mqtt_*).
+#
+#  Optional external packages (uncomment to use):
+#    lwz_180  Stiebel Eltron LWZ 180 ventilation unit via I2C, own HA device
+#    debug    CAN RX stream and debug hooks (STIEBEL_DEBUG_RX / STIEBEL_DEBUG_TX)
+#
+
+substitutions:
+  deviceid: "heatingpump-wpla07"
+  devicefrname: "Stiebel Eltron WPL-A 07"
+  # Firmware version YYYY.MM.N: N counts the builds in the month. Count up before every flashed build.
+  fw_version: "2026.11.3"
+  device_model: "wpla"            # used in HA device identifier (stiebel_eltron_<model>)
+  language: "DE"                  # display language for HA entity names: DE (default) or EN
+  # CAN pins for the ESP32-S3 built-in TWAI controller
+  can_tx_pin: GPIO18
+  can_rx_pin: GPIO16
+  can_id_pc: "0x680"
+  can_bit_rate: 50kbps            # WPL-A verified bus speed (other models: 20kbps)
+  # W5500 Ethernet SPI pins
+  eth_clk_pin: GPIO13
+  eth_mosi_pin: GPIO11
+  eth_miso_pin: GPIO12
+  eth_cs_pin: GPIO14
+  eth_int_pin: GPIO10
+  eth_rst_pin: GPIO9
+  # --- only used with the lwz_180 package ---
+  lwz_sda_gpio: "15"              # numbers only, without "GPIO"
+  lwz_scl_gpio: "17"
+  lwz_i2c_slave_addr: "42"        # 7-bit address of the ESP as I2C slave (general call is also on)
+  lwz_internal_pullup: "true"
+  lwz_prefix: "lwz180"
+  lwz_device_name: "Stiebel Eltron LWZ 180 Enthalpie"
+  lwz_model: "LWZ 180 Enthalpie"
+
+packages:
+  board: !include ha-stiebel-control/board_esp32s3_espidf.yaml
+  can: !include ha-stiebel-control/can_esp32.yaml
+  network: !include ha-stiebel-control/network_ethernet_w5500.yaml
+  base: !include ha-stiebel-control/common.yaml
+  sensors: !include ha-stiebel-control/wpla.yaml
+  # lwz_180: github://bastard-GIT/esphome-lwz-180/lwz_180.yaml@main
+  # debug: github://bastard-GIT/stiebel-debug/stiebel_debug.yaml@main

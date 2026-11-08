@@ -46,14 +46,7 @@
     {"SOMMERBETRIEB",    FREQ_1MIN,  cm_manager},   \
     {"VERDICHTER",       FREQ_30S,   cm_heizmodul}, \
     \
-    /* -------------------------------------------------------------------- */ \
-    /* ENERGY COUNTERS — required for COP calculations                      */ \
-    /* -------------------------------------------------------------------- */ \
-    {"EL_AUFNAHMELEISTUNG_HEIZ_SUM_MWH", FREQ_10MIN, cm_heizmodul}, \
-    {"EL_AUFNAHMELEISTUNG_WW_SUM_MWH",   FREQ_10MIN, cm_heizmodul}, \
-    {"WAERMEERTRAG_WW_SUM_MWH",          FREQ_10MIN, cm_heizmodul}, \
-    {"WAERMEERTRAG_HEIZ_SUM_MWH",        FREQ_10MIN, cm_heizmodul}, \
-    {"WAERMEERTRAG_2WE_WW_SUM_MWH",      FREQ_10MIN, cm_heizmodul}, \
-    {"WAERMEERTRAG_2WE_HEIZ_SUM_MWH",    FREQ_10MIN, cm_heizmodul},
+    /* Energy counters (MWh+kWh, Tag kWh+Wh) and COP are read by          */ \
+    /* energy_counters.h with its own hi/lo/hi sequence, not listed here.  */
 
 #endif // SIGNAL_REQUESTS_BASE_H
