@@ -16,6 +16,7 @@ Branch `wpla07` is upstream v2.6.0 plus the tested WPL-A 07 production state of 
 - KWL LWZ 180 (I2C) and the CAN debug stream are separate external packages (`bastard-GIT/esphome-lwz-180`, `bastard-GIT/stiebel-debug`). `common.yaml` has no I2C or debug code.
 - `common.yaml`: secrets as upstream (`api_encryption_key`, `ota_password`, `mqtt_broker`), substitutions `fw_version`, `mqtt_port`, `ntp_server`, `deviceid`, `devicefrname`; `can_bit_rate` as upstream.
 - Example `esphome/heatingpump_wpla07_mk1.yaml` for the Mk1 rig with the optional `lwz_180` and `debug` packages.
+- The changes of this branch for the WPL-A 07 (signals, debug hooks, network packages) were created with AI assistance (Claude by Anthropic) and tested on the author's own device.
 - Note: `ha-stiebel-control.h`, `config.h`, `ElsterTable.h` and the language files come from the production tree, which is older than upstream v2.6.0 in parts (for example no publish-on-change/heartbeat, #55). Upstream features not listed here may be missing for the other models.
 
 ## [Unreleased]

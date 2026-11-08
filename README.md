@@ -2,6 +2,8 @@
 
 > **Fork branch `wpla07`** (bastard-GIT): upstream v2.6.0 plus WPL-A 07 support and the Mk1 production state. See the top of [CHANGELOG.md](CHANGELOG.md) and `esphome/heatingpump_wpla07_mk1.yaml`.
 
+> **AI assistance (branch `wpla07` only):** The changes of this branch for the WPL-A 07 (signals, debug hooks, network packages) were created with AI assistance (Claude by Anthropic) and tested on the author's own device. The upstream content is not affected.
+
 Requires ESPHome 2026.7.0 or newer. CI uses ESPHome 2026.10.1.
 
 ESPHome firmware for monitoring and controlling Stiebel Eltron heat pumps via CAN bus.
