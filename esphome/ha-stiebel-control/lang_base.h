@@ -115,6 +115,21 @@
 #define LNAME_ANZEIGE_HOCHDRUCK                "Hochdruck"
 #define LNAME_ANZEIGE_NIEDERDRUCK              "Niederdruck"
 #define LNAME_BETRIEBSART_WP                   "Betriebsart Wärmepumpe"
+// WPL-A 07 (signal_requests_wpla.h)
+#define LNAME_WP_WASSERVOLUMENSTROM            "WP Wasservolumenstrom"
+#define LNAME_INTEGRAL_REGELABWEICHUNG         "Integral Regelabweichung"
+#define LNAME_EXV_OEFFNUNGSGRAD                "EXV Öffnungsgrad"
+#define LNAME_VORSTEUER_OEFFNUNGSGRAD          "Vorsteuer Öffnungsgrad"
+#define LNAME_P_ANTEIL_EXV                     "P-Anteil EXV"
+#define LNAME_I_ANTEIL_EXV                     "I-Anteil EXV"
+#define LNAME_D_ANTEIL_EXV                     "D-Anteil EXV"
+#define LNAME_FROSTSCHUTZTEMPERATUR            "Frostschutztemperatur"
+#define LNAME_VERFLUESSIGERTEMP_WPLA           "Verflüssigertemperatur"
+#define LNAME_OELSUMPFTEMP                     "Ölsumpftemperatur"
+#define LNAME_ANTILEGIONELLENBEHANDLUNG        "Antilegionellenbehandlung"
+#define LNAME_SPREIZUNG                        "Spreizung"
+#define LNAME_MINIMALE_PUMPLEISTUNG            "Minimale Pumpleistung"
+#define LNAME_MAXIMALE_PUMPLEISTUNG            "Maximale Pumpleistung"
 
 // ============================================================================
 // Calculated sensor names (ha-stiebel-control.h calculatedSensors[])
@@ -181,8 +196,8 @@
 // Select option strings (programmschalterOptions[], sgReadyOptions[])
 // ============================================================================
 #define LNAME_OPT_NOTBETRIEB                   "Notbetrieb"
-#ifdef HA_MODEL_wpl10ac
-// WPL 10 AC + WPM3 operating mode names (differ from the old WPM2 naming)
+#if defined(HA_MODEL_wpl10ac) || defined(HA_MODEL_wpla)
+// WPL 10 AC / WPL-A + WPM3 operating mode names (differ from the old WPM2 naming)
 #define LNAME_OPT_BEREITSCHAFT                 "Bereitschaftsbetrieb"
 #define LNAME_OPT_AUTOMATIK                    "Programmierbetrieb"
 #define LNAME_OPT_TAGBETRIEB                   "Komfortbetrieb"

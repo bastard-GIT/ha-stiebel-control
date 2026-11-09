@@ -274,6 +274,34 @@
 #define LNAME_ANZEIGE_HOCHDRUCK                "High Pressure"
 #undef  LNAME_ANZEIGE_NIEDERDRUCK
 #define LNAME_ANZEIGE_NIEDERDRUCK              "Low Pressure"
+#undef  LNAME_WP_WASSERVOLUMENSTROM
+#define LNAME_WP_WASSERVOLUMENSTROM            "Heat Pump Water Flow Rate"
+#undef  LNAME_INTEGRAL_REGELABWEICHUNG
+#define LNAME_INTEGRAL_REGELABWEICHUNG         "Control Deviation Integral"
+#undef  LNAME_EXV_OEFFNUNGSGRAD
+#define LNAME_EXV_OEFFNUNGSGRAD                "EXV Opening"
+#undef  LNAME_VORSTEUER_OEFFNUNGSGRAD
+#define LNAME_VORSTEUER_OEFFNUNGSGRAD          "EXV Pilot Opening"
+#undef  LNAME_P_ANTEIL_EXV
+#define LNAME_P_ANTEIL_EXV                     "EXV P Term"
+#undef  LNAME_I_ANTEIL_EXV
+#define LNAME_I_ANTEIL_EXV                     "EXV I Term"
+#undef  LNAME_D_ANTEIL_EXV
+#define LNAME_D_ANTEIL_EXV                     "EXV D Term"
+#undef  LNAME_FROSTSCHUTZTEMPERATUR
+#define LNAME_FROSTSCHUTZTEMPERATUR            "Frost Protection Temperature"
+#undef  LNAME_VERFLUESSIGERTEMP_WPLA
+#define LNAME_VERFLUESSIGERTEMP_WPLA           "Condenser Temperature"
+#undef  LNAME_OELSUMPFTEMP
+#define LNAME_OELSUMPFTEMP                     "Oil Sump Temperature"
+#undef  LNAME_ANTILEGIONELLENBEHANDLUNG
+#define LNAME_ANTILEGIONELLENBEHANDLUNG        "Anti-Legionella Treatment"
+#undef  LNAME_SPREIZUNG
+#define LNAME_SPREIZUNG                        "Temperature Spread"
+#undef  LNAME_MINIMALE_PUMPLEISTUNG
+#define LNAME_MINIMALE_PUMPLEISTUNG            "Minimum Pump Power"
+#undef  LNAME_MAXIMALE_PUMPLEISTUNG
+#define LNAME_MAXIMALE_PUMPLEISTUNG            "Maximum Pump Power"
 
 // ============================================================================
 // Writable number friendly names

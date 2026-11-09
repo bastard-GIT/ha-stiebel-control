@@ -1460,6 +1460,10 @@ TEST_CASE("writableNumbers: WPMW II parameters are only offered on wpl13e and tt
     // The heating curve is also writable on wpl17 (KESSEL_CANB).
     CHECK(writableNumberApplies("HEIZKURVE") == (verified || model == "wpl17"));
     CHECK(writableNumberApplies("EINSTELL_SPEICHERSOLLTEMP"));
+    // Single heating circuit: no number entities for circuits 2 and 3.
+    const bool singleCircuit = model == "wpl17" || model == "wpla";
+    CHECK(writableNumberApplies("RAUMSOLLTEMP_II") == !singleCircuit);
+    CHECK(writableNumberApplies("RAUMSOLLTEMP_III") == !singleCircuit);
 }
 
 TEST_CASE("writableNumbers: 0xfdb0/0xfdb1 resolve to the names used in the state topics", "[writable]") {
@@ -1560,9 +1564,10 @@ TEST_CASE("climate: heating and hot water discoveries reuse the number /set topi
     CHECK(heat.find("\"Tagbetrieb\"") != std::string::npos);
     CHECK(dhw.find("EINSTELL_SPEICHERSOLLTEMP/set") != std::string::npos);
     const bool wpl17 = std::strcmp(HA_DEVICE_MODEL_STR, "wpl17") == 0;
-    const bool canbSetpoint = wpl17 || std::strcmp(HA_DEVICE_MODEL_STR, "wpl9") == 0;
+    const bool wpla = std::strcmp(HA_DEVICE_MODEL_STR, "wpla") == 0;
+    const bool canbSetpoint = wpl17 || wpla || std::strcmp(HA_DEVICE_MODEL_STR, "wpl9") == 0;
     const std::string current = std::string("heatingpump/") +
-        (wpl17 ? "KESSEL_CANB" : "KESSEL") + "/SPEICHERISTTEMP/state";
+        ((wpl17 || wpla) ? "KESSEL_CANB" : "KESSEL") + "/SPEICHERISTTEMP/state";
     const std::string command = std::string("heatingpump/") +
         (canbSetpoint ? "KESSEL_CANB" : "MANAGER") + "/EINSTELL_SPEICHERSOLLTEMP/set";
     CHECK(dhw.find(current) != std::string::npos);

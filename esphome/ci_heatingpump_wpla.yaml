@@ -1,0 +1,17 @@
+# CI-only entry point for the WPL-A on an ESP32-S3 (built-in CAN, 50 kbps).
+# Not intended for end-user use — heatingpump.yaml is the user-facing config.
+substitutions:
+  device_name: heatingpump
+  friendly_name: "Stiebel Eltron Wärmepumpe"
+  device_model: "wpla"
+  language: "DE"
+  can_tx_pin: GPIO18
+  can_rx_pin: GPIO16
+  can_id_pc: "0x680"
+  can_bit_rate: 50kbps
+
+packages:
+  board: !include ha-stiebel-control/board_esp32s3.yaml
+  can: !include ha-stiebel-control/can_esp32.yaml
+  base: !include ha-stiebel-control/common.yaml
+  sensors: !include ha-stiebel-control/wpla.yaml
