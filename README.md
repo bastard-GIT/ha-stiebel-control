@@ -95,12 +95,17 @@ pump provides its own termination).
 | `ttl33.yaml` | Tecalor TTL 33 with WPMW II (air-source, 2 heating circuits, no IWS values) | ✅ Verified read-only — circuit 2 on `MISCHERMODUL_3` (0x602) |
 | `wpf10.yaml` | WPF 10 / WPF 10M (ground-source) | ⚠️ Community — signals may need adjustment |
 | `wpl17.yaml` | WPL 17 ICS classic (air-source, 1 heating circuit) | ✅ Verified on CAN-B (X1.2, 50 kbps) |
+| `wpla.yaml` | WPL-A 07 (air-source, WPM3, 1 heating circuit) | ✅ Verified on a WPL-A 07 230 Premium (50 kbps) — reading, DHW setpoints |
 
 **WPL17 note:** the WPL17 has two CAN buses. The comfort level (Speicher-Ist-Temp,
 Raum-Soll-Temp, Heizkurve, Energien, Betriebsmodus) is only readable on **CAN-B
 (X1.2, 50 kbps)** — the same bus the ISG-Web connects to. Set
 `can_bit_rate: 50kbps` and `device_model: "wpl17"` in `heatingpump.yaml`.
 See `signal_requests_wpl17.h` header for details.
+
+**WPL-A note:** set `can_bit_rate: 50kbps` and `device_model: "wpla"`. DHW values and
+setpoints live on `KESSEL_CANB` (0x201), compressor and inverter values on `HEIZMODUL_WPL`
+(0x514). See the `signal_requests_wpla.h` header.
 
 To add support for your heat pump, see [Contributing](#contributing) below.
 

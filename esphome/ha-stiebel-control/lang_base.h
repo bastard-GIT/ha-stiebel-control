@@ -181,8 +181,8 @@
 // Select option strings (programmschalterOptions[], sgReadyOptions[])
 // ============================================================================
 #define LNAME_OPT_NOTBETRIEB                   "Notbetrieb"
-#ifdef HA_MODEL_wpl10ac
-// WPL 10 AC + WPM3 operating mode names (differ from the old WPM2 naming)
+#if defined(HA_MODEL_wpl10ac) || defined(HA_MODEL_wpla)
+// WPL 10 AC / WPL-A + WPM3 operating mode names (differ from the old WPM2 naming)
 #define LNAME_OPT_BEREITSCHAFT                 "Bereitschaftsbetrieb"
 #define LNAME_OPT_AUTOMATIK                    "Programmierbetrieb"
 #define LNAME_OPT_TAGBETRIEB                   "Komfortbetrieb"

@@ -128,6 +128,9 @@ inline SignalRoute resolveSignalRoute(const char* model, uint16_t index,
     if (std::strcmp(model, "wpl17") == 0 &&
         (index == 0x0013 || index == 0x0a06 || index == 0x010e))
         return {cm_kessel_canb, cm_kessel_canb, cm_kessel_canb};
+    // WPL-A: the DHW setpoints live on 0x201 (the display writes them there too).
+    if (std::strcmp(model, "wpla") == 0 && (index == 0x0013 || index == 0x0a06))
+        return {cm_kessel_canb, cm_kessel_canb, cm_kessel_canb};
     return {fallback, fallback, fallback};
 }
 
@@ -1356,6 +1359,8 @@ void publishClimateDiscoveries() {
     const char* device = "\"device\":{\"identifiers\":[\"stiebel_eltron_" HA_DEVICE_MODEL_STR "\"],"
                          "\"name\":\"Stiebel Eltron Wärmepumpe\",\"manufacturer\":\"Stiebel Eltron\"}";
     const bool wpl17 = strcmp(HA_DEVICE_MODEL_STR, "wpl17") == 0;
+    // WPL17 and WPL-A read the DHW actual temperature from KESSEL_CANB (0x201)
+    const bool dhwOnCanb = wpl17 || strcmp(HA_DEVICE_MODEL_STR, "wpla") == 0;
 
     // Heating: room setpoint (day) + operating mode (Programmschalter) as presets
     if (const WritableNumberConfig* room = findWritableNumber("RAUMSOLLTEMP_I")) {
@@ -1387,7 +1392,7 @@ void publishClimateDiscoveries() {
           << "\"min_temp\":" << dhw->min << ",\"max_temp\":" << dhw->max << ",\"temp_step\":" << dhw->step << ","
           << "\"temperature_command_topic\":\"heatingpump/" << cm->Name << "/EINSTELL_SPEICHERSOLLTEMP/set\","
           << "\"temperature_state_topic\":\"heatingpump/" << cm->Name << "/EINSTELL_SPEICHERSOLLTEMP/state\","
-          << "\"current_temperature_topic\":\"heatingpump/" << (wpl17 ? "KESSEL_CANB" : "KESSEL") << "/SPEICHERISTTEMP/state\","
+          << "\"current_temperature_topic\":\"heatingpump/" << (dhwOnCanb ? "KESSEL_CANB" : "KESSEL") << "/SPEICHERISTTEMP/state\","
           << "\"availability_topic\":\"heatingpump/status\",\"icon\":\"mdi:water-boiler\"," << device << "}";
         std::string s = p.str();
         mqttPublish("homeassistant/climate/heatingpump/stiebel_climate_warmwasser/config", s.c_str(), s.length());
@@ -1397,9 +1402,10 @@ void publishClimateDiscoveries() {
 // Whether the model gets a writable number entity for this signal
 static bool writableNumberApplies(const char* sig) {
     const bool isWpl17 = (strcmp(HA_DEVICE_MODEL_STR, "wpl17") == 0);
-    // WPL17 has only ONE heating circuit (RAUMSOLLTEMP_I). Skip II/III so the
+    const bool isWpla = (strcmp(HA_DEVICE_MODEL_STR, "wpla") == 0);
+    // WPL17 and WPL-A have only ONE heating circuit (RAUMSOLLTEMP_I). Skip II/III so the
     // number entities are not created on single-circuit models (-255 only).
-    if ((strcmp(sig, "RAUMSOLLTEMP_II") == 0 || strcmp(sig, "RAUMSOLLTEMP_III") == 0) && isWpl17)
+    if ((strcmp(sig, "RAUMSOLLTEMP_II") == 0 || strcmp(sig, "RAUMSOLLTEMP_III") == 0) && (isWpl17 || isWpla))
         return false;
     // WPMW II writes verified on the display: WPL13E (bus scan, display) and TTL 33 (each value
     // changed over CAN and back, checked on the WPMW II display).

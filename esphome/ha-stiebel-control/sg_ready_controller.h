@@ -14,7 +14,7 @@
 
 // Operating mode written by SG Ready when boosting back to normal operation.
 // The WPM3 (WPL 10 AC) calls this mode "Komfortbetrieb", older WPM2 "Tagbetrieb".
-#ifdef HA_MODEL_wpl10ac
+#if defined(HA_MODEL_wpl10ac) || defined(HA_MODEL_wpla)
 #define SG_READY_NORMAL_MODE "Komfortbetrieb"
 #else
 #define SG_READY_NORMAL_MODE "Tagbetrieb"

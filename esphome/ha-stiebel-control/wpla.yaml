@@ -1,0 +1,20 @@
+#
+#  WPL-A Heat Pump — Model Package (Air-Source, WPM3)
+#
+#  Verified on a WPL-A 07 230 Premium: built-in CAN at 50 kbps on the WPM3 bus.
+#  Members used: KESSEL (0x180), KESSEL_CANB (0x201, DHW), MANAGER (0x480),
+#  HEIZMODUL (0x500), HEIZMODUL_WPL (0x514, compressor/inverter/energy) and
+#  MISCHERMODUL_2 (0x601, heating circuit 1). See signal_requests_wpla.h.
+#
+#  Usage in heatingpump.yaml:
+#
+#    substitutions:
+#      device_model: "wpla"
+#      can_bit_rate: 50kbps
+#    packages:
+#      sensors: !include ha-stiebel-control/wpla.yaml
+#
+
+esphome:
+  includes:
+    - signal_requests_wpla.h

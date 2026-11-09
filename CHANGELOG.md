@@ -9,6 +9,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [Sem
 
 ### Added
 
+- New model `wpla` (WPL-A 07, WPM3, CAN 50 kbps): `wpla.yaml`, `signal_requests_wpla.h`, CI
+  compile target `ci_heatingpump_wpla.yaml`. Verified on a WPL-A 07 230 Premium. DHW setpoints
+  are written to `KESSEL_CANB` (0x201), the room setpoint entities of circuits 2 and 3 are not
+  offered (one heating circuit). The WPM3 rows of `ElsterTable.h` and the WPM3 operating mode
+  names now also apply to `wpla`.
+- `ElsterTable.h`: new indices 0x4f91 SPREIZUNG, 0x4f98/0x4f99 MINIMALE/MAXIMALE_PUMPLEISTUNG,
+  0x4f9f UNTERKUEHLUNG_EXVENTIL_EIN, 0x4fa0 BETRIEBSART_KAELTEKREISREGLER. Types and HA metadata
+  for EXV and controller values (0x033d, 0x07ca, 0x07f6–0x07f9) and 0x4f28
+  ANTILEGIONELLENBEHANDLUNG. Placeholder names replaced: 0x02e2 WP_WASSERVOLUMENSTROM (was
+  WE_KONFIGURATION), 0x0a36 FROSTSCHUTZTEMPERATUR, 0x0a37 VERFLUESSIGERTEMP_WPLA, 0x0a39
+  OELSUMPFTEMP (were EINGANG14/15/17; names from jojo18222's WPL-A fork). No other model polls
+  these indices.
+- Network package selectable by the substitution `network_package`: `network_wifi.yaml`
+  (default, WiFi moved out of `common.yaml` unchanged) or the new `network_ethernet_w5500.yaml`
+  (W5500 SPI Ethernet, pin defaults for the Waveshare ESP32-S3-POE-ETH). Existing configurations
+  need no change.
 - SG Ready room setpoint boost is configurable per state (`number.…_sg_ready_raum_boost_zustand_3/4`,
   0–5 K, defaults 1 K and 2 K as before). With 0 the room setpoint of heating circuit 1 is left
   alone, so SG Ready no longer shifts the heating curve (#50).
