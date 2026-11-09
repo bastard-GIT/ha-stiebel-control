@@ -21,6 +21,39 @@ Branch `wpla07` is upstream v2.6.0 plus the tested WPL-A 07 production state of 
 
 ## [Unreleased]
 
+### Added
+
+- SG Ready room setpoint boost is configurable per state (`number.…_sg_ready_raum_boost_zustand_3/4`,
+  0–5 K, defaults 1 K and 2 K as before). With 0 the room setpoint of heating circuit 1 is left
+  alone, so SG Ready no longer shifts the heating curve (#50).
+- WPMW II models: sensors that share a signal name but measure different points get their own
+  names per bus member, e.g. KESSEL `RUECKLAUFISTTEMP` is "Heizkreis 1 Regelfühler", HEIZMODUL
+  `RUECKLAUFISTTEMP` is "Wärmepumpe Rücklauf IWS" (#46). Entity IDs of existing installs stay.
+- Calculated sensors for short-cycling: compressor starts today, runtime today and runtime per start
+  (#49). Off phases under 2 min do not count as a new start; the day follows the heat pump's date.
+
+### Fixed
+
+- Right after an MQTT connect ESPHome queues its subscriptions and native states; its async publish
+  queue holds 30 messages, so the SG Ready states and part of the republished discovery configs and
+  states were dropped (seen as `mqtt_publish_failures` after a boot). Own republishing now starts
+  3 s after the connect, and the SG Ready states are retried until they are queued.
+- `mqtt_publish_failures` counts only publishes refused while connected (dropped messages);
+  attempts while disconnected are sent again after the connect and no longer inflate it.
+- SG Ready boost values were lost on a reboot (the docs said they were stored). All four boost
+  values are now kept in NVS.
+- The read-back right after a write often returned the old value on the WPMW II, so HA showed the
+  previous setting until the next poll. Every write is now read back a second time about 4 s later
+  (reported by SolderAndSyntax, #68).
+
+### Changed
+
+- `ttl33`: the heating curve and the WPMW II parameters (Reglerdynamik, Stillstandzeit, summer mode
+  threshold, bivalence points heating/hot water) are writable number entities, as on `wpl13e`. Each
+  value was written over CAN on a TTL 33 and checked on the WPMW II display (by SolderAndSyntax).
+- `ttl33` table polls `SCHALTWERKDYNAMIKZEIT` (display "Reglerdynamik"), so its writable entity no
+  longer stays unknown.
+
 ## [2.6.0] — 2026-11-06
 
 Contributions from reniko, SolderAndSyntax and hawkeye80: three new models, WPMW II fixes and

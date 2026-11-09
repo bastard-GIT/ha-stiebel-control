@@ -442,6 +442,8 @@ static void resetDiscoveryState() {
     mqtt_client_instance().connected = true;
     mqtt_client_instance().fail_publish = false;
     mqtt_client_instance().clear();
+    mqttConnectSeen = false;
+    sgReadyPublishPending = false;
 }
 
 // ============================================================================
@@ -1076,6 +1078,62 @@ TEST_CASE("isHeizmodulSilent: only after 60 s without a frame", "[calc]") {
     CHECK_FALSE(isHeizmodulSilent(10000, 0xFFFFFFF0u));   // across the millis() wrap
 }
 
+// #49: compressor starts and runtime per day, sampled every 30 s
+static void feedCompressor(CompressorDayStats& s, uint32_t& t, bool on, int samples, int day = 5) {
+    for (int i = 0; i < samples; ++i) { updateCompressorStats(s, on, t, day); t += 30000; }
+}
+
+TEST_CASE("compressor stats: starts and runtime of separate runs", "[calc][compressor]") {
+    CompressorDayStats s; uint32_t t = 1000;
+    feedCompressor(s, t, false, 4);
+    feedCompressor(s, t, true, 27);    // run of 13 min
+    feedCompressor(s, t, false, 10);   // 5 min off
+    feedCompressor(s, t, true, 21);    // run of 10 min
+    feedCompressor(s, t, false, 2);
+    CHECK(s.starts == 2);
+    CHECK(s.runtimeMs == (26 + 20) * 30000u);   // intervals between two "on" samples
+}
+
+TEST_CASE("compressor stats: an off gap under 2 min is not a new start", "[calc][compressor]") {
+    CompressorDayStats s; uint32_t t = 1000;
+    feedCompressor(s, t, true, 10);
+    feedCompressor(s, t, false, 2);    // 60 s gap (bus hiccup, decode gap)
+    feedCompressor(s, t, true, 10);
+    CHECK(s.starts == 1);
+    feedCompressor(s, t, false, 5);    // 150 s
+    feedCompressor(s, t, true, 2);
+    CHECK(s.starts == 2);
+}
+
+TEST_CASE("compressor stats: reset at the heat pump's day change", "[calc][compressor]") {
+    CompressorDayStats s; uint32_t t = 1000;
+    feedCompressor(s, t, true, 5, 5);
+    feedCompressor(s, t, false, 6, 5);
+    feedCompressor(s, t, true, 5, 5);
+    CHECK(s.starts == 2);
+    feedCompressor(s, t, true, 3, 6);  // still running at midnight: counts for the new day
+    CHECK(s.starts == 1);
+    CHECK(s.runtimeMs == 3 * 30000u);
+    feedCompressor(s, t, false, 6, 6);
+    feedCompressor(s, t, false, 1, -1); // date not known (e.g. after a reboot): no reset
+    CHECK(s.starts == 1);
+}
+
+TEST_CASE("compressor stats are published with the compressor state", "[calc][compressor]") {
+    resetDiscoveryState();
+    compressorStats = CompressorDayStats{};
+    lastTag = 7;
+    lastVerdichterValue = 50.0f;
+    fake_millis() = 1000;
+    publishCompressorActive();
+    CHECK(mqttFindPayload("calculated/verdichter_starts_heute/state") == "1");
+    CHECK(mqttFindPayload("calculated/verdichter_laufzeit_heute/state") == "0.0");
+    CHECK(mqttFindPayload("calculated/verdichter_laufzeit_mittel/state") == "0.0");
+    compressorStats = CompressorDayStats{};
+    lastTag = -1;
+    fake_millis() = 0;
+}
+
 TEST_CASE("publishCompressorActive: value > 2 → on", "[calc]") {
     resetDiscoveryState();
     lastVerdichterValue = 50.0f;
@@ -1349,7 +1407,7 @@ TEST_CASE("writableNumbers: WPMW II parameters sit at the indices common.yaml us
     static const char* expected[] = {"SCHALTWERKDYNAMIKZEIT",
                                      "BIVALENTPARALLELTEMPERATUR_HZG", "BIVALENTPARALLELTEMPERATUR_WW",
                                      "STILLSTANDZEIT", "SW_AUSSENTEMP"};
-    REQUIRE(WRITABLE_NUMBER_COUNT == 14);
+    REQUIRE(WRITABLE_NUMBER_COUNT == 16);
     for (size_t i = 0; i < 5; ++i) {
         CHECK(std::string(writableNumbers[9 + i].signalName) == expected[i]);
         CHECK(writableNumbers[9 + i].member == cm_manager);
@@ -1358,13 +1416,49 @@ TEST_CASE("writableNumbers: WPMW II parameters sit at the indices common.yaml us
     CHECK_FALSE(isWpmw2Parameter("HEIZKURVE"));
 }
 
-TEST_CASE("writableNumbers: WPMW II parameters are only offered on wpl13e", "[writable]") {
-    // CI also builds the tests per model (MODEL_TEST_FLAGS), so both cases are checked.
-    const bool wpl13e = std::string(HA_DEVICE_MODEL_STR) == "wpl13e";
-    for (const char* sig : {"SCHALTWERKDYNAMIKZEIT", "BIVALENTPARALLELTEMPERATUR_HZG",
-                            "STILLSTANDZEIT", "SW_AUSSENTEMP"}) {
-        CHECK(writableNumberApplies(sig) == wpl13e);
+TEST_CASE("WPMW II: per-member names tell the measuring points apart (#46)", "[mqtt][names]") {
+    if (!isWpmw2Model()) {
+        CHECK(wpmw2MemberName("KESSEL", "RUECKLAUFISTTEMP") == nullptr);
+        return;
     }
+    CHECK(std::string(wpmw2MemberName("KESSEL", "RUECKLAUFISTTEMP")) == LNAME_HK1_REGELFUEHLER);
+    CHECK(std::string(wpmw2MemberName("HEIZMODUL", "RUECKLAUFISTTEMP")) == LNAME_WP_RUECKLAUF_IWS);
+    CHECK(std::string(wpmw2MemberName("HEIZMODUL", "AUSSENTEMP")) == LNAME_LUFTANSAUGTEMP);
+    CHECK(wpmw2MemberName("KESSEL", "AUSSENTEMP") == nullptr);   // the control outdoor sensor
+    CHECK(wpmw2MemberName("MANAGER", "RUECKLAUFISTTEMP") == nullptr);
+    resetDiscoveryState();
+    publishMqttDiscovery(CanMembers[cm_kessel], GetElsterIndex("VORLAUFISTTEMP"));
+    CHECK(mqttFindPayload("homeassistant/sensor").find(LNAME_HK2_MISCHER_VORLAUF) != std::string::npos);
+}
+
+TEST_CASE("writableNumbers: SG Ready room boosts sit at the indices common.yaml uses", "[writable][sgready]") {
+    // common.yaml's room boost /set handlers use writableNumbers[14] and [15].
+    CHECK(std::string(writableNumbers[14].signalName) == "SG_READY_ROOM_BOOST_STATE3");
+    CHECK(std::string(writableNumbers[15].signalName) == "SG_READY_ROOM_BOOST_STATE4");
+    CHECK(writableNumberApplies("SG_READY_ROOM_BOOST_STATE3"));
+}
+
+TEST_CASE("SG Ready room boost command is stored and published back", "[sgready]") {
+    resetDiscoveryState();
+    CHECK(handleSgReadyRoomBoost(3, "0.0"));
+    CHECK(mqttFindPayload("SG_READY_ROOM_BOOST_STATE3/state") == "0.0");
+    CHECK(sgReadyController.roomBoostState3() == Approx(0.0f));
+    CHECK_FALSE(handleSgReadyRoomBoost(4, "7"));
+    CHECK_FALSE(handleSgReadyRoomBoost(4, "abc"));
+    CHECK(sgReadyController.roomBoostState4() == Approx(2.0f));
+    CHECK(handleSgReadyRoomBoost(3, "1.0"));
+}
+
+TEST_CASE("writableNumbers: WPMW II parameters are only offered on wpl13e and ttl33", "[writable]") {
+    // CI also builds the tests per model (MODEL_TEST_FLAGS), so both cases are checked.
+    const std::string model = HA_DEVICE_MODEL_STR;
+    const bool verified = model == "wpl13e" || model == "ttl33";
+    for (const char* sig : {"SCHALTWERKDYNAMIKZEIT", "BIVALENTPARALLELTEMPERATUR_HZG",
+                            "BIVALENTPARALLELTEMPERATUR_WW", "STILLSTANDZEIT", "SW_AUSSENTEMP"}) {
+        CHECK(writableNumberApplies(sig) == verified);
+    }
+    // The heating curve is also writable on wpl17 (KESSEL_CANB).
+    CHECK(writableNumberApplies("HEIZKURVE") == (verified || model == "wpl17"));
     CHECK(writableNumberApplies("EINSTELL_SPEICHERSOLLTEMP"));
 }
 
@@ -1851,6 +1945,10 @@ TEST_CASE("mqttPublish: refused publishes are counted and published as diagnosti
     publishCalculatedState("heatingpump/calculated/time/state", "12:00:00");
     publishCalculatedState("heatingpump/calculated/time/state", "12:00:00");   // still pending: retried
     CHECK(mqttPublishFailures == 2);
+    mqtt_client_instance().connected = false;     // not connected: not a drop
+    mqttPublish("heatingpump/x", "1", 1);
+    CHECK(mqttPublishFailures == 2);
+    mqtt_client_instance().connected = true;
     mqtt_client_instance().fail_publish = false;
     publishMqttDiagnostics();
     CHECK(mqttFindPayload("calculated/mqtt_publish_failures/state") == "2");
@@ -1958,7 +2056,7 @@ TEST_CASE("SG Ready IO: write is sent at once, read-back ~100 ms later from the 
     sgReadyIO.writeCanSignal("EINSTELL_SPEICHERSOLLTEMP", "55.0");
     REQUIRE(fake_can().sent.size() == 2);          // two writes, no read yet
     CHECK((fake_can().sent[0][0] & 0x0F) == 0);    // telegram type 0 = write
-    CHECK(pendingReadbackCount == 2);
+    CHECK(pendingReadbackCount == 4);              // early and settle read per signal
 
     pendingReadbackStep();                         // not due yet
     CHECK(fake_can().sent.size() == 2);
@@ -1970,13 +2068,75 @@ TEST_CASE("SG Ready IO: write is sent at once, read-back ~100 ms later from the 
     CHECK(fake_can().sent.size() == 4);
     pendingReadbackStep();
     CHECK(fake_can().sent.size() == 4);
+    CHECK(pendingReadbackCount == 2);
+    fake_millis() = 5000 + READBACK_SETTLE_MS;
+    pendingReadbackStep();
+    pendingReadbackStep();
+    CHECK(fake_can().sent.size() == 6);
     CHECK(pendingReadbackCount == 0);
 
-    // the same signal twice -> one read-back
+    // the same signal twice -> one early and one settle read-back
     sgReadyIO.writeCanSignal("PROGRAMMSCHALTER", "Automatik");
     sgReadyIO.writeCanSignal("PROGRAMMSCHALTER", "Bereitschaft");
-    CHECK(pendingReadbackCount == 1);
+    CHECK(pendingReadbackCount == 2);
     pendingReadbackCount = 0;
+    fake_millis() = 0;
+}
+
+TEST_CASE("MQTT connect: own republishing waits until the connect burst has drained", "[mqtt][state]") {
+    resetDiscoveryState();
+    fake_millis() = 10000;
+    publishMqttState(CanMembers[cm_kessel], GetElsterIndex("SPEICHERISTTEMP"), "48.0");
+    mqtt_client_instance().clear();
+    noteMqttConnected();
+    republishAllStates();
+    scheduleSgReadyPublish();
+    stateRepublishStep();
+    sgReadyPublishStep();
+    CHECK(mqtt_client_instance().messages.empty());
+    fake_millis() = 10000 + MQTT_CONNECT_SETTLE_MS;
+    stateRepublishStep();
+    sgReadyPublishStep();
+    CHECK(mqttTopicPublished("heatingpump/KESSEL/SPEICHERISTTEMP/state"));
+    CHECK(mqttTopicPublished("heatingpump/MANAGER/SG_READY_ROOM_BOOST_STATE3/state"));
+    CHECK_FALSE(sgReadyPublishPending);
+    fake_millis() = 0;
+}
+
+TEST_CASE("MQTT connect: SG Ready state is retried when the queue was full", "[mqtt][sgready]") {
+    resetDiscoveryState();
+    fake_millis() = 5000;
+    scheduleSgReadyPublish();
+    mqtt_client_instance().fail_publish = true;
+    sgReadyPublishStep();
+    CHECK(sgReadyPublishPending);
+    mqtt_client_instance().fail_publish = false;
+    fake_millis() = 5500;
+    sgReadyPublishStep();                       // retry waits a second
+    CHECK(sgReadyPublishPending);
+    fake_millis() = 6000;
+    sgReadyPublishStep();
+    CHECK_FALSE(sgReadyPublishPending);
+    CHECK(mqttFindPayload("SG_READY_STATE/state").size() > 0);
+    fake_millis() = 0;
+}
+
+TEST_CASE("writeSignal: a second read-back follows once the value has settled", "[readback]") {
+    resetDiscoveryState();
+    pendingReadbackCount = 0;
+    fake_can().sent.clear();
+    fake_millis() = 1000;
+    writeSignal(&CanMembers[cm_manager], "STILLSTANDZEIT", "21");
+    REQUIRE(fake_can().sent.size() == 1);
+    REQUIRE(pendingReadbackCount == 1);
+    fake_millis() = 1000 + READBACK_SETTLE_MS - 1;
+    pendingReadbackStep();
+    CHECK(fake_can().sent.size() == 1);
+    fake_millis() = 1000 + READBACK_SETTLE_MS;
+    pendingReadbackStep();
+    REQUIRE(fake_can().sent.size() == 2);
+    CHECK((fake_can().sent[1][0] & 0x0F) == 1);   // read request to the written member
+    CHECK(pendingReadbackCount == 0);
     fake_millis() = 0;
 }
 
