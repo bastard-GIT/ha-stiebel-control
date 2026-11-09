@@ -1,7 +1,17 @@
 #
-#  Network: Ethernet (W5500 SPI) — e.g. "esp32-s3-technik-mk1" reference rig
+#  Network: Ethernet (W5500 SPI)
+#  Default pins: Waveshare ESP32-S3-POE-ETH. Override the eth_* substitutions in the
+#  top-level config if your board is wired differently.
 #  DHCP by default. Add a manual_ip block below if you need a static address.
 #
+
+substitutions:
+  eth_clk_pin: GPIO13
+  eth_mosi_pin: GPIO11
+  eth_miso_pin: GPIO12
+  eth_cs_pin: GPIO14
+  eth_int_pin: GPIO10
+  eth_rst_pin: GPIO9
 
 ethernet:
   type: W5500

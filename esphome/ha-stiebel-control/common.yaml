@@ -1,6 +1,6 @@
 substitutions:
-  deviceid: "heatingpump"
-  devicefrname: "Heating Pump CAN Interface"
+  device_name: "heatingpump"
+  friendly_name: "Heating Pump CAN Interface"
   mqtt_port: "1883"
   ntp_server: "pool.ntp.org"   # e.g. your router for an isolated network
   fw_version: "0.0.0"           # Firmware version (YYYY.MM.N), set in the top-level config
@@ -23,8 +23,8 @@ substitutions:
 #
 
 esphome:
-  name: $deviceid
-  friendly_name: $devicefrname
+  name: ${device_name}
+  friendly_name: ${friendly_name}
   project:
     name: "bullitt186.ha-stiebel-control"
     version: "${fw_version}"   # in HA: Sensoren Firmware Version / Firmware Build (boot_info.h)
@@ -114,7 +114,7 @@ mqtt:
     retain: true
   # Remote-Log ueber MQTT nur Warnungen/Fehler; INFO bleibt im seriellen/API-Log.
   log_topic:
-    topic: ${deviceid}/debug
+    topic: ${device_name}/debug
     level: WARN
   # Keepalive for connection monitoring
   keepalive: 15s

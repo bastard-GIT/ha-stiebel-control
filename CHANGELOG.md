@@ -11,10 +11,10 @@ Branch `wpla07` is upstream v2.6.0 plus the tested WPL-A 07 production state of 
 
 - New model `wpla` (WPL-A 07, CAN 50 kbps): `wpla.yaml`, `signal_requests_wpla.h`, WPL-A status and Elster table additions.
 - New helpers: `energy_counters.h` (energy totals and COP), `boot_info.h` (restart reason, firmware version), `crash_trace.h`, `unix_time.h`.
-- New packages `board_esp32s3_espidf.yaml`, `network_wifi.yaml`, `network_ethernet_w5500.yaml`. Network settings moved out of `common.yaml`, so every top-level config needs a `network:` package (CI configs and `heatingpump.yaml` updated).
+- New packages `network_wifi.yaml`, `network_ethernet_w5500.yaml` (W5500 pin defaults for the Waveshare ESP32-S3-POE-ETH as package substitutions). The WPL-A example uses `board_esp32s3.yaml` (ESP-IDF, octal PSRAM). Network settings moved out of `common.yaml`, so every top-level config needs a `network:` package (CI configs and `heatingpump.yaml` updated).
 - Debug hooks `STIEBEL_DEBUG_RX` / `STIEBEL_DEBUG_TX` in `config.h`, `can_*.yaml`, `ha-stiebel-control.h` and `energy_counters.h`. They compile to nothing unless the external package `bastard-GIT/stiebel-debug` defines `STIEBEL_DEBUG`.
 - KWL LWZ 180 (I2C) and the CAN debug stream are separate external packages (`bastard-GIT/esphome-lwz-180`, `bastard-GIT/stiebel-debug`). `common.yaml` has no I2C or debug code.
-- `common.yaml`: secrets as upstream (`api_encryption_key`, `ota_password`, `mqtt_broker`), substitutions `fw_version`, `mqtt_port`, `ntp_server`, `deviceid`, `devicefrname`; `can_bit_rate` as upstream.
+- `common.yaml`: secrets as upstream (`api_encryption_key`, `ota_password`, `mqtt_broker`), substitutions `fw_version`, `mqtt_port`, `ntp_server`, `device_name`, `friendly_name` (the names the examples and docs already use; before, `common.yaml` ignored them and always used `heatingpump`); `can_bit_rate` as upstream.
 - Example `esphome/heatingpump_wpla07_mk1.yaml` for the Mk1 rig with the optional `lwz_180` and `debug` packages.
 - The changes of this branch for the WPL-A 07 (signals, debug hooks, network packages) were created with AI assistance (Claude by Anthropic) and tested on the author's own device.
 - Note: `ha-stiebel-control.h`, `config.h`, `ElsterTable.h` and the language files come from the production tree, which is older than upstream v2.6.0 in parts (for example no publish-on-change/heartbeat, #55). Upstream features not listed here may be missing for the other models.
