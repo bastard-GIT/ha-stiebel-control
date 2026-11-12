@@ -1409,8 +1409,8 @@ static const ElsterIndex ElsterTable[] =
   { "LAUFZEIT_VERDICHTER_HEIZEN", 0x05a5, 0, "Laufzeit Verdichter Heizung", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
   { "LAUFZEIT_VERDICHTER_KUEHLEN", 0x05a6, 0, "Laufzeit Verdichter Kühlung", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
   { "LAUFZEIT_VERDICHTER_WW", 0x05a7, 0, "Laufzeit Verdichter Warmwasser", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
-  { "LAUFZEIT_NHZ_WW", 0x05a8, 0, "Laufzeit NHZ Warmwasser", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
-  { "LAUFZEIT_NHZ_HEIZEN", 0x05a9, 0, "Laufzeit NHZ Heizung", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
+  { "LAUFZEIT_NHZ_WW", 0x05a8, 0, "Laufzeit NHZ Warmwasser", "sensor", "duration", "h", "", "mdi:timer-outline", NULL, NULL, false, true }, // Test 2026-11-12: Antwort von 0x514 unbekannt, Einheit h angenommen
+  { "LAUFZEIT_NHZ_HEIZEN", 0x05a9, 0, "Laufzeit NHZ Heizung", "sensor", "duration", "h", "", "mdi:timer-outline", NULL, NULL, false, true }, // Test 2026-11-12: Antwort von 0x514 unbekannt, Einheit h angenommen
   { "MANUELL_VERDICHTER", 0x05aa, 0, "Manueller Elektrisch Verdichter", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
   { "MANUELL_NHZ_STUFE", 0x05ab, 0, "Manueller Elektrisch NHZ Stufe", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
   { "MANUELL_DREHZAHL_ABLUEFTER", 0x05ac, 0, "Manueller Elektrisch Drehzahl Ablüfter", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },

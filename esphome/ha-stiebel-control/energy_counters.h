@@ -13,15 +13,27 @@
 //
 // Alle Antworten auf Energie-Register (0x091a-0x0931) werden hier verbraucht, auch
 // die an das Display; processAndUpdate() reicht sie nicht mehr an updateSensor().
+//
+// Zeitplan (gemessen 2026-11-05..12, Upstream #51/#52): Die WPL-A aktualisiert die
+// Tag-Zaehler nur einmal pro Stunde (Minute :01-:04) und die Summen nur einmal am Tag
+// (00:01-00:05). Daher: Tag-Zaehler einmal pro Stunde ab Minute :05, Summen einmal am
+// Tag ab 00:05, nach dem Start sofort beide. Schlaegt eine Gruppe fehl, neuer Versuch
+// nach 15 min. Ohne gueltige SNTP-Zeit: alles einmal pro Stunde.
+// Die Summen werden bei jedem stuendlichen Durchlauf aus dem Speicher neu gesendet,
+// solange der letzte erfolgreiche Lesewert juenger als 26 h ist (expire_after ist
+// uint16_t, max. ca. 18 h).
 #ifndef ENERGY_COUNTERS_H
 #define ENERGY_COUNTERS_H
 
 namespace energy {
 
-static const uint32_t kPeriodMs = 300000;     // ein Durchlauf alle 5 min
+static const uint32_t kRetryMs = 900000;      // neuer Versuch nach Fehler: 15 min
+static const uint32_t kPollMs = 30000;        // Zeitplan pruefen alle 30 s
+static const uint32_t kNoTimeMs = 3600000;    // ohne SNTP-Zeit: alles stuendlich
+static const uint32_t kSumMaxAgeMs = 93600000;  // Summe aus Speicher senden bis 26 h
 static const uint32_t kTimeoutMs = 1500;      // 0x500: p99 568 ms gemessen
 static const uint8_t kMaxTries = 3;           // Versuche je Register und Member
-static const uint16_t kExpireS = 1800;        // HA: unavailable nach 30 min ohne Wert
+static const uint16_t kExpireS = 7200;        // HA: unavailable nach 2 h ohne Wert
 static const uint16_t kMembers[] = {0x500, 0x514};
 static const size_t kMemberCount = sizeof(kMembers) / sizeof(kMembers[0]);
 
@@ -84,6 +96,7 @@ struct State {
   uint8_t member;   // Index in kMembers
   bool have;        // value gueltig
   float value;      // MWh (Summe) bzw. kWh (Tag)
+  uint32_t ok_ms;   // millis() der letzten erfolgreichen Lesung
 };
 static State g_st[kCount];
 
@@ -97,6 +110,19 @@ static int32_t g_answer = 0;
 static int32_t g_hi1 = 0, g_lo = 0;
 static uint32_t g_sent_ms = 0;
 static uint32_t g_next_cycle_ms = STARTUP_DELAY_MS;
+// Zeitplan: welche Gruppe dieser Durchlauf liest, ob sie fehlerfrei war, wann zuletzt erledigt
+static bool g_do_sum = false, g_do_tag = false;
+static bool g_sum_fail = false, g_tag_fail = false;
+static bool g_first = true;           // erster Durchlauf nach dem Start: alles lesen
+static bool g_time_ok = false;        // Durchlauf mit gueltiger SNTP-Zeit gestartet
+static int g_cycle_hour = -1, g_cycle_day = -1;   // Schluessel des laufenden Durchlaufs
+static bool g_tag_late = false, g_sum_late = false;  // Durchlauf nach dem Zaehler-Update der WPL-A
+static int g_tag_done_hour = -1;      // day_of_year * 24 + hour des letzten fehlerfreien Tag-Durchlaufs
+static int g_sum_done_day = -1;       // day_of_year des letzten fehlerfreien Summen-Durchlaufs
+static uint32_t g_last_full_ms = 0;   // ohne SNTP: letzter Durchlauf
+
+static bool selected(size_t i) { return i < kTag ? g_do_sum : g_do_tag; }
+static void mark_fail() { if (g_cur < kTag) g_sum_fail = true; else g_tag_fail = true; }
 static bool g_cleanup_done = false;
 static uint16_t g_cleanup_pos = 0;
 
@@ -163,6 +189,7 @@ static void finish_counter() {
   const int32_t lo = (g_lo == 0x8000) ? 0 : g_lo;
   if (g_hi1 < 0 || g_hi1 >= 0x8000 || lo < 0 || lo > 999) {
     ESP_LOGW("ENERGIE", "%s: ungueltig hi=%ld lo=%ld", c.cfg.uniqueId, (long)g_hi1, (long)g_lo);
+    mark_fail();
     return;
   }
   const float val = (float)g_hi1 + (float)lo / 1000.0f;
@@ -173,17 +200,38 @@ static void finish_counter() {
   }
   s.value = val;
   s.have = true;
+  s.ok_ms = millis();
   publish_value(c.cfg, val, "%.3f");
   ESP_LOGI("ENERGIE", "%s = %.3f (0x%03x)", c.cfg.uniqueId, val, kMembers[s.member]);
 }
 
+// Durchlauf fertig: erledigte Gruppen merken, nicht gelesene Summen aus dem Speicher
+// senden (haelt expire_after), COP neu berechnen
+static void finish_cycle() {
+  const uint32_t now = millis();
+  if (g_time_ok) {
+    // Start-Durchlauf vor Minute :05 (bzw. vor 00:05) zaehlt nicht als erledigt
+    if (g_do_tag && !g_tag_fail && g_tag_late) g_tag_done_hour = g_cycle_hour;
+    if (g_do_sum && !g_sum_fail && g_sum_late) g_sum_done_day = g_cycle_day;
+  }
+  if (!g_do_sum) {
+    for (size_t i = 0; i < kTag; i++) {
+      const State &s = g_st[i];
+      if (s.have && (uint32_t)(now - s.ok_ms) < kSumMaxAgeMs) publish_value(kCounters[i].cfg, s.value, "%.3f");
+    }
+  }
+  ESP_LOGI("ENERGIE", "Durchlauf fertig: Summe %s, Tag %s",
+           g_do_sum ? (g_sum_fail ? "Fehler" : "ok") : "-", g_do_tag ? (g_tag_fail ? "Fehler" : "ok") : "-");
+  publish_cop();
+}
+
 static void next_counter() {
-  g_cur++;
+  do { g_cur++; } while (g_cur < kCount && !selected(g_cur));
   g_tries = 0;
   g_member_tries = 0;
   if (g_cur >= kCount) {
     g_step = S_IDLE;
-    publish_cop();
+    finish_cycle();
     return;
   }
   g_step = S_HI1;
@@ -195,7 +243,7 @@ static void member_failed(const char *why) {
   State &s = g_st[g_cur];
   ESP_LOGW("ENERGIE", "%s: 0x%03x %s", kCounters[g_cur].cfg.uniqueId, kMembers[s.member], why);
   s.member = (uint8_t)((s.member + 1) % kMemberCount);
-  if (++g_member_tries >= kMemberCount) { next_counter(); return; }
+  if (++g_member_tries >= kMemberCount) { mark_fail(); next_counter(); return; }
   g_tries = 0;
   g_step = S_HI1;
   request();
@@ -237,8 +285,30 @@ static void loop() {
   if (!g_cleanup_done) { cleanup_step(); return; }
   if (g_step == S_IDLE) {
     if ((int32_t)(now - g_next_cycle_ms) < 0) return;
-    g_next_cycle_ms = now + kPeriodMs;
+    const ESPTime t = id(sntp_time).now();
+    g_time_ok = t.is_valid();
+    bool sum, tag;
+    if (g_time_ok) {
+      g_cycle_hour = t.day_of_year * 24 + t.hour;
+      g_cycle_day = t.day_of_year;
+      const bool after5 = t.minute >= 5;   // WPL-A schreibt die Zaehler in Minute :01-:04
+      g_tag_late = after5;
+      g_sum_late = t.hour > 0 || after5;
+      tag = g_first || (g_tag_done_hour != g_cycle_hour && g_tag_late);
+      sum = g_first || (g_sum_done_day != g_cycle_day && g_sum_late);
+    } else {
+      tag = sum = g_first || (uint32_t)(now - g_last_full_ms) >= kNoTimeMs;
+    }
+    if (!sum && !tag) { g_next_cycle_ms = now + kPollMs; return; }
+    // naechster Versuch: bei Erfolg greift der Zeitplan vorher (Stundenwechsel), bei Fehler nach 15 min
+    g_next_cycle_ms = now + (g_time_ok ? kRetryMs : kPollMs);
+    g_first = false;
+    g_last_full_ms = now;
+    g_do_sum = sum;
+    g_do_tag = tag;
+    g_sum_fail = g_tag_fail = false;
     g_cur = 0;
+    while (g_cur < kCount && !selected(g_cur)) g_cur++;
     g_tries = 0;
     g_member_tries = 0;
     g_step = S_HI1;

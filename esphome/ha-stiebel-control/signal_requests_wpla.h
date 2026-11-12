@@ -50,6 +50,8 @@ extern const SignalRequest signalRequests[] = {
     {"LAUFZEIT_DHC1",                         FREQ_10MIN, cm_wpumpe},   // aux heater 1 runtime
     {"LAUFZEIT_DHC2",                         FREQ_10MIN, cm_wpumpe},   // aux heater 2 runtime
     {"LZ_DHC12",                              FREQ_10MIN, cm_wpumpe},   // aux heater 1+2 runtime
+    {"LAUFZEIT_NHZ_WW",                       FREQ_10MIN, cm_wpumpe},   // 0x05a8 aux heater runtime DHW (test 2026-11-12, not in scan)
+    {"LAUFZEIT_NHZ_HEIZEN",                   FREQ_10MIN, cm_wpumpe},   // 0x05a9 aux heater runtime heating (test 2026-11-12, not in scan)
     {"ZEITDAUER_LETZTE_ABTAUUNG",             FREQ_10MIN, cm_wpumpe},   // duration of last defrost
     {"STARTS_VERDICHTER_H",                   FREQ_10MIN, cm_wpumpe},   // compressor starts (high word)
     {"STARTS_VERDICHTER_L",                   FREQ_10MIN, cm_wpumpe},   // compressor starts (low word)
