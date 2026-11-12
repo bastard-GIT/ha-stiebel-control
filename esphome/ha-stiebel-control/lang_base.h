@@ -122,6 +122,7 @@
 #define LNAME_CALC_STATUS_WPLA                 "Status WPL-A"
 #define LNAME_CALC_PUMPENSTATUS                "Pumpenstatus"
 #define LNAME_CALC_VERDICHTER_STATUS           "Verdichter-Status"
+#define LNAME_CALC_WP_STATUS_4EDA              "WP-Status (0x4eda)"
 
 // ============================================================================
 // Writable number friendly names (writableNumbers[])

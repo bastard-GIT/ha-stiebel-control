@@ -1409,8 +1409,8 @@ static const ElsterIndex ElsterTable[] =
   { "LAUFZEIT_VERDICHTER_HEIZEN", 0x05a5, 0, "Laufzeit Verdichter Heizung", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
   { "LAUFZEIT_VERDICHTER_KUEHLEN", 0x05a6, 0, "Laufzeit Verdichter Kühlung", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
   { "LAUFZEIT_VERDICHTER_WW", 0x05a7, 0, "Laufzeit Verdichter Warmwasser", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
-  { "LAUFZEIT_NHZ_WW", 0x05a8, 0, "Laufzeit NHZ Warmwasser", "sensor", "duration", "h", "", "mdi:timer-outline", NULL, NULL, false, true }, // 0x514 antwortet -255 (Test 2026-11-12), Scan 2026-10-20: alle anderen 0x8000, 0x500 ungeprueft -> Test auf 0x500
-  { "LAUFZEIT_NHZ_HEIZEN", 0x05a9, 0, "Laufzeit NHZ Heizung", "sensor", "duration", "h", "", "mdi:timer-outline", NULL, NULL, false, true }, // 0x514 antwortet -255 (Test 2026-11-12), Scan 2026-10-20: alle anderen 0x8000, 0x500 ungeprueft -> Test auf 0x500
+  { "LAUFZEIT_NHZ_WW", 0x05a8, 0, "Laufzeit NHZ Warmwasser", "sensor", "duration", "h", "", "mdi:timer-outline", NULL, NULL, false, true }, // kein Wert: 0x514 und 0x500 antworten -255 (2026-11-12/13), Scan 2026-10-20 alle anderen 0x8000; nicht abgefragt
+  { "LAUFZEIT_NHZ_HEIZEN", 0x05a9, 0, "Laufzeit NHZ Heizung", "sensor", "duration", "h", "", "mdi:timer-outline", NULL, NULL, false, true }, // kein Wert: 0x514 und 0x500 antworten -255 (2026-11-12/13), Scan 2026-10-20 alle anderen 0x8000; nicht abgefragt
   { "MANUELL_VERDICHTER", 0x05aa, 0, "Manueller Elektrisch Verdichter", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
   { "MANUELL_NHZ_STUFE", 0x05ab, 0, "Manueller Elektrisch NHZ Stufe", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
   { "MANUELL_DREHZAHL_ABLUEFTER", 0x05ac, 0, "Manueller Elektrisch Drehzahl Ablüfter", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
@@ -1677,7 +1677,7 @@ static const ElsterIndex ElsterTable[] =
   { "SPANNUNG_INVERTER", 0x06b1, et_dec_val, "Spannung Inverter", "sensor", "voltage", "V", "measurement", "mdi:flash", NULL, NULL, false, true }, // Fork jojo18222 WPL-A-05, vorher TEST_OBJEKT_112
   { "STROM_INVERTER", 0x06b2, et_dec_val, "Strom Inverter", "sensor", "current", "A", "measurement", "mdi:current-ac", NULL, NULL, false, true }, // Fork jojo18222 WPL-A-05, vorher TEST_OBJEKT_113
   { "TEST_OBJEKT_114", 0x06b3, 0, "Test Objekt 114", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
-  { "STROM_MOTOR", 0x06b4, et_dec_val, "Strom Motor", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
+  { "STROM_MOTOR", 0x06b4, et_dec_val, "Strom Motor", "sensor", "current", "A", "measurement", "mdi:current-ac", NULL, NULL, false, true }, // Einheit war Default °C (Display: A, 2026-11-12)
   { "TEST_OBJEKT_116", 0x06b5, 0, "Test Objekt 116", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
   { "TEST_OBJEKT_117", 0x06b6, 0, "Test Objekt 117", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
   { "TEST_OBJEKT_118", 0x06b7, 0, "Test Objekt 118", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
@@ -3807,7 +3807,7 @@ static const ElsterIndex ElsterTable[] =
   { "STARTS_VERDICHTER_L", 0x4ef1, et_default, "Starts Verdichter L", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
   { "STATUS_WPLA", 0x4eef, et_default, LNAME_STATUS_WPLA_ROH, "sensor", "", "", "", "mdi:list-status", NULL, NULL, false, true }, // WPL-A Statuswort (MANAGER 0x480, Bits laut kr0ner), Text siehe calculated/status_wpla
   { "WAERMEPUMPEN_STATUS_WPLA", 0x4eda, et_default, "Wärmepumpenstatus (roh)", "sensor", "", "", "", "mdi:list-status", NULL, NULL, false, true }, // kr0ner WPL-A-7 (raw 2 dort), Scan 2026-10-20: 18 auf allen Membern; Bedeutung offen. Name "WAERMEPUMPEN_STATUS" bereits vergeben (0x0062)
-  { "EINGESCHALTETE_STUFEN", 0x4efa, et_default, "Eingeschaltete Stufen", "sensor", "", "", "", "mdi:stairs", NULL, NULL, false, true }, // kr0ner WPL-A-7, Scan: MANAGER 0x480 = 1
+  { "EINGESCHALTETE_STUFEN", 0x4efa, et_default, "Verdichterstufen", "sensor", "", "", "", "mdi:stairs", NULL, NULL, false, true }, // kr0ner WPL-A-7, Scan: MANAGER 0x480 = 1
   // --- Fork jojo18222 WPL-A-05 (2026-11-06): Indizes, die auf unserem Bus antworten ---
   { "MAXTEMP", 0x4ea8, et_dec_val, "HK1 Maximaltemperatur", "sensor", "temperature", "°C", "", "mdi:thermometer-high", NULL, NULL, false, true }, // Fork jojo18222 WPL-A-05
   { "SOLLTEMPERATUR", 0x4eb0, et_dec_val, "HK1 Solltemperatur", "sensor", "temperature", "°C", "measurement", "mdi:thermometer", NULL, NULL, false, true }, // Fork jojo18222 WPL-A-05
@@ -3851,13 +3851,13 @@ static const ElsterIndex ElsterTable[] =
   { "LAUFZEIT_VERDICHTER_ABTAUEN", 0x4f06, et_default, "Laufzeit Verdichter Abtauen", "sensor", "duration", "h", "", "mdi:timer-outline", NULL, NULL, false, true },
   { "UMGEBUNGSTEMPERATUR_INVERTER", 0xc1e6, et_dec_val, "Umgebungstemperatur Inverter", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
   { "TEMPERATUR_INVERTER_VERDICHTER", 0xc1e7, et_dec_val, "Temperatur Inverter Verdichter", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
-  { "OEFFNUNGSGRAD_BYPASSVENTIL", 0xc2c3, et_dec_val, "Öffnungsgrad Bypassventil", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
-  { "ADAPTION_UEBERHITZUNG", 0x4f9e, et_dec_val, "Adaption Überhitzung", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
-  { "UNTERKUEHLUNG_EXVENTIL_EIN", 0x4f9f, et_dec_val, "Unterkühlung Exventil Ein", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
-  { "SOLL_UEBERHITZUNG_SAUGGAS_VENTIL", 0x4fa1, et_dec_val, "Soll Überhitzung Sauggas Ventil", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
-  { "IST_UEBERHITZUNG_SAUGGAS_VENTIL", 0x4fa2, et_dec_val, "Ist Überhitzung Sauggas Ventil", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
+  { "OEFFNUNGSGRAD_BYPASSVENTIL", 0xc2c3, et_dec_val, "Öffnungsgrad Bypassventil", "sensor", "", "%", "measurement", "mdi:valve", NULL, NULL, false, true }, // Einheit war Default °C (Display: %, 2026-11-12)
+  { "ADAPTION_UEBERHITZUNG", 0x4f9e, et_dec_val, "Adaption Überhitzung", "sensor", "", "K", "measurement", "mdi:thermometer-lines", NULL, NULL, false, true }, // Einheit war Default °C (Display: K, 2026-11-12)
+  { "UNTERKUEHLUNG_EXVENTIL_EIN", 0x4f9f, et_dec_val, "Unterkühlung Exventil Ein", "sensor", "", "K", "measurement", "mdi:thermometer-lines", NULL, NULL, false, true }, // Einheit war Default °C (Display: K, 2026-11-12)
+  { "SOLL_UEBERHITZUNG_SAUGGAS_VENTIL", 0x4fa1, et_dec_val, "Soll Überhitzung Sauggas Ventil", "sensor", "", "K", "measurement", "mdi:thermometer-lines", NULL, NULL, false, true }, // Einheit war Default °C (Display: K, 2026-11-12)
+  { "IST_UEBERHITZUNG_SAUGGAS_VENTIL", 0x4fa2, et_dec_val, "Ist Überhitzung Sauggas Ventil", "sensor", "", "K", "measurement", "mdi:thermometer-lines", NULL, NULL, false, true }, // Einheit war Default °C (Display: K, 2026-11-12)
   { "VERDICHTERDREHZAHLGRENZE", 0x4fac, et_default, "Verdichterdrehzahlgrenze", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
-  { "UNTERKUEHLUNG_KONDENSATOR", 0x0aff, et_dec_val, "Unterkühlung Kondensator", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
+  { "UNTERKUEHLUNG_KONDENSATOR", 0x0aff, et_dec_val, "Unterkühlung Kondensator", "sensor", "", "K", "measurement", "mdi:thermometer-lines", NULL, NULL, false, true }, // Einheit war Default °C (Display UNTERK COND, 2026-11-12)
   { "BETRIEBSART_KAELTEKREISREGLER", 0x4fa0, et_default, "Betriebsart Kältekreisregler", NULL, NULL, NULL, NULL, NULL, NULL, NULL, false, false },
   { "ZEITINTERVALL", 0x4f4d, et_default, "Zeitintervall", "sensor", "", "", "measurement", "mdi:timer-outline", NULL, NULL, false, true },
   { "RESTSTILLSTANDSZEIT", 0x4f4e, et_default, "Reststillstandszeit", "sensor", "duration", "min", "measurement", "mdi:timer-sand", NULL, NULL, false, true },

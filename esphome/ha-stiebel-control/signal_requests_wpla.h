@@ -50,8 +50,6 @@ extern const SignalRequest signalRequests[] = {
     {"LAUFZEIT_DHC1",                         FREQ_10MIN, cm_wpumpe},   // aux heater 1 runtime
     {"LAUFZEIT_DHC2",                         FREQ_10MIN, cm_wpumpe},   // aux heater 2 runtime
     {"LZ_DHC12",                              FREQ_10MIN, cm_wpumpe},   // aux heater 1+2 runtime
-    {"LAUFZEIT_NHZ_WW",                       FREQ_10MIN, cm_heizmodul},  // 0x05a8 test 2026-11-12: 0x514 answers -255, scan: all others 0x8000, 0x500 not scanned
-    {"LAUFZEIT_NHZ_HEIZEN",                   FREQ_10MIN, cm_heizmodul},  // 0x05a9 test 2026-11-12, see above
     {"ZEITDAUER_LETZTE_ABTAUUNG",             FREQ_10MIN, cm_wpumpe},   // duration of last defrost
     {"STARTS_VERDICHTER_H",                   FREQ_10MIN, cm_wpumpe},   // compressor starts (high word)
     {"STARTS_VERDICHTER_L",                   FREQ_10MIN, cm_wpumpe},   // compressor starts (low word)
@@ -116,7 +114,7 @@ extern const SignalRequest signalRequests[] = {
     {"PUMPENSTATUS",                          FREQ_1MIN,  cm_kessel},     // 0x01d2 bit field, text in calculated/pumpenstatus
     {"WP_PUMPENSTATUS",                       FREQ_1MIN,  cm_kessel},     // 0xfdad on/off (0x0100/0x0000)
     {"SAMMEL_RELAISSTATUS",                   FREQ_1MIN,  cm_kessel},     // 0x0a20 Bitfeld? (Blacklist aufgehoben 2026-10-31)
-    {"WAERMEPUMPEN_STATUS_WPLA",              FREQ_10MIN, cm_manager},    // 0x4eda kr0ner WPL-A-7 (upstream-check 2026-11-06), Bedeutung offen
+    {"WAERMEPUMPEN_STATUS_WPLA",              FREQ_1MIN,  cm_manager},    // 0x4eda status bits (analysis 2026-11-13), 1 min for bit mapping
     {"EINGESCHALTETE_STUFEN",                 FREQ_10MIN, cm_manager},    // 0x4efa kr0ner WPL-A-7, Scan 0x480 = 1
 
     // ========================================================================

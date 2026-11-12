@@ -222,6 +222,8 @@
 #define LNAME_CALC_PUMPENSTATUS                "Pump status"
 #undef  LNAME_CALC_VERDICHTER_STATUS
 #define LNAME_CALC_VERDICHTER_STATUS           "Compressor status"
+#undef  LNAME_CALC_WP_STATUS_4EDA
+#define LNAME_CALC_WP_STATUS_4EDA              "HP status (0x4eda)"
 
 // ============================================================================
 // Writable number friendly names

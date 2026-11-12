@@ -172,8 +172,13 @@ static const CalculatedSensorConfig calculatedSensors[] = {
     // VERDICHTER 0x07a8 (HEIZMODUL) as text, WPL-A only (on WPC7 VERDICHTER is a power value)
     {"stiebel_calculated_verdichter_status", LNAME_CALC_VERDICHTER_STATUS, "heatingpump/calculated/verdichter_status/state",
      "sensor", "", "", "", "mdi:heat-pump-outline", "", "", "", true, 900},  // source read every 30 s
+
+    // WAERMEPUMPEN_STATUS_WPLA 0x4eda (MANAGER) as text, WPL-A only
+    {"stiebel_calculated_wp_status_4eda", LNAME_CALC_WP_STATUS_4EDA, "heatingpump/calculated/wp_status_4eda/state",
+     "sensor", "", "", "", "mdi:list-status", "", "", "", true, 900},  // source read every 1 min
 };
 static const size_t CALC_IDX_VERDICHTER_STATUS = 13;
+static const size_t CALC_IDX_WP_STATUS_4EDA = 14;
 // Model check for WPL-A-only sensors (HA_DEVICE_MODEL is injected by the build, e.g. "wpla")
 static inline bool isModelWpla() { return strcmp(HA_DEVICE_MODEL_STR, "wpla") == 0; }
 
@@ -680,7 +685,7 @@ void publishAllCalculatedSensorDiscoveries(bool forceRepublish = false) {
     }
     
     for (size_t i = 0; i < CALCULATED_SENSOR_COUNT; i++) {
-        if (i == CALC_IDX_VERDICHTER_STATUS && !isModelWpla()) continue;
+        if ((i == CALC_IDX_VERDICHTER_STATUS || i == CALC_IDX_WP_STATUS_4EDA) && !isModelWpla()) continue;
         publishCalculatedSensorDiscovery(calculatedSensors[i], forceRepublish);
     }
 }
@@ -1360,6 +1365,7 @@ constexpr uint32_t HASH_STATUS_WPLA = hash("STATUS_WPLA");
 constexpr uint32_t HASH_STARTS_VERDICHTER_H = hash("STARTS_VERDICHTER_H");
 constexpr uint32_t HASH_STARTS_VERDICHTER_L = hash("STARTS_VERDICHTER_L");
 constexpr uint32_t HASH_PUMPENSTATUS = hash("PUMPENSTATUS");
+constexpr uint32_t HASH_WP_STATUS_4EDA = hash("WAERMEPUMPEN_STATUS_WPLA");
 
 // Signals read only as input for a calculated sensor: no discovery and no state of their own.
 // STARTS_VERDICHTER_H/L -> verdichter_starts.
@@ -1458,6 +1464,28 @@ void publishVerdichterStatus(long raw) {
     }
     if (text.empty()) text = "Idle";
     const CalculatedSensorConfig &cfg = calculatedSensors[CALC_IDX_VERDICHTER_STATUS];
+    publishCalculatedSensorDiscovery(cfg);
+    id(mqtt_client).publish(cfg.stateTopic, text.c_str(), text.length(), 0, true);
+}
+
+// WAERMEPUMPEN_STATUS_WPLA 0x4eda (MANAGER) as text, WPL-A only. HA history 2026-11-06..12 (10-min reads):
+// bit 12 only during the aux heater test (display "NHZ Stufe 1" on), bit 6 = 98 % with 0x4eef bit 5
+// (WP WW-Betrieb), bit 4 set in every compressor minute and also during the aux heater test without
+// compressor (display "Netzversorgung Inverter" on). Bit 1 (98 % with Heizkreispumpe 1) unconfirmed -> "Bit 1".
+void publishWpStatus4eda(long raw) {
+    std::string text;
+    for (int b = 0; b < 16; b++) {
+        if (!(raw & (1L << b))) continue;
+        if (!text.empty()) text += ", ";
+        switch (b) {
+            case 4:  text += "Netzversorgung Inverter"; break;
+            case 6:  text += "WW-Betrieb"; break;
+            case 12: text += "NHZ Stufe 1"; break;
+            default: text += "Bit " + std::to_string(b); break;
+        }
+    }
+    if (text.empty()) text = "-";
+    const CalculatedSensorConfig &cfg = calculatedSensors[CALC_IDX_WP_STATUS_4EDA];
     publishCalculatedSensorDiscovery(cfg);
     id(mqtt_client).publish(cfg.stateTopic, text.c_str(), text.length(), 0, true);
 }
@@ -1669,6 +1697,15 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
                 publishPumpenstatus(intValue & 0xFFFF);  // et_default prints signed
             } else {
                 ESP_LOGW("CALC", "Invalid PUMPENSTATUS value: %s", value.c_str());
+            }
+            break;
+        }
+
+        case HASH_WP_STATUS_4EDA: {
+            char* endPtr;
+            long intValue = strtol(value.c_str(), &endPtr, 10);
+            if (isModelWpla() && endPtr != value.c_str() && *endPtr == '\0' && intValue >= -32768 && intValue <= 65535) {
+                publishWpStatus4eda(intValue & 0xFFFF);  // et_default prints signed
             }
             break;
         }
