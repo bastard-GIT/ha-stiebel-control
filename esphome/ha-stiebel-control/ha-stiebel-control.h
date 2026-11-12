@@ -168,7 +168,14 @@ static const CalculatedSensorConfig calculatedSensors[] = {
     // Active bits of PUMPENSTATUS 0x01d2 (KESSEL), comma separated
     {"stiebel_calculated_pumpenstatus", LNAME_CALC_PUMPENSTATUS, "heatingpump/calculated/pumpenstatus/state",
      "sensor", "", "", "", "mdi:pump", "", "", "", true, 900},  // source read every 1 min
+
+    // VERDICHTER 0x07a8 (HEIZMODUL) as text, WPL-A only (on WPC7 VERDICHTER is a power value)
+    {"stiebel_calculated_verdichter_status", LNAME_CALC_VERDICHTER_STATUS, "heatingpump/calculated/verdichter_status/state",
+     "sensor", "", "", "", "mdi:heat-pump-outline", "", "", "", true, 900},  // source read every 30 s
 };
+static const size_t CALC_IDX_VERDICHTER_STATUS = 13;
+// Model check for WPL-A-only sensors (HA_DEVICE_MODEL is injected by the build, e.g. "wpla")
+static inline bool isModelWpla() { return strcmp(HA_DEVICE_MODEL_STR, "wpla") == 0; }
 
 static const size_t CALCULATED_SENSOR_COUNT = sizeof(calculatedSensors) / sizeof(CalculatedSensorConfig);
 
@@ -673,6 +680,7 @@ void publishAllCalculatedSensorDiscoveries(bool forceRepublish = false) {
     }
     
     for (size_t i = 0; i < CALCULATED_SENSOR_COUNT; i++) {
+        if (i == CALC_IDX_VERDICHTER_STATUS && !isModelWpla()) continue;
         publishCalculatedSensorDiscovery(calculatedSensors[i], forceRepublish);
     }
 }
@@ -1372,8 +1380,10 @@ static long startsPublished = -1;   // last published total, -1 = nothing publis
 // Heizen = 0x0041, Warmwasser = 0x4041, Notlauf = 0x1040. Other bits unconfirmed.
 void publishBetriebsstatus(long raw) {
     const char* text;
+    // Bit 13 = NHZ stage 1, bit 12 = NHZ stage 2 (aux heater test 2026-11-12: stage 1 -> 0x2040,
+    // stages 1+2 -> 0x3040; emergency mode 2026-10-21 -> 0x1040). Before, stage 1 alone showed "Bereit".
     if (raw & (1L << 14))      text = "Warmwasser";
-    else if (raw & (1L << 12)) text = "Zusatzheizung";
+    else if (raw & ((1L << 12) | (1L << 13))) text = "Zusatzheizung";
     else if (raw & (1L << 0))  text = "Heizen";
     else                       text = "Bereit";
     publishCalculatedSensorDiscovery(calculatedSensors[10]);
@@ -1406,19 +1416,50 @@ void publishStatusWpla(long raw) {
     id(mqtt_client).publish(calculatedSensors[11].stateTopic, text.c_str(), text.length(), 0, true);
 }
 
-// PUMPENSTATUS 0x01d2 (KESSEL) as text. Seen on our unit: 0x0000 and 0x0011 (bits 0 and 4,
-// meaning unknown). Bit 6 = WW-Ladepumpe: upstream #52 reports 0x4000 with swapped bytes,
-// and bit 6 of BETRIEBS_STATUS is the Speicherladepumpe as well. Other bits unconfirmed.
+// PUMPENSTATUS 0x01d2 (KESSEL) as text. Seen on our unit: 0x0000, 0x0010 (Bereit), 0x0011 (heating),
+// 0x0041/0x0051 (DHW), 0x0411/0x0401 (aux heater test 2026-11-12), 0x1100 once (2026-11-09).
+// Bit 6 = WW-Ladepumpe (HA history 2026-11-05..12; upstream #52 reports 0x4000 with swapped bytes).
+// Bit 0 = Pufferladepumpe 1, bit 4 = Heizkreispumpe 1, bit 10 = NHZ: display "Status Anlage" during
+// the aux heater test 2026-11-12, accepted by the user. Bit 12 seen once, meaning open: own label
+// "bit12" so it can be found in the HA history later.
 void publishPumpenstatus(long raw) {
     std::string text;
     for (int b = 0; b < 16; b++) {
         if (!(raw & (1L << b))) continue;
         if (!text.empty()) text += ", ";
-        text += (b == 6) ? std::string("WW-Ladepumpe") : "Bit " + std::to_string(b);
+        switch (b) {
+            case 0:  text += "Pufferladepumpe 1"; break;
+            case 4:  text += "Heizkreispumpe 1"; break;
+            case 6:  text += "WW-Ladepumpe"; break;
+            case 10: text += "NHZ"; break;
+            case 12: text += "bit12"; break;
+            default: text += "Bit " + std::to_string(b); break;
+        }
     }
     if (text.empty()) text = "-";
     publishCalculatedSensorDiscovery(calculatedSensors[12]);
     id(mqtt_client).publish(calculatedSensors[12].stateTopic, text.c_str(), text.length(), 0, true);
+}
+
+// VERDICHTER 0x07a8 (HEIZMODUL) as text, WPL-A only. HA history 2026-11-05..12: 0x0008 = idle,
+// 0x0018 = compressor running (heating and DHW), bit 8 = defrost (40/40 phases match 0x4eef bit 9).
+// Bit 3 is always set (meaning open) and not shown. Bits 6/7 (aux heater 2/1) seen only once
+// (test 2026-11-12), shown as "Bit n" until confirmed.
+void publishVerdichterStatus(long raw) {
+    std::string text;
+    for (int b = 0; b < 16; b++) {
+        if (b == 3 || !(raw & (1L << b))) continue;
+        if (!text.empty()) text += ", ";
+        switch (b) {
+            case 4: text += "Verdichter läuft"; break;
+            case 8: text += "Abtauen"; break;
+            default: text += "Bit " + std::to_string(b); break;
+        }
+    }
+    if (text.empty()) text = "Idle";
+    const CalculatedSensorConfig &cfg = calculatedSensors[CALC_IDX_VERDICHTER_STATUS];
+    publishCalculatedSensorDiscovery(cfg);
+    id(mqtt_client).publish(cfg.stateTopic, text.c_str(), text.length(), 0, true);
 }
 
 void publishCompressorStartsIfChanged() {
@@ -1597,6 +1638,11 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
             if (endPtr != value.c_str() && *endPtr == '\0') {
                 lastVerdichterValue = floatValue;
                 // Compressor state will be calculated and published by scheduler
+                // WPL-A: status word as text, only for plain integers 0..0xFFFF (2026-11-09 showed 2.4/28.0/0.8)
+                if (isModelWpla() && floatValue >= 0.0f && floatValue <= 65535.0f &&
+                    floatValue == (float)(long)floatValue) {
+                    publishVerdichterStatus((long)floatValue);
+                }
             } else {
                 ESP_LOGW("CALC", "Failed to parse VERDICHTER value: %s", value.c_str());
             }

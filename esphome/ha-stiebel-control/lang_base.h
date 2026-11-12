@@ -121,6 +121,7 @@
 #define LNAME_CALC_BETRIEBSSTATUS              "Betriebsstatus"
 #define LNAME_CALC_STATUS_WPLA                 "Status WPL-A"
 #define LNAME_CALC_PUMPENSTATUS                "Pumpenstatus"
+#define LNAME_CALC_VERDICHTER_STATUS           "Verdichter-Status"
 
 // ============================================================================
 // Writable number friendly names (writableNumbers[])

@@ -220,6 +220,8 @@
 #define LNAME_CALC_STATUS_WPLA                 "WPL-A status"
 #undef  LNAME_CALC_PUMPENSTATUS
 #define LNAME_CALC_PUMPENSTATUS                "Pump status"
+#undef  LNAME_CALC_VERDICHTER_STATUS
+#define LNAME_CALC_VERDICHTER_STATUS           "Compressor status"
 
 // ============================================================================
 // Writable number friendly names
