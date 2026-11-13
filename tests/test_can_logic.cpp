@@ -2018,7 +2018,7 @@ TEST_CASE("signalKey: ElsterTable names have distinct hashes", "[kelster][lookup
 }
 
 TEST_CASE("request manager: table resolved once, unknown/blacklisted skipped", "[can][lookup]") {
-    static_assert(cm_kessel == 0 && cm_manager == 8 && cm_other == 20, "signal_requests_stub.cpp member values");
+    static_assert(cm_kessel == 0 && cm_manager == 8 && cm_other == 21, "signal_requests_stub.cpp member values");
     resolveSignalRequests();
     REQUIRE(resolvedRequests.size() == 4);
     CHECK(resolvedRequests[0].ei == GetElsterIndex("AUSSENTEMP"));

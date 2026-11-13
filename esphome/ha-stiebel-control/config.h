@@ -8,6 +8,25 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <stdint.h>
+#include <vector>
+
+// ============================================================================
+// DEBUG HOOKS (optional package stiebel-debug)
+// ============================================================================
+// Hooks compile to nothing unless package stiebel-debug defines STIEBEL_DEBUG.
+#ifdef STIEBEL_DEBUG
+// Defined in package stiebel-debug (stiebel_debug/can_rx_stream.h), same translation unit
+void dbgrx_on_frame(uint32_t can_id, const std::vector<uint8_t> &x);
+void dbgrx_note_tx(uint32_t can_id, const std::vector<uint8_t> &data);
+#define STIEBEL_DEBUG_RX(id, x) dbgrx_on_frame((id), (x))
+#define STIEBEL_DEBUG_TX(id, x) dbgrx_note_tx((id), (x))
+#else
+#define STIEBEL_DEBUG_RX(id, x) ((void)0)
+#define STIEBEL_DEBUG_TX(id, x) ((void)0)
+#endif
+
+
 // ============================================================================
 // DEVICE MODEL
 // ============================================================================

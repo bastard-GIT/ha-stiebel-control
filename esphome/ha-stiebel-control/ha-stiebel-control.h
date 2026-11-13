@@ -90,6 +90,7 @@ static const CanMember CanMembers[] =
         {HA_NAME_HEIZMODUL_WPL, 0x514},  // WPL17 Heizmodul (fine daily energy counters)
         {HA_NAME_KESSEL_CANB, 0x201},    // WPL17 DHW / room / heating-curve registers
         {"MISCHERMODUL_2", 0x601}, // WPL17 exposes the heating program here
+        {"FES", 0x100},  // WPL-A: date/time + several counters/params respond here, not MANAGER
         {"OTHER", 0x000}};
 
 typedef enum
@@ -115,6 +116,7 @@ typedef enum
     cm_heizmodul_wpl,
     cm_kessel_canb,
     cm_mischermodul_2,
+    cm_fes,
     cm_other
 } CanMemberType;
 
@@ -1075,6 +1077,7 @@ void readSignalRaw(const CanMember *cm, uint16_t index, [[maybe_unused]] const c
              data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
 
     id(my_can).send_data(CanMembers[cm_pc].CanId, use_extended_id, data);
+    STIEBEL_DEBUG_TX(CanMembers[cm_pc].CanId, data);
 }
 
 void readSignal(const CanMember *cm, const ElsterIndex *ei)
@@ -1133,6 +1136,7 @@ void writeSignal(const CanMember *cm, const ElsterIndex *ei, const char *&str)
     ESP_LOGI("writeSignal()", "%s", logmsg);
 
     id(my_can).send_data(CanMembers[cm_pc].CanId, use_extended_id, data);
+    STIEBEL_DEBUG_TX(CanMembers[cm_pc].CanId, data);
     // Command echo: publish the read-back even if the value did not change
     forceNextStatePublish(*cm, ei);
     // The immediate read-back may still return the old value; read again once settled
@@ -3595,6 +3599,14 @@ void processAndUpdate(uint32_t can_id, const std::vector<uint8_t> &msg)
     {
         return;
     }
+    // FES (0x100) is a CAN member only for the WPL-A 07. For all other models its
+    // frames are still dropped as before (it used to fall back to OTHER above).
+#if !defined(HA_MODEL_wpla)
+    if (cm->CanId == 0x100)
+    {
+        return;
+    }
+#endif
 
     if (handleScanFrame(*cm, ei, msg, value)) return;
     if (handleFaultListFrame(*cm, msg)) return;
