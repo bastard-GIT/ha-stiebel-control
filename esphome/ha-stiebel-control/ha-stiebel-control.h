@@ -1449,8 +1449,9 @@ void publishPumpenstatus(long raw) {
 
 // VERDICHTER 0x07a8 (HEIZMODUL) as text, WPL-A only. HA history 2026-11-05..12: 0x0008 = idle,
 // 0x0018 = compressor running (heating and DHW), bit 8 = defrost (40/40 phases match 0x4eef bit 9).
-// Bit 3 is always set (meaning open) and not shown. Bits 6/7 (aux heater 2/1) seen only once
-// (test 2026-11-12), shown as "Bit n" until confirmed.
+// Bit 3 is always set (meaning open) and not shown.
+// Bit 7 = aux heater stage 1, bit 6 = aux heater stage 2 (one observation each, aux heater test
+// 2026-11-12, display + external meter ~3 kW per stage; stage 2 alone not tested).
 void publishVerdichterStatus(long raw) {
     std::string text;
     for (int b = 0; b < 16; b++) {
@@ -1458,6 +1459,8 @@ void publishVerdichterStatus(long raw) {
         if (!text.empty()) text += ", ";
         switch (b) {
             case 4: text += "Verdichter läuft"; break;
+            case 6: text += "NHZ Stufe 2"; break;
+            case 7: text += "NHZ Stufe 1"; break;
             case 8: text += "Abtauen"; break;
             default: text += "Bit " + std::to_string(b); break;
         }
