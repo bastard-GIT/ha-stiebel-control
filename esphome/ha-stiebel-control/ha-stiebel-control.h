@@ -685,19 +685,29 @@ struct CanIdBytes {
     uint8_t second;
 };
 
+// Sub-address mask of the second CAN ID byte. Upstream keeps 3 bits (all members
+// except 0x514 have a sub-address <= 7). WPL-A 07: the heating module 0x514 needs
+// sub-address 0x14, so it gets 7 bits (verified on WPL-A hardware: with the 3-bit
+// mask 0x514 does not answer at all). Other models keep the 3-bit mask.
+#if defined(HA_MODEL_wpla)
+#define HA_CAN_SUB_ADDR_MASK 0x7F
+#else
+#define HA_CAN_SUB_ADDR_MASK 7
+#endif
+
 /**
  * Generate CAN read ID from member CAN ID
  */
 CanIdBytes generate_read_id(unsigned short can_id)
 {
     uint8_t address = (can_id & 0x780) / 8;
-    return {static_cast<uint8_t>((address & 0xF0) + 1), static_cast<uint8_t>(can_id & 7)};
+    return {static_cast<uint8_t>((address & 0xF0) + 1), static_cast<uint8_t>(can_id & HA_CAN_SUB_ADDR_MASK)};
 }
 
 CanIdBytes generate_write_id(unsigned short can_id)
 {
     uint8_t address = (can_id & 0x780) / 8;
-    return {static_cast<uint8_t>(address & 0xF0), static_cast<uint8_t>(can_id & 7)};
+    return {static_cast<uint8_t>(address & 0xF0), static_cast<uint8_t>(can_id & HA_CAN_SUB_ADDR_MASK)};
 }
 
 const CanMember &lookupCanMember(uint32_t canId)
@@ -3950,6 +3960,13 @@ void processSignalRequests() {
         // Move to next signal in round-robin fashion (wrap around at end)
         currentIndex = (currentIndex + 1) % SIGNAL_REQUEST_COUNT;
     }
+
+#if defined(HA_MODEL_wpla)
+    // Continue after the last checked signal next time. Without this every iteration
+    // started at index 0 and, with more due requests than 1/s, the end of the table
+    // was never polled (seen on WPL-A 07, 2026-11-03: PUMPENSTATUS starved).
+    signalProcessingStartIndex = currentIndex;
+#endif
 }
 
 // Heat pump restart detection (boot capture 2026-11-13): after mains loss all participants

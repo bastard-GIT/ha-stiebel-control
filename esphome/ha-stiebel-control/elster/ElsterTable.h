@@ -4176,7 +4176,11 @@ const ElsterIndex ElsterTable[] =
 #else
   { "PUMPENLEISTUNG_HEIZEN"                       , 0x4f8c, 0               , false, false },
 #endif
+#if defined(HA_MODEL_wpla)
+  { "PUMPENLEISTUNG_WW_WPLA"                      , 0x4f8f, 0               , false, true  },
+#else
   { "PUMPENLEISTUNG_WW_4F8F"                      , 0x4f8f, 0               , false, false },
+#endif
   { "SPREIZUNG"                                   , 0x4f91, et_dec_val      , false, true  }, // WPL-A 07, checked on the device (bastard-GIT)
 #if defined(HA_MODEL_wpla)
   { "PUMPENLEISTUNG_KUEHLEN_WPLA"                 , 0x4f92, 0               , false, true  },
@@ -4517,6 +4521,7 @@ const ElsterMeta ElsterMetaTable[] =
   { 0x4f8c, "PUMPENLEISTUNG_HEIZEN_WPLA", "Pumpenleistung Heizen", "sensor", "", "%", "", "mdi:pump", NULL, NULL },
   { 0x4f92, "PUMPENLEISTUNG_KUEHLEN_WPLA", "Pumpenleistung Kühlen", "sensor", "", "%", "", "mdi:pump", NULL, NULL },
   { 0x4f8a, "PUMPENLEISTUNG_STANDBY_WPLA", "Pumpenleistung Standby", "sensor", "", "%", "", "mdi:pump", NULL, NULL },
+  { 0x4f8f, "PUMPENLEISTUNG_WW_WPLA", "Pumpenleistung Warmwasser", "sensor", "", "%", "", "mdi:pump", NULL, NULL },
   { 0x4eef, "STATUS_WPLA", LNAME_STATUS_WPLA_ROH, "sensor", "", "", "", "mdi:list-status", NULL, NULL },
   { 0x4eda, "WAERMEPUMPEN_STATUS_WPLA", "Wärmepumpenstatus (roh)", "sensor", "", "", "", "mdi:list-status", NULL, NULL },
   // WPL-A: raw 0x9000 = OFF text handling is not ported yet
