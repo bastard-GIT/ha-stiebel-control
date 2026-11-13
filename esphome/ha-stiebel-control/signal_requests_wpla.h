@@ -44,7 +44,7 @@ extern const SignalRequest signalRequests[] = {
     {"RUECKLAUFISTTEMP",                      FREQ_30S,   cm_wpumpe},   // WP return flow temp
     {"HEISSGAS_TEMP",                         FREQ_30S,   cm_wpumpe},   // hot gas temp
     {"WP_VERDICHTEREINTRITTSTEMPERATUR",      FREQ_30S,   cm_wpumpe},   // compressor inlet temp
-    // {"STROM_MOTOR",                        FREQ_30S,   cm_fes},      // 0x06b4 motor current: FES answers 0x8000, no other member answers (scan 2026-10-20)
+    {"STROM_MOTOR",                           FREQ_1MIN,  cm_wpumpe},   // 0x06b4 motor current (A): WPUMPE answers (4.6 on 2026-10-29, 0.1 = display 12.11.), FES answers 0x8000
     {"STARTS_ABTAUUNG",                       FREQ_10MIN, cm_wpumpe},   // defrost start count
     {"ANZEIGE_NIEDERDRUCK",                   FREQ_30S,   cm_wpumpe},   // low pressure display
     {"LAUFZEIT_DHC1",                         FREQ_10MIN, cm_wpumpe},   // aux heater 1 runtime
