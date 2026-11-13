@@ -25,6 +25,7 @@ substitutions:
   friendly_name: "Heating Pump CAN Interface"
   fw_version: "2.6.0"                   # firmware version; shown as project version and in the Firmware Version sensor (boot_info.h)
   ntp_server: "pool.ntp.org"            # SNTP server (e.g. your router in an isolated network)
+  api_reboot_timeout: "15min"           # reboot if no API client connects for this long; "0s" disables (e.g. when only MQTT is used, no API client)
 
 packages:
   network: !include ${network_package}
@@ -95,13 +96,14 @@ debug:
 #                                       #
 #########################################
 api:
-  reboot_timeout: 15min
+  reboot_timeout: ${api_reboot_timeout}
   encryption:
     key: !secret api_encryption_key
 
 ota:
-  platform: esphome
-  password: !secret ota_password
+  - platform: esphome
+    id: ota_esphome   # id lets external packages extend this component via !extend
+    password: !secret ota_password
 
 safe_mode:
   reboot_timeout: 5min
