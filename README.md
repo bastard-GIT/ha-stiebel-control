@@ -1,5 +1,7 @@
 # ha-stiebel-control
 
+> **AI assistance (WPL-A 07 branches only):** The changes of these branches for the WPL-A 07 (signals, debug hooks, network packages) were created with AI assistance (Claude by Anthropic) and tested on the author's own device. The upstream content is not affected.
+
 Requires ESPHome 2026.7.0 or newer. CI uses ESPHome 2026.10.1.
 
 ESPHome firmware for monitoring and controlling Stiebel Eltron heat pumps via CAN bus.
