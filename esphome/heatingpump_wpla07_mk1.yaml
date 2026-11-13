@@ -1,0 +1,45 @@
+#
+#  Example: Stiebel Eltron WPL-A 07 (branch wpla07) on the WAVESHARE ESP32-S3-POE-ETH.
+#  ESP-IDF, built-in CAN (TWAI) at 50 kbps, Ethernet W5500, MQTT only (no native API client).
+#
+#  Entry point: this file. Packages (all in ha-stiebel-control/):
+#    board, can (ESP32-S3 TWAI), base (common.yaml: MQTT, OTA, boot info, calculated sensors),
+#    sensors (wpla.yaml: WPL-A signal table and request list). common.yaml includes the
+#    network package named in the substitution network_package (here the W5500 Ethernet).
+#
+#  Credentials: copy secrets.yaml.example to secrets.yaml (see the keys used in
+#  ha-stiebel-control/common.yaml: api_encryption_key, ota_password, mqtt_*).
+#
+#  Optional external packages (uncomment to use):
+#    lwz_180  Stiebel Eltron LWZ 180 ventilation unit via I2C, own HA device
+#    debug    CAN RX stream and debug hooks (STIEBEL_DEBUG_RX / STIEBEL_DEBUG_TX)
+#
+
+substitutions:
+  device_name: "heatingpump-wpla07"
+  friendly_name: "Stiebel Eltron WPL-A 07"
+  # Firmware version YYYY.MM.N: N counts the builds in the month. Count up before every flashed build.
+  fw_version: "2026.11.1"
+  # Network package from ha-stiebel-control/ (common.yaml includes it)
+  network_package: network_ethernet_w5500.yaml
+  # MQTT only, no API client: the default 15 min API reboot watchdog would reboot the device
+  # every 15 min. "0s" disables it.
+  api_reboot_timeout: "0s"
+  device_model: "wpla"            # used in HA device identifier (stiebel_eltron_<model>)
+  language: "DE"                  # display language for HA entity names: DE (default) or EN
+  # CAN pins for the ESP32-S3 built-in TWAI controller
+  can_tx_pin: GPIO18
+  can_rx_pin: GPIO16
+  can_id_pc: "0x680"
+  can_bit_rate: 50kbps            # WPL-A verified bus speed (other models: 20kbps)
+  # --- only used with the lwz_180 package (pins, I2C address, prefix: defaults in the package) ---
+  lwz_device_name: "Stiebel Eltron LWZ 180 Enthalpie"
+  lwz_model: "LWZ 180 Enthalpie"
+
+packages:
+  board: !include ha-stiebel-control/board_esp32s3.yaml
+  can: !include ha-stiebel-control/can_esp32.yaml
+  base: !include ha-stiebel-control/common.yaml
+  sensors: !include ha-stiebel-control/wpla.yaml
+  # lwz_180: github://bastard-GIT/esphome-lwz-180/lwz_180.yaml@main
+  # debug: github://bastard-GIT/stiebel-debug/stiebel_debug.yaml@main

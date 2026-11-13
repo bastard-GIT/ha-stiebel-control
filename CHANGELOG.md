@@ -56,6 +56,34 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [Sem
 - `ttl33` table polls `SCHALTWERKDYNAMIKZEIT` (display "Reglerdynamik"), so its writable entity no
   longer stays unknown.
 
+### WPL-A 07 / Mk1 (fork branch)
+
+Entries below apply to the WPL-A 07 and the Mk1 firmware on this branch. Entries marked
+"WPL-A only" do not change other models.
+
+- Added: `LICENSE` (GPL-3.0) and a README note on AI assistance for the WPL-A 07 branches.
+- Added: Mk1 boot info sensors `stiebel_mk1_*` (last restart, restart reason, runtime before
+  restart, restart count, firmware version and build) via `boot_info.h`, crash trace via
+  `crash_trace.h`, timestamps via `unix_time.h`.
+- Added: substitutions `device_name`, `friendly_name`, `fw_version`, `ntp_server` and
+  `api_reboot_timeout` in `common.yaml`. OTA component has the id `ota_esphome`. The MQTT log
+  topic follows `device_name`.
+- Added: example config `esphome/heatingpump_wpla07_mk1.yaml` (WPL-A 07, Waveshare ESP32-S3-POE-ETH,
+  W5500 Ethernet, MQTT only). WPL-A only.
+- Added: hooks for the `stiebel-debug` package (`STIEBEL_DEBUG_RX` / `STIEBEL_DEBUG_TX`) and
+  member FES (0x100). Mk1 branch.
+- Added: WPL-A calculated sensors with status texts and heat-pump restart detection
+  (`wp_restarts`). WPL-A only.
+- Added: WPL-A energy counters and COP via `energy_counters.h`. WPL-A only.
+- Added: WPL-A DHW setpoints are writable (`WW_KOMFORT_TEMPERATUR` / `WW_ECO_TEMPERATUR` on
+  SPEICHER, 0x201). WPL-A only.
+- Changed: WPL-A members renamed to WPUMPE (0x514) and SPEICHER (0x201). WPL-A only.
+- Changed: WPL-A table and request list as on the running WPL-A 07 firmware. WPL-A only.
+- Changed: OFF and sentinel values are handled for WPL-A signals. WPL-A only.
+- Changed: receive path has a type filter and the OTHER member. WPL-A only.
+- Fixed: WPL-A sub-address mask 0x7F for member 0x514 (second byte of the CAN ID). WPL-A only.
+- Fixed: round-robin start index for WPL-A requests. WPL-A only.
+
 ## [2.6.0] — 2026-11-06
 
 Contributions from reniko, SolderAndSyntax and hawkeye80: three new models, WPMW II fixes and
