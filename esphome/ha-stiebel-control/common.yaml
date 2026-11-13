@@ -140,7 +140,7 @@ mqtt:
   # Remote log via MQTT: warnings and errors only. Per-frame CAN logs are DEBUG and
   # INFO stays on the API/serial log (esphome logs).
   log_topic:
-    topic: heatingpump/debug
+    topic: ${device_name}/debug
     level: WARN
   # Keepalive for connection monitoring
   keepalive: 15s
