@@ -234,6 +234,18 @@
 #define LNAME_CALC_EL_LEISTUNG_W               "Current Electrical Power"
 #undef  LNAME_CALC_BETRIEBSSTATUS
 #define LNAME_CALC_BETRIEBSSTATUS              "Operating State"
+#undef  LNAME_CALC_VERDICHTER_STARTS
+#define LNAME_CALC_VERDICHTER_STARTS           "Compressor starts total"
+#undef  LNAME_CALC_STATUS_WPLA
+#define LNAME_CALC_STATUS_WPLA                 "WPL-A status"
+#undef  LNAME_CALC_PUMPENSTATUS
+#define LNAME_CALC_PUMPENSTATUS                "Pump status"
+#undef  LNAME_CALC_VERDICHTER_STATUS
+#define LNAME_CALC_VERDICHTER_STATUS           "Compressor status"
+#undef  LNAME_CALC_WP_STATUS_4EDA
+#define LNAME_CALC_WP_STATUS_4EDA              "HP status (0x4eda)"
+#undef  LNAME_CALC_WP_RESTARTS
+#define LNAME_CALC_WP_RESTARTS                 "HP restarts"
 #undef  LNAME_CALC_ENERGIE_HEIZ_TAG_KWH
 #define LNAME_CALC_ENERGIE_HEIZ_TAG_KWH        "Heating Energy Today"
 #undef  LNAME_CALC_ENERGIE_WW_TAG_KWH

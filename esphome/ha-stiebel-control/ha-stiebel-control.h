@@ -172,7 +172,15 @@ struct CalculatedSensorConfig {
     const char* payloadOff;        // For binary sensors (empty string if not applicable)
     const char* entityCategory;    // "diagnostic" | "config" | "" (empty = normal)
     bool enabledByDefault;         // false = disabled in HA until user enables
+    uint16_t expireAfterS;         // HA expire_after in s (0 = none); only for values published at a fixed rate
 };
+
+// expire_after of the WPL-A 07 status sensors (source read every 30 s / 1 min); 0 = none for all other models
+#if defined(HA_MODEL_wpla)
+#define CALC_EXPIRE_S(s) (s)
+#else
+#define CALC_EXPIRE_S(s) 0
+#endif
 
 static const CalculatedSensorConfig calculatedSensors[] = {
     // Date sensor
@@ -225,7 +233,7 @@ static const CalculatedSensorConfig calculatedSensors[] = {
     // Ersetzt das (auf der WPL17 unbrauchbare) WP_STATUS-Bitfeld, siehe Ableitung in
     // publishCombinedEnergySensors().
     {"stiebel_calculated_betriebsstatus", LNAME_CALC_BETRIEBSSTATUS, "heatingpump/calculated/betriebsstatus/state",
-     "sensor", "", "", "", "mdi:heat-pump", "", "", "", true},
+     "sensor", "", "", "", "mdi:heat-pump", "", "", "", true, CALC_EXPIRE_S(900)},  // WPL-A: source BETRIEBS_STATUS read every 30 s
 
     // Kombinierte TAGES-Energiewerte (kWh-Anteil + Wh/1000 -> Wh-Aufloesung).
     // Die Tageszaehler aktualisieren laufend und fallen um Mitternacht auf 0
@@ -280,6 +288,32 @@ static const CalculatedSensorConfig calculatedSensors[] = {
      "sensor", "duration", "min", "total_increasing", "mdi:timer-outline", "", "", "", true},
     {"stiebel_calculated_verdichter_laufzeit_mittel", LNAME_CALC_VERDICHTER_LAUFZEIT_MITTEL, "heatingpump/calculated/verdichter_laufzeit_mittel/state",
      "sensor", "duration", "min", "measurement", "mdi:timer-sand", "", "", "", true},
+#if defined(HA_MODEL_wpla)
+    // WPL-A 07 only, appended after the upstream entries (indices 31..36, see CALC_IDX_*)
+    // Compressor starts total (STARTS_VERDICHTER_H * 1000 + STARTS_VERDICHTER_L)
+    {"stiebel_calculated_verdichter_starts", LNAME_CALC_VERDICHTER_STARTS, "heatingpump/calculated/verdichter_starts/state",
+     "sensor", "", "", "total_increasing", "mdi:counter", "", "", "", true},
+
+    // Active bits of the WPL-A status word 0x4eef (MANAGER), comma separated
+    {"stiebel_calculated_status_wpla", LNAME_CALC_STATUS_WPLA, "heatingpump/calculated/status_wpla/state",
+     "sensor", "", "", "", "mdi:list-status", "", "", "", true, CALC_EXPIRE_S(900)},  // source read every 30 s
+
+    // Active bits of PUMPENSTATUS 0x01d2 (KESSEL), comma separated
+    {"stiebel_calculated_pumpenstatus", LNAME_CALC_PUMPENSTATUS, "heatingpump/calculated/pumpenstatus/state",
+     "sensor", "", "", "", "mdi:pump", "", "", "", true, CALC_EXPIRE_S(900)},  // source read every 1 min
+
+    // VERDICHTER 0x07a8 (HEIZMODUL) status word as text
+    {"stiebel_calculated_verdichter_status", LNAME_CALC_VERDICHTER_STATUS, "heatingpump/calculated/verdichter_status/state",
+     "sensor", "", "", "", "mdi:heat-pump-outline", "", "", "", true, CALC_EXPIRE_S(900)},  // source read every 30 s
+
+    // WAERMEPUMPEN_STATUS_WPLA 0x4eda (MANAGER) as text
+    {"stiebel_calculated_wp_status_4eda", LNAME_CALC_WP_STATUS_4EDA, "heatingpump/calculated/wp_status_4eda/state",
+     "sensor", "", "", "", "mdi:list-status", "", "", "", true, CALC_EXPIRE_S(900)},  // source read every 1 min
+
+    // Heat pump restarts counted from the 0xFE round after a bus silence (boot capture 2026-11-13)
+    {"stiebel_calculated_wp_restarts", LNAME_CALC_WP_RESTARTS, "heatingpump/calculated/wp_restarts/state",
+     "sensor", "", "", "total_increasing", "mdi:restart-alert", "", "", "", true},
+#endif
 };
 
 static const size_t CALCULATED_SENSOR_COUNT = sizeof(calculatedSensors) / sizeof(CalculatedSensorConfig);
@@ -292,8 +326,21 @@ static const size_t CALC_IDX_MQTT_PUBLISH_FAILURES = 27;
 static const size_t CALC_IDX_VERDICHTER_STARTS = 28;
 static const size_t CALC_IDX_VERDICHTER_LAUFZEIT = 29;
 static const size_t CALC_IDX_VERDICHTER_LAUFZEIT_MITTEL = 30;
+#if defined(HA_MODEL_wpla)
+// WPL-A 07 only: more entries appended after the upstream ones
+static const size_t CALC_IDX_BETRIEBSSTATUS = 14;   // upstream entry, also fed by BETRIEBS_STATUS on the WPL-A
+static const size_t CALC_IDX_VERDICHTER_STARTS_TOTAL = 31;  // upstream CALC_IDX_VERDICHTER_STARTS is "starts today"
+static const size_t CALC_IDX_STATUS_WPLA = 32;
+static const size_t CALC_IDX_PUMPENSTATUS = 33;
+static const size_t CALC_IDX_VERDICHTER_STATUS = 34;
+static const size_t CALC_IDX_WP_STATUS_4EDA = 35;
+static const size_t CALC_IDX_WP_RESTARTS = 36;
+static_assert(CALCULATED_SENSOR_COUNT == CALC_IDX_WP_RESTARTS + 1,
+              "calculatedSensors changed: update the CALC_IDX_* constants");
+#else
 static_assert(CALCULATED_SENSOR_COUNT == CALC_IDX_VERDICHTER_LAUFZEIT_MITTEL + 1,
               "calculatedSensors changed: update the CALC_IDX_* constants");
+#endif
 
 // Decode buffer for SetValueType(): its longest texts are 20 characters plus the
 // terminator ("not used time domain", "ERR MIN UEBERHITZUNG").
@@ -1219,6 +1266,15 @@ void publishCalculatedSensorDiscovery(const CalculatedSensorConfig& config, bool
         payload << ",\"enabled_by_default\":false";
     }
 
+#if defined(HA_MODEL_wpla)
+    // Availability: unavailable when the ESP drops off MQTT (LWT on heatingpump/status)
+    payload << ",\"availability_topic\":\"heatingpump/status\"";
+#endif
+    // expire_after: unavailable if no state arrives in time (e.g. CAN reads stop while the ESP still runs)
+    if (config.expireAfterS > 0) {
+        payload << ",\"expire_after\":" << config.expireAfterS;
+    }
+
     // Add device info
     payload << ",\"device\":{\"identifiers\":[\"stiebel_eltron_" HA_DEVICE_MODEL_STR "\"],"
             << "\"name\":\"Stiebel Eltron Wärmepumpe\","
@@ -1688,13 +1744,24 @@ void publishDeltaTContinuous()
     publishCalculatedState(stateTopic, value);
 }
 
+// Compressor on/off from the VERDICHTER value. WPL-A 07: raw status word, bit 4 = compressor running
+// (0x0008 idle, 0x0018 running). All other models: decimal value above `threshold`.
+inline bool verdichterRunning(float value, float threshold) {
+#if defined(HA_MODEL_wpla)
+    (void)threshold;
+    return !std::isnan(value) && (((int)value) & 0x10) != 0;
+#else
+    return !std::isnan(value) && value > threshold;
+#endif
+}
+
 void publishDeltaTRunning()
 {
     // Publish discovery (only once - cached)
     publishCalculatedSensorDiscovery(calculatedSensors[3]);
     
     // Check if compressor is running (value > 2 or not NaN and not 0)
-    bool compressorRunning = (!std::isnan(lastVerdichterValue) && lastVerdichterValue > 2.0);
+    bool compressorRunning = verdichterRunning(lastVerdichterValue, 2.0f);
     
     if (!compressorRunning) {
         return; // Silently skip if compressor not running
@@ -1780,7 +1847,7 @@ void publishCompressorActive()
     }
     
     // Compressor is active if value > 2
-    bool isActive = (lastVerdichterValue > 2.0);
+    bool isActive = verdichterRunning(lastVerdichterValue, 2.0f);
     
     // Publish state to MQTT
     const char* state = isActive ? "on" : "off";
@@ -2504,7 +2571,7 @@ void publishCombinedEnergySensors() {
         lastHeizWh = heizWh; lastWwWh = wwWh; init = true;
 
         // Verdichter: 0.8 = steht, 2.4 = laeuft (Heizmodul)
-        bool running = (lastVerdichterValue > 1.5f);
+        bool running = verdichterRunning(lastVerdichterValue, 1.5f);
 
         // Betriebsstatus live (alle 30 s): laeuft/steht aus dem Verdichter,
         // Heizen/Warmwasser aus den Energie-Deltas der letzten Minuten.
@@ -2528,8 +2595,11 @@ void publishCombinedEnergySensors() {
                 ns = (strcmp(opState, "Warmwasser") == 0) ? "Warmwasser" : "Heizen";
             }
             opState = ns;
+#if !defined(HA_MODEL_wpla)
+            // WPL-A: betriebsstatus comes from BETRIEBS_STATUS 0x0176 (publishBetriebsstatus), not from the energy deltas
             publishCalculatedSensorDiscovery(calculatedSensors[14], false);
             publishCalculatedState("heatingpump/calculated/betriebsstatus/state", opState);
+#endif
             lastStatusMs = nowMs;
         }
 
@@ -2757,6 +2827,161 @@ inline uint32_t hash_runtime(const char* str) {
     return h;
 }
 
+#if defined(HA_MODEL_wpla)
+// WPL-A 07 calculated status sensors (ported from the running Mk1 firmware, branch wpla07-boot)
+
+// Signals read only as input for a calculated sensor: no discovery and no state of their own.
+// STARTS_VERDICHTER_H/L -> verdichter_starts.
+static bool isHiddenSignal(const char *name) {
+    return strcmp(name, "STARTS_VERDICHTER_H") == 0 || strcmp(name, "STARTS_VERDICHTER_L") == 0;
+}
+
+// Compressor starts total = STARTS_VERDICHTER_H * 1000 + STARTS_VERDICHTER_L
+// (both from cm_heizmodul_wpl 0x514 = WPUMPE, polled every 10 min)
+static bool startsHighValid = false;
+static bool startsLowValid = false;
+static long startsHigh = 0;
+static long startsLow = 0;
+static long startsPublished = -1;   // last published total, -1 = nothing published yet
+
+// BETRIEBS_STATUS 0x0176 (KESSEL) as text. Bits checked on the display 2026-10-21:
+// 0 Verdichter, 6 Speicherladepumpe, 12 Zusatzheizung, 14 Warmwasser.
+// Heizen = 0x0041, Warmwasser = 0x4041, Notlauf = 0x1040. Other bits unconfirmed.
+void publishBetriebsstatus(long raw) {
+    const char* text;
+    // Bit 13 = NHZ stage 1, bit 12 = NHZ stage 2 (aux heater test 2026-11-12: stage 1 -> 0x2040,
+    // stages 1+2 -> 0x3040; emergency mode 2026-10-21 -> 0x1040). Before, stage 1 alone showed "Bereit".
+    if (raw & (1L << 14))      text = "Warmwasser";
+    else if (raw & ((1L << 12) | (1L << 13))) text = "Zusatzheizung";
+    else if (raw & (1L << 0))  text = "Heizen";
+    else                       text = "Bereit";
+    publishCalculatedSensorDiscovery(calculatedSensors[CALC_IDX_BETRIEBSSTATUS]);
+    publishCalculatedState(calculatedSensors[CALC_IDX_BETRIEBSSTATUS].stateTopic, text);
+}
+
+// WPL-A status word 0x4eef (MANAGER), bit names from kr0ner/OneESP32ToRuleThemAll.
+// Confirmed on our unit only as a whole (0x0051 while heating); single bits unchecked.
+static const char* const STATUS_WPLA_BITS[] = {
+    "HKP1", "HKP2", "Aufheizprogramm", "NHZ", "WP Heizbetrieb", "WP WW-Betrieb",
+    "Verdichter", "Sommerbetrieb aktiv", "Kuehlen", "Abtauen", "Silent 1", "Silent 2",
+};
+
+void publishStatusWpla(long raw) {
+    std::string text;
+    for (size_t b = 0; b < sizeof(STATUS_WPLA_BITS) / sizeof(STATUS_WPLA_BITS[0]); b++) {
+        if (raw & (1L << b)) {
+            if (!text.empty()) text += ", ";
+            text += STATUS_WPLA_BITS[b];
+        }
+    }
+    // Bit 14 seen once on 2026-11-13 at mains loss (0x4000 together with 0x0074=0 and 0xabe1=1),
+    // unconfirmed; an EVU lock might set the same bit.
+    for (int b = 12; b < 16; b++) {
+        if (raw & (1L << b)) {
+            if (!text.empty()) text += ", ";
+            if (b == 14) text += "Netzausfall/Abschaltung";
+            else text += "Bit " + std::to_string(b);
+        }
+    }
+    if (text.empty()) text = "-";
+    publishCalculatedSensorDiscovery(calculatedSensors[CALC_IDX_STATUS_WPLA]);
+    publishCalculatedState(calculatedSensors[CALC_IDX_STATUS_WPLA].stateTopic, text.c_str());
+}
+
+// PUMPENSTATUS 0x01d2 (KESSEL) as text. Seen on our unit: 0x0000, 0x0010 (Bereit), 0x0011 (heating),
+// 0x0041/0x0051 (DHW), 0x0411/0x0401 (aux heater test 2026-11-12), 0x1100 once (2026-11-09).
+// Bit 6 = WW-Ladepumpe (HA history 2026-11-05..12; upstream #52 reports 0x4000 with swapped bytes).
+// Bit 0 = Pufferladepumpe 1, bit 4 = Heizkreispumpe 1, bit 10 = NHZ: display "Status Anlage" during
+// the aux heater test 2026-11-12, accepted by the user. Bit 12 seen once, meaning open: own label
+// "bit12" so it can be found in the HA history later.
+void publishPumpenstatus(long raw) {
+    std::string text;
+    for (int b = 0; b < 16; b++) {
+        if (!(raw & (1L << b))) continue;
+        if (!text.empty()) text += ", ";
+        switch (b) {
+            case 0:  text += "Pufferladepumpe 1"; break;
+            case 4:  text += "Heizkreispumpe 1"; break;
+            case 6:  text += "WW-Ladepumpe"; break;
+            case 10: text += "NHZ"; break;
+            case 12: text += "bit12"; break;
+            default: text += "Bit " + std::to_string(b); break;
+        }
+    }
+    if (text.empty()) text = "-";
+    publishCalculatedSensorDiscovery(calculatedSensors[CALC_IDX_PUMPENSTATUS]);
+    publishCalculatedState(calculatedSensors[CALC_IDX_PUMPENSTATUS].stateTopic, text.c_str());
+}
+
+// VERDICHTER 0x07a8 (HEIZMODUL) as text, WPL-A only. HA history 2026-11-05..12: 0x0008 = idle,
+// 0x0018 = compressor running (heating and DHW), bit 8 = defrost (40/40 phases match 0x4eef bit 9).
+// Bit 3 is always set (meaning open) and not shown.
+// Bit 7 = aux heater stage 1, bit 6 = aux heater stage 2 (one observation each, aux heater test
+// 2026-11-12, display + external meter ~3 kW per stage; stage 2 alone not tested).
+void publishVerdichterStatus(long raw) {
+    std::string text;
+    for (int b = 0; b < 16; b++) {
+        if (b == 3 || !(raw & (1L << b))) continue;
+        if (!text.empty()) text += ", ";
+        switch (b) {
+            case 4: text += "Verdichter läuft"; break;
+            case 6: text += "NHZ Stufe 2"; break;
+            case 7: text += "NHZ Stufe 1"; break;
+            case 8: text += "Abtauen"; break;
+            default: text += "Bit " + std::to_string(b); break;
+        }
+    }
+    if (text.empty()) text = "Idle";
+    const CalculatedSensorConfig &cfg = calculatedSensors[CALC_IDX_VERDICHTER_STATUS];
+    publishCalculatedSensorDiscovery(cfg);
+    publishCalculatedState(cfg.stateTopic, text.c_str());
+}
+
+// WAERMEPUMPEN_STATUS_WPLA 0x4eda (MANAGER) as text, WPL-A only. HA history 2026-11-06..12 (10-min reads):
+// bit 12 only during the aux heater test (display "NHZ Stufe 1" on), bit 6 = 98 % with 0x4eef bit 5
+// (WP WW-Betrieb), bit 4 set in every compressor minute and also during the aux heater test without
+// compressor (display "Netzversorgung Inverter" on). Bit 1 (98 % with Heizkreispumpe 1) unconfirmed -> "Bit 1".
+void publishWpStatus4eda(long raw) {
+    std::string text;
+    for (int b = 0; b < 16; b++) {
+        if (!(raw & (1L << b))) continue;
+        if (!text.empty()) text += ", ";
+        switch (b) {
+            case 4:  text += "Netzversorgung Inverter"; break;
+            case 6:  text += "WW-Betrieb"; break;
+            case 12: text += "NHZ Stufe 1"; break;
+            default: text += "Bit " + std::to_string(b); break;
+        }
+    }
+    if (text.empty()) text = "-";
+    const CalculatedSensorConfig &cfg = calculatedSensors[CALC_IDX_WP_STATUS_4EDA];
+    publishCalculatedSensorDiscovery(cfg);
+    publishCalculatedState(cfg.stateTopic, text.c_str());
+}
+
+void publishCompressorStartsIfChanged() {
+    // Publish only when BOTH words were refreshed since the last publish. H and L are polled
+    // in the same cycle; waiting for both avoids a mixed pair at the 999 -> 0 carry
+    // (e.g. new H=8 with old L=999 would give 8999 instead of 8000).
+    if (!startsHighValid || !startsLowValid) return;
+
+    long total = startsHigh * 1000 + startsLow;
+    startsHighValid = false;
+    startsLowValid = false;
+    if (total == startsPublished) return;
+    if (startsPublished >= 0 && total < startsPublished) {
+        ESP_LOGW("CALC", "Verdichter Starts gesunken (%ld -> %ld), nicht publiziert", startsPublished, total);
+        return;
+    }
+
+    publishCalculatedSensorDiscovery(calculatedSensors[CALC_IDX_VERDICHTER_STARTS_TOTAL]);
+    char buf[16];
+    snprintf(buf, sizeof(buf), "%ld", total);
+    publishCalculatedState(calculatedSensors[CALC_IDX_VERDICHTER_STARTS_TOTAL].stateTopic, buf);
+    startsPublished = total;
+}
+#endif
+
 // Pre-computed compile-time hashes for all monitored signals
 constexpr uint32_t HASH_JAHR = hash("JAHR");
 constexpr uint32_t HASH_MONAT = hash("MONAT");
@@ -2768,6 +2993,13 @@ constexpr uint32_t HASH_WPVORLAUFIST = hash("WPVORLAUFIST");
 constexpr uint32_t HASH_RUECKLAUFISTTEMP = hash("RUECKLAUFISTTEMP");
 constexpr uint32_t HASH_VERDICHTER = hash("VERDICHTER");
 constexpr uint32_t HASH_PUMPENSTATUS = hash("PUMPENSTATUS");
+#if defined(HA_MODEL_wpla)
+constexpr uint32_t HASH_BETRIEBS_STATUS = hash("BETRIEBS_STATUS");
+constexpr uint32_t HASH_STATUS_WPLA = hash("STATUS_WPLA");
+constexpr uint32_t HASH_STARTS_VERDICHTER_H = hash("STARTS_VERDICHTER_H");
+constexpr uint32_t HASH_STARTS_VERDICHTER_L = hash("STARTS_VERDICHTER_L");
+constexpr uint32_t HASH_WP_STATUS_4EDA = hash("WAERMEPUMPEN_STATUS_WPLA");
+#endif
 constexpr uint32_t HASH_FEHLERMELDUNG = hash("FEHLERMELDUNG");
 constexpr uint32_t HASH_EVU_SPERRE_AKTIV = hash("EVU_SPERRE_AKTIV");
 constexpr uint32_t HASH_SOMMERBETRIEB = hash("SOMMERBETRIEB");
@@ -2936,14 +3168,20 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
         }
     }
     
+#if defined(HA_MODEL_wpla)
+    // Hidden signals (inputs of a calculated sensor) get neither discovery nor state
+    const bool hidden = isHiddenSignal(signalName);
+#else
+    const bool hidden = false;
+#endif
     // Check if discovery is needed: mark as discovered and publish discovery immediately
-    if (discoveredSignals.find(key) == discoveredSignals.end()) {
+    if (!hidden && discoveredSignals.find(key) == discoveredSignals.end()) {
         discoveredSignals.emplace(key, DiscoveredSignal{&cm, ei});
         publishMqttDiscovery(cm, ei);
     }
     
     // Publish state (on change / heartbeat)
-    publishMqttState(cm, ei, publishValue);
+    if (!hidden) publishMqttState(cm, ei, publishValue);
     
     // Fast signal dispatch using compile-time hash (O(1) switch/jump table)
     
@@ -3078,6 +3316,18 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
 
         case HASH_PUMPENSTATUS:
             if (strcmp(cm.Name, "KESSEL") == 0 && value != "-255") lastPumpenstatus = atoi(value.c_str());
+#if defined(HA_MODEL_wpla)
+            // WPL-A: bit field as text (A: any member, sentinels never reach here)
+            if (value != "-255" && value != "-32768") {
+                char* endPtr;
+                long intValue = strtol(value.c_str(), &endPtr, 10);
+                if (endPtr != value.c_str() && *endPtr == '\0' && intValue >= -32768 && intValue <= 32767) {
+                    publishPumpenstatus(intValue & 0xFFFF);  // et_default prints signed
+                } else {
+                    ESP_LOGW("CALC", "Invalid PUMPENSTATUS value: %s", value.c_str());
+                }
+            }
+#endif
             break;
 
         case HASH_VERDICHTER: {
@@ -3086,12 +3336,70 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
             if (endPtr != value.c_str() && *endPtr == '\0') {
                 lastVerdichterValue = floatValue;
                 // Compressor state will be calculated and published by scheduler
+#if defined(HA_MODEL_wpla)
+                // WPL-A: status word as text, only for plain integers 0..0xFFFF
+                if (floatValue >= 0.0f && floatValue <= 65535.0f && floatValue == (float)(long)floatValue) {
+                    publishVerdichterStatus((long)floatValue);
+                }
+#endif
             } else {
                 ESP_LOGW("CALC", "Failed to parse VERDICHTER value: %s", value.c_str());
             }
             break;
         }
         
+#if defined(HA_MODEL_wpla)
+        case HASH_BETRIEBS_STATUS:
+        case HASH_STATUS_WPLA: {
+            if (value == "-255" || value == "-32768") break;
+            char* endPtr;
+            long intValue = strtol(value.c_str(), &endPtr, 10);
+            if (endPtr != value.c_str() && *endPtr == '\0' && intValue >= 0 && intValue <= 0xFFFF) {
+                if (signalHash == HASH_BETRIEBS_STATUS) publishBetriebsstatus(intValue);
+                else publishStatusWpla(intValue);
+            } else {
+                ESP_LOGW("CALC", "Invalid %s value: %s", signalName, value.c_str());
+            }
+            break;
+        }
+
+        case HASH_WP_STATUS_4EDA: {
+            if (value == "-255") break;
+            char* endPtr;
+            long intValue = strtol(value.c_str(), &endPtr, 10);
+            if (endPtr != value.c_str() && *endPtr == '\0' && intValue >= -32768 && intValue <= 65535) {
+                publishWpStatus4eda(intValue & 0xFFFF);  // et_default prints signed
+            }
+            break;
+        }
+
+        case HASH_STARTS_VERDICHTER_H: {
+            char* endPtr;
+            long intValue = strtol(value.c_str(), &endPtr, 10);
+            if (endPtr != value.c_str() && *endPtr == '\0' && intValue >= 0) {
+                startsHigh = intValue;
+                startsHighValid = true;
+                publishCompressorStartsIfChanged();
+            } else {
+                ESP_LOGW("CALC", "Invalid STARTS_VERDICHTER_H value: %s", value.c_str());
+            }
+            break;
+        }
+
+        case HASH_STARTS_VERDICHTER_L: {
+            char* endPtr;
+            long intValue = strtol(value.c_str(), &endPtr, 10);
+            if (endPtr != value.c_str() && *endPtr == '\0' && intValue >= 0 && intValue <= 999) {
+                startsLow = intValue;
+                startsLowValid = true;
+                publishCompressorStartsIfChanged();
+            } else {
+                ESP_LOGW("CALC", "Invalid STARTS_VERDICHTER_L value: %s", value.c_str());
+            }
+            break;
+        }
+#endif
+
         case HASH_EL_AUFNAHMELEISTUNG_HEIZ:
         case HASH_EL_AUFNAHMELEISTUNG_WW:
         case HASH_WAERMEERTRAG_2WE_WW:
@@ -3582,10 +3890,68 @@ void processSignalRequests() {
     }
 }
 
+// Heat pump restart detection (boot capture 2026-11-13): after mains loss all participants
+// stay silent for about 28 s. Then FES (0x100) answers first, and about 16.6 s later the
+// MANAGER (0x480) sends the type-6 index-0xFE round. In normal operation this round comes
+// every 420 s, so it only counts after a silence. Counter: calculated/wp_restarts.
+#if defined(HA_MODEL_wpla)
+static constexpr unsigned long WP_SILENCE_MS = 10000;        // bus silence that arms the detector
+static constexpr unsigned long WP_RESTART_WINDOW_MS = 60000; // 0xFE round must follow the silence within this time
+static unsigned long lastForeignRxMs = 0;                    // time of the last frame not sent by the ESP (0x680)
+static bool haveForeignRx = false;                           // false until the first foreign frame (no silence before it)
+static bool restartPending = false;                          // silence seen, waiting for the 0xFE round
+static unsigned long restartPendingSinceMs = 0;              // time the silence ended
+static uint32_t wpRestartCount = 0;                          // restarts counted since boot
+
+// Publish the restart counter (state is cached, so republishAllStates() re-sends it after a reconnect)
+void publishWpRestarts() {
+    publishCalculatedSensorDiscovery(calculatedSensors[CALC_IDX_WP_RESTARTS]);
+    std::string text = std::to_string(wpRestartCount);
+    publishCalculatedState(calculatedSensors[CALC_IDX_WP_RESTARTS].stateTopic, text.c_str());
+}
+#else
+// Other models: no restart counter
+inline void publishWpRestarts() {}
+#endif
+
 void processAndUpdate(uint32_t can_id, const std::vector<uint8_t> &msg)
 {
     // processCanMessage() leaves the member unset for short frames
     if (msg.size() < 7) return;
+#if defined(HA_MODEL_wpla)
+    // Restart detection runs before the type filter: the 0xFE round is a type-6 frame.
+    // Frames from the ESP itself (0x680) do not count as bus activity.
+    if (can_id != 0x680)
+    {
+        unsigned long now = millis();
+        if (haveForeignRx && (unsigned long)(now - lastForeignRxMs) > WP_SILENCE_MS)
+        {
+            restartPending = true;
+            restartPendingSinceMs = now;
+        }
+        haveForeignRx = true;
+        lastForeignRxMs = now;
+
+        if (restartPending && (unsigned long)(now - restartPendingSinceMs) > WP_RESTART_WINDOW_MS)
+        {
+            restartPending = false;
+        }
+
+        if (can_id == 0x480 && (msg[0] & 0x0F) == 6 && msg[2] == 0xFE && restartPending)
+        {
+            restartPending = false;
+            wpRestartCount++;
+            ESP_LOGI("WP_RESTART", "Heat pump restart detected, count %u", (unsigned) wpRestartCount);
+
+            // Poll everything again at once; the scheduler still limits requests per iteration
+            invalidStreak.clear();
+            for (auto &entry : nextRequestTime) {
+                entry.second = now;
+            }
+            publishWpRestarts();
+        }
+    }
+#endif
     // Elster telegram type = low nibble of byte 0 (0 write, 1 read request, 2 response).
     // A read request carries no value: decoding it attributed a fake 0 to the
     // requesting node (e.g. the WPMW II polling the IWS -> "MANAGER VERDICHTER 0.0").
