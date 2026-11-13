@@ -57,12 +57,15 @@ typedef struct
 // MQTT/HA names of the two CAN-B members at 0x514 and 0x201. For the WPL-A 07 they are
 // published as WPUMPE and SPEICHER: keeps MQTT topics and HA entities of the running
 // WPL-A 07 firmware. All other models keep the upstream names.
+// MQTT name of the DHW actual temperature: WW_ISTTEMPERATUR on WPL-A 07, SPEICHERISTTEMP elsewhere
 #if defined(HA_MODEL_wpla)
 #define HA_NAME_HEIZMODUL_WPL "WPUMPE"
 #define HA_NAME_KESSEL_CANB "SPEICHER"
+#define HA_NAME_DHW_ACTUAL "WW_ISTTEMPERATUR"
 #else
 #define HA_NAME_HEIZMODUL_WPL "HEIZMODUL_WPL"
 #define HA_NAME_KESSEL_CANB "KESSEL_CANB"
+#define HA_NAME_DHW_ACTUAL "SPEICHERISTTEMP"
 #endif
 
 static const CanMember CanMembers[] =
@@ -873,7 +876,7 @@ static int stateDeadbandTenths = STATE_DEADBAND_TENTHS;   // variable for the te
 // True if `value` of a measured temperature is too close to the last published one
 inline bool withinDeadband(const char* signal, const char* published, const char* value) {
     static const char* const kDeadbandSignals[] = {
-        "AUSSENTEMP", "SPEICHERISTTEMP", "RUECKLAUFISTTEMP", "VORLAUFISTTEMP", "WPVORLAUFIST"};
+        "AUSSENTEMP", HA_NAME_DHW_ACTUAL, "RUECKLAUFISTTEMP", "VORLAUFISTTEMP", "WPVORLAUFIST"};
     if (stateDeadbandTenths <= 0 || !signal || !published[0]) return false;
     bool listed = false;
     for (const char* name : kDeadbandSignals) {
@@ -1407,7 +1410,7 @@ void publishClimateDiscoveries() {
           << "\"min_temp\":" << dhw->min << ",\"max_temp\":" << dhw->max << ",\"temp_step\":" << dhw->step << ","
           << "\"temperature_command_topic\":\"heatingpump/" << cm->Name << "/EINSTELL_SPEICHERSOLLTEMP/set\","
           << "\"temperature_state_topic\":\"heatingpump/" << cm->Name << "/EINSTELL_SPEICHERSOLLTEMP/state\","
-          << "\"current_temperature_topic\":\"heatingpump/" << (dhwOnCanb ? HA_NAME_KESSEL_CANB : "KESSEL") << "/SPEICHERISTTEMP/state\","
+          << "\"current_temperature_topic\":\"heatingpump/" << (dhwOnCanb ? HA_NAME_KESSEL_CANB : "KESSEL") << "/" HA_NAME_DHW_ACTUAL "/state\","
           << "\"availability_topic\":\"heatingpump/status\",\"icon\":\"mdi:water-boiler\"," << device << "}";
         std::string s = p.str();
         mqttPublish("homeassistant/climate/heatingpump/stiebel_climate_warmwasser/config", s.c_str(), s.length());

@@ -26,6 +26,13 @@
 #ifndef SIGNAL_REQUESTS_BASE_H
 #define SIGNAL_REQUESTS_BASE_H
 
+// 0x0074 is EVU_FREIGABE on WPL-A (not inverted).
+#if defined(HA_MODEL_wpla)
+#define SIGNAL_REQUEST_EVU {"EVU_FREIGABE", FREQ_1MIN, cm_manager},
+#else
+#define SIGNAL_REQUEST_EVU {"EVU_SPERRE_AKTIV", FREQ_1MIN, cm_manager},
+#endif
+
 #define SIGNAL_REQUESTS_BASE \
     \
     /* -------------------------------------------------------------------- */ \
@@ -41,7 +48,7 @@
     /* -------------------------------------------------------------------- */ \
     /* OPERATING STATE                                                       */ \
     /* -------------------------------------------------------------------- */ \
-    {"EVU_SPERRE_AKTIV", FREQ_1MIN,  cm_manager},   \
+    SIGNAL_REQUEST_EVU \
     {"PROGRAMMSCHALTER", FREQ_10MIN, cm_manager},   \
     {"SOMMERBETRIEB",    FREQ_1MIN,  cm_manager},   \
     {"VERDICHTER",       FREQ_30S,   cm_heizmodul}, \

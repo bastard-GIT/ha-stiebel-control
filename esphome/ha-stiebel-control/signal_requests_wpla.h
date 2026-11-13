@@ -50,34 +50,37 @@ extern const SignalRequest signalRequests[] = {
     {"SOLLSPREIZUNG",                         FREQ_10MIN, cm_kessel},   // 0x067e K
     {"AUSLEGUNGSTEMPERATUR",                  FREQ_10MIN, cm_kessel},   // 0x0665 °C
     {"WAERMEBEDARF",                          FREQ_10MIN, cm_kessel},   // 0x0666 kW
-    {"REGLERDYNAMIK_HEIZEN",                  FREQ_10MIN, cm_kessel},   // 0x4e8a
+    {"REGELDYNAMIK",                          FREQ_10MIN, cm_kessel},   // 0x4e8a
     {"WARMWASSERBETRIEB",                     FREQ_10MIN, cm_kessel},   // 0x4f24
     {"WARMWASSERHYSTERESE",                   FREQ_10MIN, cm_kessel},   // 0x4f25 K
     {"ANTILEGIONELLENBEHANDLUNG",             FREQ_10MIN, cm_kessel},   // 0x4f28 on/off
-    {"WW_SOLLTEMPERATUR",                     FREQ_10MIN, cm_kessel},   // 0x4ef9 anti-legionella setpoint °C
+    {"WW_LEG_SOLLTEMPERATUR",                 FREQ_10MIN, cm_kessel},   // 0x4ef9 anti-legionella setpoint °C
     {"STILLSTANDSZEIT",                       FREQ_10MIN, cm_kessel},   // 0x4f2e min
+    {"SAMMEL_RELAISSTATUS",                   FREQ_1MIN,  cm_kessel},   // 0x0a20 relay status bit field
+    {"PROGRAMMSCHALTER",                      FREQ_10MIN, cm_kessel},   // 0x0112 operating mode switch
 
     // ========================================================================
     // KESSEL_CANB (0x201) — DHW
     // ========================================================================
-    {"SPEICHERSOLLTEMP",                      FREQ_30S,   cm_kessel_canb}, // 0x0003 DHW setpoint
-    {"SPEICHERISTTEMP",                       FREQ_30S,   cm_kessel_canb}, // 0x000e DHW actual temp
+    {"WW_SOLLTEMPERATUR",                     FREQ_30S,   cm_kessel_canb}, // 0x0003 DHW setpoint
+    {"WW_ISTTEMPERATUR",                      FREQ_30S,   cm_kessel_canb}, // 0x000e DHW actual temp
     {"EINSTELL_SPEICHERSOLLTEMP",             FREQ_30S,   cm_kessel_canb}, // 0x0013 DHW comfort setpoint (writable)
     {"EINSTELL_SPEICHERSOLLTEMP2",            FREQ_30S,   cm_kessel_canb}, // 0x0a06 DHW eco setpoint (writable)
+    {"PROGRAMMSCHALTER",                      FREQ_10MIN, cm_kessel_canb}, // 0x0112 operating mode switch
 
     // ========================================================================
     // MANAGER (0x480)
     // ========================================================================
-    {"BETRIEBS_STATUS_4EEF",                  FREQ_30S,   cm_manager},  // WPL-A status word (bits from kr0ner/OneESP32ToRuleThemAll)
-    {"WAERMEPUMPEN_STATUS_4EDA",              FREQ_10MIN, cm_manager},  // meaning open
+    {"STATUS_WPLA",                           FREQ_30S,   cm_manager},  // WPL-A status word (bits from kr0ner/OneESP32ToRuleThemAll)
+    {"WAERMEPUMPEN_STATUS_WPLA",              FREQ_1MIN,  cm_manager},  // meaning open
     {"EINGESCHALTETE_STUFEN",                 FREQ_10MIN, cm_manager},  // 0x4efa
-    {"ZEITINTERVALL_4F4D",                    FREQ_1MIN,  cm_manager},  // raw +-165 seen
+    {"ZEITINTERVALL",                         FREQ_1MIN,  cm_manager},  // raw +-165 seen
     {"MINIMALE_PUMPLEISTUNG",                 FREQ_10MIN, cm_manager},  // 0x4f98 %
     {"MAXIMALE_PUMPLEISTUNG",                 FREQ_10MIN, cm_manager},  // 0x4f99 %
     {"SPREIZUNG",                             FREQ_10MIN, cm_manager},  // 0x4f91 K
-    {"PUMPENLEISTUNG_STANDBY_4F8A",           FREQ_10MIN, cm_manager},  // %
-    {"PUMPENLEISTUNG_HEIZEN",                 FREQ_10MIN, cm_manager},  // 0x4f8c %
-    {"PUMPENLEISTUNG_KUEHLEN",                FREQ_10MIN, cm_manager},  // 0x4f92 %
+    {"PUMPENLEISTUNG_STANDBY_WPLA",           FREQ_10MIN, cm_manager},  // %
+    {"PUMPENLEISTUNG_HEIZEN_WPLA",            FREQ_10MIN, cm_manager},  // 0x4f8c %
+    {"PUMPENLEISTUNG_KUEHLEN_WPLA",           FREQ_10MIN, cm_manager},  // 0x4f92 %
     {"EVU_SPERRE",                            FREQ_10MIN, cm_manager},  // 0xabe1
     {"EVU_SPERRE_CONFIG",                     FREQ_10MIN, cm_manager},  // 0x4f84
 
@@ -97,30 +100,32 @@ extern const SignalRequest signalRequests[] = {
     // ========================================================================
     {"RUECKLAUFISTTEMP",                      FREQ_30S,   cm_heizmodul_wpl}, // return flow temp
     {"HEISSGAS_TEMP",                         FREQ_30S,   cm_heizmodul_wpl}, // hot gas temp
-    {"VERDICHTER_EINTRITTSTEMP",              FREQ_30S,   cm_heizmodul_wpl}, // 0x06d9 compressor inlet temp
+    {"WP_VERDICHTEREINTRITTSTEMPERATUR",      FREQ_30S,   cm_heizmodul_wpl}, // 0x06d9 compressor inlet temp
     {"ANZEIGE_NIEDERDRUCK",                   FREQ_30S,   cm_heizmodul_wpl}, // low pressure
     {"STARTS_ABTAUUNG",                       FREQ_10MIN, cm_heizmodul_wpl}, // defrost starts
     {"ZEITDAUER_LETZTE_ABTAUUNG",             FREQ_10MIN, cm_heizmodul_wpl}, // last defrost duration
     {"LAUFZEIT_DHC1",                         FREQ_10MIN, cm_heizmodul_wpl}, // aux heater 1 runtime
     {"LAUFZEIT_DHC2",                         FREQ_10MIN, cm_heizmodul_wpl}, // aux heater 2 runtime
     {"LZ_DHC12",                              FREQ_10MIN, cm_heizmodul_wpl}, // aux heater 1+2 runtime
-    {"VERDICHTER_STARTS_K_4EF0",              FREQ_10MIN, cm_heizmodul_wpl}, // compressor starts (thousands)
-    {"VERDICHTER_STARTS_4EF1",                FREQ_10MIN, cm_heizmodul_wpl}, // compressor starts (units)
-    {"LAUFZEIT_VD_HEIZEN",                    FREQ_10MIN, cm_heizmodul_wpl}, // 0x4efb compressor heating runtime
-    {"LAUFZEIT_VD_WW",                        FREQ_10MIN, cm_heizmodul_wpl}, // 0x4efd compressor DHW runtime
-    {"LAUFZEIT_VD_ABTAUEN",                   FREQ_10MIN, cm_heizmodul_wpl}, // 0x4f06 compressor defrost runtime
+    {"STARTS_VERDICHTER_H",                   FREQ_10MIN, cm_heizmodul_wpl}, // compressor starts (thousands)
+    {"STARTS_VERDICHTER_L",                   FREQ_10MIN, cm_heizmodul_wpl}, // compressor starts (units)
+    {"LAUFZEIT_VERDICHTER_HEIZEN_WPLA",       FREQ_10MIN, cm_heizmodul_wpl}, // 0x4efb compressor heating runtime
+    {"LAUFZEIT_VERDICHTER_WW_WPLA",           FREQ_10MIN, cm_heizmodul_wpl}, // 0x4efd compressor DHW runtime
+    {"LAUFZEIT_VERDICHTER_ABTAUEN",           FREQ_10MIN, cm_heizmodul_wpl}, // 0x4f06 compressor defrost runtime
     {"RESTSTILLSTANDSZEIT",                   FREQ_1MIN,  cm_heizmodul_wpl}, // 0x4f4e min
-    {"EVU_SPERRE",                            FREQ_10MIN, cm_heizmodul_wpl}, // 0xabe1
+    // not polled: 0xabe1 on 0x514 is not an EVU lock signal (see 2026-11 boot capture)
+    // {"EVU_SPERRE",                            FREQ_10MIN, cm_heizmodul_wpl}, // 0xabe1
     {"UMGEBUNGSTEMPERATUR_INVERTER",          FREQ_1MIN,  cm_heizmodul_wpl}, // inverter ambient temp
-    {"TEMPERATUR_INV_VERDICHTER",             FREQ_1MIN,  cm_heizmodul_wpl}, // 0xc1e7 inverter/compressor temp
+    {"TEMPERATUR_INVERTER_VERDICHTER",        FREQ_1MIN,  cm_heizmodul_wpl}, // 0xc1e7 inverter/compressor temp
     {"SPANNUNG_INVERTER",                     FREQ_1MIN,  cm_heizmodul_wpl}, // 0x06b1 V
     {"STROM_INVERTER",                        FREQ_1MIN,  cm_heizmodul_wpl}, // 0x06b2 A
-    {"OEFFNUNGSGRAD_BYPASSVENT",              FREQ_1MIN,  cm_heizmodul_wpl}, // 0xc2c3 bypass valve opening
+    {"STROM_MOTOR",                           FREQ_1MIN,  cm_heizmodul_wpl},  // 0x06b4 motor current (A), answers on 0x514
+    {"OEFFNUNGSGRAD_BYPASSVENTIL",            FREQ_1MIN,  cm_heizmodul_wpl}, // 0xc2c3 bypass valve opening
     {"ADAPTION_UEBERHITZUNG",                 FREQ_1MIN,  cm_heizmodul_wpl}, // superheat adaption
     {"UNTERKUEHLUNG_EXVENTIL_EIN",            FREQ_1MIN,  cm_heizmodul_wpl}, // 0x4f9f subcooling EXV on
     {"BETRIEBSART_KAELTEKREISREGLER",         FREQ_1MIN,  cm_heizmodul_wpl}, // 0x4fa0 raw 0/3, meaning open
-    {"SOLL_UEBERHITZUNG_SAUGGAS_VERDICHTER",  FREQ_1MIN,  cm_heizmodul_wpl}, // 0x4fa1
-    {"IST_UEBERHITZUNG_SAUGGAS_VERDICHTER",   FREQ_1MIN,  cm_heizmodul_wpl}, // 0x4fa2
+    {"SOLL_UEBERHITZUNG_SAUGGAS_VENTIL",      FREQ_1MIN,  cm_heizmodul_wpl}, // 0x4fa1
+    {"IST_UEBERHITZUNG_SAUGGAS_VENTIL",       FREQ_1MIN,  cm_heizmodul_wpl}, // 0x4fa2
     {"VERDICHTERDREHZAHLGRENZE",              FREQ_1MIN,  cm_heizmodul_wpl}, // 0x4fac
     {"EXV_OEFFNUNGSGRAD",                     FREQ_1MIN,  cm_heizmodul_wpl}, // 0x07ca %
     {"SOLLWERT_UEBERHITZUNG",                 FREQ_1MIN,  cm_heizmodul_wpl}, // 0x07f3 K
@@ -130,9 +135,9 @@ extern const SignalRequest signalRequests[] = {
     {"P_ANTEIL_EXV",                          FREQ_1MIN,  cm_heizmodul_wpl}, // 0x07f7
     {"I_ANTEIL_EXV",                          FREQ_1MIN,  cm_heizmodul_wpl}, // 0x07f8
     {"D_ANTEIL_EXV",                          FREQ_1MIN,  cm_heizmodul_wpl}, // 0x07f9
-    {"UNTERK_COND",                           FREQ_1MIN,  cm_heizmodul_wpl}, // 0x0aff condenser subcooling
+    {"UNTERKUEHLUNG_KONDENSATOR",             FREQ_1MIN,  cm_heizmodul_wpl}, // 0x0aff condenser subcooling
     {"FROSTSCHUTZTEMPERATUR",                 FREQ_1MIN,  cm_heizmodul_wpl}, // 0x0a36 °C
-    {"VERFLUESSIGERTEMP_WPLA",                FREQ_1MIN,  cm_heizmodul_wpl}, // 0x0a37 °C
+    {"VERFLUESSIGER_TEMP_WPLA",               FREQ_1MIN,  cm_heizmodul_wpl}, // 0x0a37 °C
     {"OELSUMPFTEMP",                          FREQ_1MIN,  cm_heizmodul_wpl}, // 0x0a39 °C
     {"WP_WASSERVOLUMENSTROM",                 FREQ_1MIN,  cm_heizmodul_wpl}, // 0x02e2 l/min
 
@@ -159,13 +164,18 @@ extern const SignalRequest signalRequests[] = {
     // ========================================================================
     // MISCHERMODUL_2 (0x601) — heating circuit 1
     // ========================================================================
-    {"MINTEMP",                               FREQ_10MIN, cm_mischermodul_2}, // 0x4ea7 HK1 min flow temp
+    {"MINIMAL_TEMPERATUR_HK_1",               FREQ_10MIN, cm_mischermodul_2}, // 0x4ea7 HK1 min flow temp
     {"MAXTEMP",                               FREQ_10MIN, cm_mischermodul_2}, // 0x4ea8
     {"SOLLTEMPERATUR",                        FREQ_10MIN, cm_mischermodul_2}, // 0x4eb0
     {"ISTTEMPERATUR",                         FREQ_10MIN, cm_mischermodul_2}, // 0x4eb4
     {"KOMFORTTEMPERATUR",                     FREQ_10MIN, cm_mischermodul_2}, // 0x4eb8
     {"ECOTEMPERATUR",                         FREQ_10MIN, cm_mischermodul_2}, // 0x4eb9
     {"STEIGUNG_HEIZKURVE",                    FREQ_10MIN, cm_mischermodul_2}, // 0x4f2b
+
+    // ========================================================================
+    // BEDIENMODUL_2 — operating mode probe (as in A)
+    // ========================================================================
+    {"PROGRAMMSCHALTER",                      FREQ_10MIN, cm_bedienmodul_2},   // 0x0112 operating mode switch
 
     // ========================================================================
     // ROOM SETPOINTS — MANAGER, single heating circuit
