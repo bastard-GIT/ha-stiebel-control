@@ -141,25 +141,7 @@ extern const SignalRequest signalRequests[] = {
     {"OELSUMPFTEMP",                          FREQ_1MIN,  cm_heizmodul_wpl}, // 0x0a39 °C
     {"WP_WASSERVOLUMENSTROM",                 FREQ_1MIN,  cm_heizmodul_wpl}, // 0x02e2 l/min
 
-    // Energy counters (sum MWh+kWh, day kWh+Wh). Totals and COP are built from
-    // HEIZMODUL_WPL as on the WPL17 (energyMemberName()); the base table adds the
-    // SUM_MWH registers on HEIZMODUL.
-    {"EL_AUFNAHMELEISTUNG_HEIZ_SUM_MWH",      FREQ_1MIN,  cm_heizmodul_wpl},
-    {"EL_AUFNAHMELEISTUNG_HEIZ_SUM_KWH",      FREQ_1MIN,  cm_heizmodul_wpl},
-    {"EL_AUFNAHMELEISTUNG_WW_SUM_MWH",        FREQ_1MIN,  cm_heizmodul_wpl},
-    {"EL_AUFNAHMELEISTUNG_WW_SUM_KWH",        FREQ_1MIN,  cm_heizmodul_wpl},
-    {"WAERMEERTRAG_HEIZ_SUM_MWH",             FREQ_1MIN,  cm_heizmodul_wpl},
-    {"WAERMEERTRAG_HEIZ_SUM_KWH",             FREQ_1MIN,  cm_heizmodul_wpl},
-    {"WAERMEERTRAG_WW_SUM_MWH",               FREQ_1MIN,  cm_heizmodul_wpl},
-    {"WAERMEERTRAG_WW_SUM_KWH",               FREQ_1MIN,  cm_heizmodul_wpl},
-    {"EL_AUFNAHMELEISTUNG_HEIZ_TAG_WH",       FREQ_30S,   cm_heizmodul_wpl},
-    {"EL_AUFNAHMELEISTUNG_HEIZ_TAG_KWH",      FREQ_30S,   cm_heizmodul_wpl},
-    {"EL_AUFNAHMELEISTUNG_WW_TAG_WH",         FREQ_30S,   cm_heizmodul_wpl},
-    {"EL_AUFNAHMELEISTUNG_WW_TAG_KWH",        FREQ_30S,   cm_heizmodul_wpl},
-    {"WAERMEERTRAG_HEIZ_TAG_WH",              FREQ_30S,   cm_heizmodul_wpl},
-    {"WAERMEERTRAG_HEIZ_TAG_KWH",             FREQ_30S,   cm_heizmodul_wpl},
-    {"WAERMEERTRAG_WW_TAG_WH",                FREQ_30S,   cm_heizmodul_wpl},
-    {"WAERMEERTRAG_WW_TAG_KWH",               FREQ_30S,   cm_heizmodul_wpl},
+    // Energy counters (sum, day) and COP are read by energy_counters.h (own requests via namespace energy), so there are no energy rows in this table.
 
     // ========================================================================
     // MISCHERMODUL_2 (0x601) — heating circuit 1

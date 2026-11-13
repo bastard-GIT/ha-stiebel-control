@@ -173,6 +173,7 @@ struct CalculatedSensorConfig {
     const char* entityCategory;    // "diagnostic" | "config" | "" (empty = normal)
     bool enabledByDefault;         // false = disabled in HA until user enables
     uint16_t expireAfterS;         // HA expire_after in s (0 = none); only for values published at a fixed rate
+    const char* discoveryId;       // optional object id of the discovery topic (nullptr = uniqueId)
 };
 
 // expire_after of the WPL-A 07 status sensors (source read every 30 s / 1 min); 0 = none for all other models
@@ -1222,7 +1223,8 @@ void publishCalculatedSensorDiscovery(const CalculatedSensorConfig& config, bool
     // Build discovery topic
     char discoveryTopic[256];
     snprintf(discoveryTopic, sizeof(discoveryTopic), 
-             "homeassistant/%s/heatingpump/%s/config", config.component, config.uniqueId);
+             "homeassistant/%s/heatingpump/%s/config", config.component,
+             config.discoveryId ? config.discoveryId : config.uniqueId);
     
     // Build JSON payload
     std::ostringstream payload;
@@ -3400,6 +3402,8 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
         }
 #endif
 
+        // WPL-A 07: energy and COP come from energy_counters.h
+#if !defined(HA_MODEL_wpla)
         case HASH_EL_AUFNAHMELEISTUNG_HEIZ:
         case HASH_EL_AUFNAHMELEISTUNG_WW:
         case HASH_WAERMEERTRAG_2WE_WW:
@@ -3422,6 +3426,7 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
             storeCOPEnergyValueMember(cm.Name, signalName, value);
             updateCOPCalculations();
             break;
+#endif
         
         default:
             // Signal not monitored for calculated sensors - no action needed
@@ -3914,6 +3919,11 @@ void publishWpRestarts() {
 inline void publishWpRestarts() {}
 #endif
 
+#if defined(HA_MODEL_wpla)
+// Energy counters and COP of the WPL-A 07 (own sequential reads, see energy_counters.h)
+#include "energy_counters.h"
+#endif
+
 void processAndUpdate(uint32_t can_id, const std::vector<uint8_t> &msg)
 {
     // processCanMessage() leaves the member unset for short frames
@@ -3956,6 +3966,15 @@ void processAndUpdate(uint32_t can_id, const std::vector<uint8_t> &msg)
     // A read request carries no value: decoding it attributed a fake 0 to the
     // requesting node (e.g. the WPMW II polling the IWS -> "MANAGER VERDICHTER 0.0").
     if ((msg[0] & 0x0F) == 1) return;
+
+#if defined(HA_MODEL_wpla)
+    // Energy registers 0x091a-0x0931 are handled only by energy_counters.h
+    // (combined MWh+kWh values); no separate entities per register part.
+    if (energy::on_frame(can_id, msg))
+    {
+        return;
+    }
+#endif
 
     std::string value;
     const CanMember *cm = nullptr;

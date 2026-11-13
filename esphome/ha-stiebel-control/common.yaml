@@ -65,6 +65,8 @@ esphome:
     # boot_info.h includes crash_trace.h and unix_time.h
     - crash_trace.h
     - boot_info.h
+    # energy_counters.h: energy counters and COP for WPL-A 07 (used only with HA_MODEL_wpla)
+    - energy_counters.h
     - signal_requests_base.h
     # model-specific signal_requests_*.h is declared by each model yaml package
   build_flags:
@@ -496,6 +498,14 @@ interval:
     then:
       - lambda: |-
           processSignalRequests();
+
+  # Energy counters and COP (energy_counters.h, WPL-A 07 only): sequential reads with own timeouts
+  - interval: 100ms
+    then:
+      - lambda: |-
+          #if defined(HA_MODEL_wpla)
+          energy::loop();
+          #endif
 
   # Fault list of the manager (20 entries, refreshed every 30 min)
   - interval: 1s
