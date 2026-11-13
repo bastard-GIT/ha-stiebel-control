@@ -1459,7 +1459,7 @@ TEST_CASE("writableNumbers: WPMW II parameters are only offered on wpl13e and tt
     }
     // The heating curve is also writable on wpl17 (KESSEL_CANB).
     CHECK(writableNumberApplies("HEIZKURVE") == (verified || model == "wpl17"));
-    CHECK(writableNumberApplies("EINSTELL_SPEICHERSOLLTEMP"));
+    CHECK(writableNumberApplies(HA_NAME_DHW_SET));
     // Single heating circuit: no number entities for circuits 2 and 3.
     const bool singleCircuit = model == "wpl17" || model == "wpla";
     CHECK(writableNumberApplies("RAUMSOLLTEMP_II") == !singleCircuit);
@@ -1562,7 +1562,7 @@ TEST_CASE("climate: heating and hot water discoveries reuse the number /set topi
     CHECK(heat.find("heatingpump/MANAGER/RAUMSOLLTEMP_I/set") != std::string::npos);
     CHECK(heat.find("PROGRAMMSCHALTER/set") != std::string::npos);
     CHECK(heat.find("\"Tagbetrieb\"") != std::string::npos);
-    CHECK(dhw.find("EINSTELL_SPEICHERSOLLTEMP/set") != std::string::npos);
+    CHECK(dhw.find(HA_NAME_DHW_SET "/set") != std::string::npos);
     const bool wpl17 = std::strcmp(HA_DEVICE_MODEL_STR, "wpl17") == 0;
     const bool wpla = std::strcmp(HA_DEVICE_MODEL_STR, "wpla") == 0;
     const bool canbSetpoint = wpl17 || wpla || std::strcmp(HA_DEVICE_MODEL_STR, "wpl9") == 0;
@@ -1570,7 +1570,7 @@ TEST_CASE("climate: heating and hot water discoveries reuse the number /set topi
     const std::string current = std::string("heatingpump/") +
         ((wpl17 || wpla) ? HA_NAME_KESSEL_CANB : "KESSEL") + "/" HA_NAME_DHW_ACTUAL "/state";
     const std::string command = std::string("heatingpump/") +
-        (canbSetpoint ? HA_NAME_KESSEL_CANB : "MANAGER") + "/EINSTELL_SPEICHERSOLLTEMP/set";
+        (canbSetpoint ? HA_NAME_KESSEL_CANB : "MANAGER") + "/" HA_NAME_DHW_SET "/set";
     CHECK(dhw.find(current) != std::string::npos);
     CHECK(dhw.find(command) != std::string::npos);
 }
@@ -1716,7 +1716,7 @@ TEST_CASE("republishAllDiscoveries: keeps every discovered signal and re-sends i
     // Multi-word names: the old filter took the fragment after the last '_' of the
     // lowercase uid ("temp"), found no table row and dropped the signal.
     updateSensor(CanMembers[cm_kessel], GetElsterIndex("SPEICHERSOLLTEMP"), "50.0");
-    updateSensor(CanMembers[cm_manager], GetElsterIndex("EINSTELL_SPEICHERSOLLTEMP"), "48.0");
+    updateSensor(CanMembers[cm_manager], GetElsterIndex(HA_NAME_DHW_SET), "48.0");
     updateSensor(CanMembers[cm_manager], GetElsterIndex("HYSTERESEZEIT"), "2.0");
     REQUIRE(discoveredSignals.size() == 3);
 
@@ -1935,13 +1935,13 @@ TEST_CASE("state cache: republish waits for the discovery republish", "[mqtt][st
 TEST_CASE("state cache: a write forces the next read-back to be published", "[mqtt][state]") {
     resetDiscoveryState();
     const CanMember* mgr = &CanMembers[cm_manager];
-    const ElsterIndex* ei = GetElsterIndex("EINSTELL_SPEICHERSOLLTEMP");
+    const ElsterIndex* ei = GetElsterIndex(HA_NAME_DHW_SET);
     publishMqttState(*mgr, ei, "48.0");
     publishMqttState(*mgr, ei, "48.0");
-    CHECK(countTopic("heatingpump/MANAGER/EINSTELL_SPEICHERSOLLTEMP/state") == 1);
-    writeSignal(mgr, "EINSTELL_SPEICHERSOLLTEMP", "50.0");
+    CHECK(countTopic("heatingpump/MANAGER/" HA_NAME_DHW_SET "/state") == 1);
+    writeSignal(mgr, HA_NAME_DHW_SET, "50.0");
     publishMqttState(*mgr, ei, "48.0");   // device kept the old value: HA still gets the echo
-    CHECK(countTopic("heatingpump/MANAGER/EINSTELL_SPEICHERSOLLTEMP/state") == 2);
+    CHECK(countTopic("heatingpump/MANAGER/" HA_NAME_DHW_SET "/state") == 2);
 }
 
 TEST_CASE("mqttPublish: refused publishes are counted and published as diagnostic", "[mqtt][state]") {
@@ -2059,7 +2059,7 @@ TEST_CASE("SG Ready IO: write is sent at once, read-back ~100 ms later from the 
     fake_can().sent.clear();
     fake_millis() = 5000;
     sgReadyIO.writeCanSignal("PROGRAMMSCHALTER", "Automatik");
-    sgReadyIO.writeCanSignal("EINSTELL_SPEICHERSOLLTEMP", "55.0");
+    sgReadyIO.writeCanSignal(HA_NAME_DHW_SET, "55.0");
     REQUIRE(fake_can().sent.size() == 2);          // two writes, no read yet
     CHECK((fake_can().sent[0][0] & 0x0F) == 0);    // telegram type 0 = write
     CHECK(pendingReadbackCount == 4);              // early and settle read per signal
@@ -2407,6 +2407,67 @@ TEST_CASE("wpla_status: compressor_active follows VERDICHTER bit 4", "[wpla_stat
     resetStateCache(); mqtt_client_instance().clear();
     publishCompressorActive();
     CHECK(mqttFindPayload("compressor_active/state") == "on");
+}
+
+// ============================================================================
+// AUS handling (raw 0x9000), sentinels, frame types, OTHER member, DHW names
+// ============================================================================
+
+// Frame layout: [type | receiver, 0x00, 0xFA, idx hi, idx lo, val hi, val lo]
+TEST_CASE("wpla_aus: raw 0x9000 on an AUS-capable signal publishes AUS", "[wpla_aus]") {
+    resetDiscoveryState();
+    // MISCHERMODUL_2 (0x601) answers PC (0x680): type 2, MINIMAL_TEMPERATUR_HK_1 0x4ea7, raw 0x9000
+    processAndUpdate(0x601, {0xD2, 0x00, 0xFA, 0x4E, 0xA7, 0x90, 0x00});
+    CHECK(mqttFindPayload("heatingpump/MISCHERMODUL_2/MINIMAL_TEMPERATUR_HK_1/state") == "AUS");
+}
+
+TEST_CASE("wpla_aus: valid value on an AUS-capable signal gets the unit", "[wpla_aus]") {
+    resetDiscoveryState();
+    // raw 0x00B4 = 180, et_dec_val -> "18.0" plus unit suffix
+    processAndUpdate(0x601, {0xD2, 0x00, 0xFA, 0x4E, 0xA7, 0x00, 0xB4});
+    CHECK(mqttFindPayload("heatingpump/MISCHERMODUL_2/MINIMAL_TEMPERATUR_HK_1/state") == "18.0 °C");
+}
+
+TEST_CASE("wpla_aus: raw 0x9000 on a plain dec signal publishes nothing", "[wpla_aus]") {
+    resetDiscoveryState();
+    // HEIZMODUL (0x500) answers PC: type 2, VORLAUFISTTEMP 0x000f, raw 0x9000 (not AUS-capable)
+    processAndUpdate(0x500, {0xD2, 0x00, 0xFA, 0x00, 0x0F, 0x90, 0x00});
+    CHECK_FALSE(mqttTopicPublished("heatingpump/HEIZMODUL/VORLAUFISTTEMP/state"));
+}
+
+TEST_CASE("wpla_aus: raw 0x8000 (no sensor) publishes nothing", "[wpla_aus]") {
+    resetDiscoveryState();
+    processAndUpdate(0x601, {0xD2, 0x00, 0xFA, 0x4E, 0xA7, 0x80, 0x00});
+    CHECK_FALSE(mqttTopicPublished("heatingpump/MISCHERMODUL_2/MINIMAL_TEMPERATUR_HK_1/state"));
+}
+
+TEST_CASE("wpla_aus: only response, write and write-ack frames are published", "[wpla_aus]") {
+    resetDiscoveryState();
+    const char* topic = "heatingpump/MISCHERMODUL_2/MINIMAL_TEMPERATUR_HK_1/state";
+    processAndUpdate(0x601, {0xD1, 0x00, 0xFA, 0x4E, 0xA7, 0x00, 0xB4});  // type 1: read request
+    CHECK_FALSE(mqttTopicPublished(topic));
+    processAndUpdate(0x601, {0xD3, 0x00, 0xFA, 0x4E, 0xA7, 0x00, 0xB4});  // type 3: not a value
+    CHECK_FALSE(mqttTopicPublished(topic));
+    processAndUpdate(0x601, {0xD2, 0x00, 0xFA, 0x4E, 0xA7, 0x00, 0xB4});  // type 2: response
+    CHECK(mqttFindPayload(topic) == "18.0 °C");
+}
+
+TEST_CASE("wpla_aus: frames from unmapped senders are published under OTHER", "[wpla_aus]") {
+    resetDiscoveryState();
+    // 0x0777 is not in CanMembers: lookupCanMember falls back to OTHER (CanId 0x000)
+    processAndUpdate(0x0777, {0xD2, 0x00, 0xFA, 0x00, 0x0F, 0x00, 0xB4});
+    CHECK(mqttFindPayload("heatingpump/OTHER/VORLAUFISTTEMP/state") == "18.0");
+}
+
+TEST_CASE("wpla_aus: DHW setpoint signal names of the running firmware", "[wpla_aus]") {
+    const ElsterIndex* komfort = GetElsterIndex(static_cast<unsigned short>(0x0013));
+    const ElsterIndex* eco = GetElsterIndex(static_cast<unsigned short>(0x0a06));
+    REQUIRE(komfort != nullptr);
+    REQUIRE(eco != nullptr);
+    CHECK(std::strcmp(komfort->Name, "WW_KOMFORT_TEMPERATUR") == 0);
+    CHECK(std::strcmp(eco->Name, "WW_ECO_TEMPERATUR") == 0);
+    CHECK(std::strcmp(HA_NAME_DHW_SET, "WW_KOMFORT_TEMPERATUR") == 0);
+    CHECK(std::strcmp(HA_NAME_DHW_SET2, "WW_ECO_TEMPERATUR") == 0);
 }
 #endif
 #include "wpl9_cases.inc"

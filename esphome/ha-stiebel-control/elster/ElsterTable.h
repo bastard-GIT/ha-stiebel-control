@@ -199,7 +199,11 @@ const ElsterIndex ElsterTable[] =
   { "RAUMISTTEMP"                                 , 0x4ec7, et_dec_val      , false, true  },
   { "FEUCHTE"                                     , 0x4ec8, et_dec_val      , false, true  },
   { "VERSTELLTE_RAUMSOLLTEMP"                     , 0x0012, et_dec_val      , false, false },
+#if defined(HA_MODEL_wpla)
+  { "WW_KOMFORT_TEMPERATUR"                       , 0x0013, et_dec_val      , false, true  },
+#else
   { "EINSTELL_SPEICHERSOLLTEMP"                   , 0x0013, et_dec_val      , false, true  },
+#endif
 #ifdef HA_CONTROLLER_WPMW2
   // WPL13E IWS: not an evaporator temperature. Falls to -30 at standstill (outside +5 °C), rises to +58..+76 within
   // minutes of a compressor start, then decays. Meaning unknown; published without unit.
@@ -2593,7 +2597,11 @@ const ElsterIndex ElsterTable[] =
   { "AUSSEN_FROSTTEMP"                            , 0x0a00, et_dec_val      , false, true  },
   { "BRENNER1LAUFZEIT"                            , 0x0a02, 0               , false, false },
   { "BRENNER2LAUFZEIT"                            , 0x0a04, 0               , false, false },
+#if defined(HA_MODEL_wpla)
+  { "WW_ECO_TEMPERATUR"                           , 0x0a06, et_dec_val      , false, true  },
+#else
   { "EINSTELL_SPEICHERSOLLTEMP2"                  , 0x0a06, et_dec_val      , false, true  },
+#endif
   { "STATUS_HK_ANZEIGE"                           , 0x0a07, 0               , false, false },
   { "UEBERLAUF_BRENNER1LAUFZEIT"                  , 0x0a08, 0               , false, false },
   { "UEBERLAUF_BRENNER1STARTS"                    , 0x0a09, 0               , false, false },
@@ -4289,7 +4297,11 @@ const ElsterMeta ElsterMetaTable[] =
   { 0x000f, "VORLAUFISTTEMP", LNAME_VORLAUFISTTEMP, "sensor", "temperature", "°C", "measurement", "mdi:thermometer-lines", NULL, NULL },
   { 0x4ec7, "RAUMISTTEMP", "Raum Ist Temperatur", "sensor", "temperature", "°C", "measurement", "mdi:thermometer", NULL, NULL },
   { 0x4ec8, "FEUCHTE", "Feuchte", "sensor", "humidity", "%", "measurement", "mdi:water-percent", NULL, NULL },
+#if defined(HA_MODEL_wpla)
+  { 0x0013, "WW_KOMFORT_TEMPERATUR", LNAME_EINSTELL_SPEICHERSOLLTEMP, "sensor", "temperature", "°C", "measurement", "mdi:thermometer", NULL, NULL },
+#else
   { 0x0013, "EINSTELL_SPEICHERSOLLTEMP", LNAME_EINSTELL_SPEICHERSOLLTEMP, "sensor", "temperature", "°C", "measurement", "mdi:thermometer", NULL, NULL },
+#endif
 #ifdef HA_CONTROLLER_WPMW2
   { 0x0014, "VERDAMPFERTEMP", LNAME_VERDAMPFERTEMP, "sensor", NULL, NULL, "measurement", "mdi:help-circle-outline", NULL, NULL },
 #else
@@ -4434,7 +4446,11 @@ const ElsterMeta ElsterMetaTable[] =
   { 0x0930, "WAERMEERTRAG_HEIZ_SUM_KWH", LNAME_WAERMEERTRAG_HEIZ_SUM_KWH, "sensor", "energy", "kWh", "total_increasing", "mdi:fire", NULL, NULL },
   { 0x0931, "WAERMEERTRAG_HEIZ_SUM_MWH", LNAME_WAERMEERTRAG_HEIZ_SUM_MWH, "sensor", "energy", "MWh", "total_increasing", "mdi:fire", NULL, NULL },
   { 0x0a00, "AUSSEN_FROSTTEMP", "Anlagenfrostschutz Temperatur", "sensor", "temperature", "°C", "measurement", "mdi:thermometer", NULL, NULL },
+#if defined(HA_MODEL_wpla)
+  { 0x0a06, "WW_ECO_TEMPERATUR", LNAME_EINSTELL_SPEICHERSOLLTEMP2, "sensor", "temperature", "°C", "measurement", "mdi:thermometer", NULL, NULL },
+#else
   { 0x0a06, "EINSTELL_SPEICHERSOLLTEMP2", LNAME_EINSTELL_SPEICHERSOLLTEMP2, "sensor", "temperature", "°C", "measurement", "mdi:thermometer", NULL, NULL },
+#endif
   { 0xfdb3, "GEBAEUDEART", LNAME_GEBAEUDEART, NULL, NULL, NULL, NULL, NULL, NULL, NULL },
   { 0xfdae, "WP_STATUS", LNAME_WP_STATUS, "sensor", "", "", "", "mdi:heat-pump", NULL, NULL },
 #if !defined(HA_MODEL_wpla)
@@ -4504,6 +4520,7 @@ const ElsterMeta ElsterMetaTable[] =
   { 0x4eef, "STATUS_WPLA", LNAME_STATUS_WPLA_ROH, "sensor", "", "", "", "mdi:list-status", NULL, NULL },
   { 0x4eda, "WAERMEPUMPEN_STATUS_WPLA", "Wärmepumpenstatus (roh)", "sensor", "", "", "", "mdi:list-status", NULL, NULL },
   // WPL-A: raw 0x9000 = OFF text handling is not ported yet
+  // (update: ported in ha-stiebel-control.h, isAusCapable() lists this signal; it is published as text "AUS" or "<value> °C")
   { 0x4ea7, "MINIMAL_TEMPERATUR_HK_1", NULL, "sensor", "", "", "", "mdi:thermometer", NULL, NULL },
   { 0x4efb, "LAUFZEIT_VERDICHTER_HEIZEN_WPLA", "Laufzeit Verdichter Heizen", "sensor", "duration", "h", "", "mdi:timer-outline", NULL, NULL },
   { 0x4efd, "LAUFZEIT_VERDICHTER_WW_WPLA", "Laufzeit Verdichter Warmwasser", "sensor", "duration", "h", "", "mdi:timer-outline", NULL, NULL },

@@ -11,6 +11,7 @@
 
 #include <string>
 #include <cstring>
+#include "config.h"
 
 // Operating mode written by SG Ready when boosting back to normal operation.
 // The WPM3 (WPL 10 AC) calls this mode "Komfortbetrieb", older WPM2 "Tagbetrieb".
@@ -208,7 +209,7 @@ private:
         if (state_.active && state_.originalDhwTemp > 0.0f) {
             char buf[16];
             snprintf(buf, sizeof(buf), "%.1f", state_.originalDhwTemp);
-            io_.writeCanSignal("EINSTELL_SPEICHERSOLLTEMP", buf);
+            io_.writeCanSignal(HA_NAME_DHW_SET, buf);
             state_.originalDhwTemp = 0.0f;
         }
     }
@@ -256,7 +257,7 @@ private:
             if (boosted > MAX_DHW_TEMP) boosted = MAX_DHW_TEMP;
             char buf[16];
             snprintf(buf, sizeof(buf), "%.1f", boosted);
-            io_.writeCanSignal("EINSTELL_SPEICHERSOLLTEMP", buf);
+            io_.writeCanSignal(HA_NAME_DHW_SET, buf);
         }
 
         boostRoom(config_.roomBoostState3);
@@ -274,7 +275,7 @@ private:
             if (boosted > MAX_DHW_TEMP) boosted = MAX_DHW_TEMP;
             char buf[16];
             snprintf(buf, sizeof(buf), "%.1f", boosted);
-            io_.writeCanSignal("EINSTELL_SPEICHERSOLLTEMP", buf);
+            io_.writeCanSignal(HA_NAME_DHW_SET, buf);
         }
 
         boostRoom(config_.roomBoostState4);

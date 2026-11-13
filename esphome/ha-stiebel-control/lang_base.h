@@ -38,8 +38,13 @@
 #define LNAME_SAMMLERISTTEMP                   "Sammler Ist Temperatur"
 #define LNAME_SPEICHERISTTEMP                  "Speicher Ist Temperatur"
 #define LNAME_VORLAUFISTTEMP                   "Vorlauf Ist Temperatur"
+#if defined(HA_MODEL_wpla)
+#define LNAME_EINSTELL_SPEICHERSOLLTEMP        "Warmwasser Komfort Temperatur"
+#define LNAME_EINSTELL_SPEICHERSOLLTEMP2       "Warmwasser Eco Temperatur"
+#else
 #define LNAME_EINSTELL_SPEICHERSOLLTEMP        "Einstellung Speicher Soll Temperatur"
 #define LNAME_EINSTELL_SPEICHERSOLLTEMP2       "Einstellung Speicher Soll Temperatur 2"
+#endif
 #define LNAME_VERDAMPFERTEMP                   "Verdampfer Temperatur"
 #define LNAME_RUECKLAUFISTTEMP                 "Rücklauf Ist Temperatur"
 #define LNAME_ABTAUUNGAKTIV                    "Abtauung Aktiv"
@@ -161,8 +166,13 @@
 // ============================================================================
 // Writable number friendly names (writableNumbers[])
 // ============================================================================
+#if defined(HA_MODEL_wpla)
+#define LNAME_NUM_SPEICHERSOLLTEMP             "Warmwasser Komfort Temperatur Einstellung"
+#define LNAME_NUM_SPEICHERSOLLTEMP2            "Warmwasser Eco Temperatur Einstellung"
+#else
 #define LNAME_NUM_SPEICHERSOLLTEMP             "Speicher Soll Temperatur Einstellung"
 #define LNAME_NUM_SPEICHERSOLLTEMP2            "Speicher Soll Temperatur 2 Einstellung"
+#endif
 #define LNAME_NUM_SG_READY_BOOST3              "SG Ready Boost Zustand 3"
 #define LNAME_NUM_SG_READY_BOOST4              "SG Ready Boost Zustand 4"
 #define LNAME_NUM_SG_READY_ROOM_BOOST3         "SG Ready Raum-Boost Zustand 3"

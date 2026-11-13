@@ -22,29 +22,23 @@ esphome:
 # MQTT command topics under the SPEICHER name (0x201 is published as SPEICHER for the WPL-A,
 # see HA_NAME_KESSEL_CANB in ha-stiebel-control.h). Same handlers as the KESSEL_CANB topics
 # in common.yaml, which stay subscribed but are unused for this model.
+# The DHW setpoint handlers below use the signal names of the running WPL-A firmware
+# (WW_KOMFORT_TEMPERATUR / WW_ECO_TEMPERATUR), not the Elster-era EINSTELL_SPEICHERSOLLTEMP names.
+# There is no HEIZKURVE handler for wpla: WPL-A does not offer this setting.
 mqtt:
   on_message:
-    - topic: heatingpump/SPEICHER/EINSTELL_SPEICHERSOLLTEMP/set
+    - topic: heatingpump/SPEICHER/WW_KOMFORT_TEMPERATUR/set
       then:
         - lambda: |-
-            ESP_LOGI("MQTT_CMD", "Received EINSTELL_SPEICHERSOLLTEMP (Speicher) command: %s", x.c_str());
+            ESP_LOGI("MQTT_CMD", "Received WW_KOMFORT_TEMPERATUR (Speicher) command: %s", x.c_str());
             publishWritableNumberDiscovery(writableNumbers[0]);
             const char* value = x.c_str();
-            writeConfiguredSignal(cm_kessel_canb, "EINSTELL_SPEICHERSOLLTEMP", value);
+            writeConfiguredSignal(cm_kessel_canb, "WW_KOMFORT_TEMPERATUR", value);
 
-    - topic: heatingpump/SPEICHER/EINSTELL_SPEICHERSOLLTEMP2/set
+    - topic: heatingpump/SPEICHER/WW_ECO_TEMPERATUR/set
       then:
         - lambda: |-
-            ESP_LOGI("MQTT_CMD", "Received EINSTELL_SPEICHERSOLLTEMP2 (Speicher) command: %s", x.c_str());
+            ESP_LOGI("MQTT_CMD", "Received WW_ECO_TEMPERATUR (Speicher) command: %s", x.c_str());
             publishWritableNumberDiscovery(writableNumbers[1]);
             const char* value = x.c_str();
-            writeConfiguredSignal(cm_kessel_canb, "EINSTELL_SPEICHERSOLLTEMP2", value);
-
-    - topic: heatingpump/SPEICHER/HEIZKURVE/set
-      then:
-        - lambda: |-
-            ESP_LOGI("MQTT_CMD", "Received HEIZKURVE command: %s", x.c_str());
-            publishWritableNumberDiscovery(writableNumbers[8]);
-            const char* value = x.c_str();
-            writeSignal(&CanMembers[cm_kessel_canb], "HEIZKURVE", value);
-            readSignal(&CanMembers[cm_kessel_canb], "HEIZKURVE");
+            writeConfiguredSignal(cm_kessel_canb, "WW_ECO_TEMPERATUR", value);

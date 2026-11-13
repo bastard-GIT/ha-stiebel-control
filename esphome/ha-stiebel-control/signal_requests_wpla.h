@@ -64,8 +64,8 @@ extern const SignalRequest signalRequests[] = {
     // ========================================================================
     {"WW_SOLLTEMPERATUR",                     FREQ_30S,   cm_kessel_canb}, // 0x0003 DHW setpoint
     {"WW_ISTTEMPERATUR",                      FREQ_30S,   cm_kessel_canb}, // 0x000e DHW actual temp
-    {"EINSTELL_SPEICHERSOLLTEMP",             FREQ_30S,   cm_kessel_canb}, // 0x0013 DHW comfort setpoint (writable)
-    {"EINSTELL_SPEICHERSOLLTEMP2",            FREQ_30S,   cm_kessel_canb}, // 0x0a06 DHW eco setpoint (writable)
+    {"WW_KOMFORT_TEMPERATUR",                 FREQ_30S,   cm_kessel_canb}, // 0x0013 DHW comfort setpoint (writable)
+    {"WW_ECO_TEMPERATUR",                     FREQ_30S,   cm_kessel_canb}, // 0x0a06 DHW eco setpoint (writable)
     {"PROGRAMMSCHALTER",                      FREQ_10MIN, cm_kessel_canb}, // 0x0112 operating mode switch
 
     // ========================================================================

@@ -58,10 +58,17 @@
 #define LNAME_SPEICHERISTTEMP                  "Storage Actual Temperature"
 #undef  LNAME_VORLAUFISTTEMP
 #define LNAME_VORLAUFISTTEMP                   "Flow Actual Temperature"
+#if defined(HA_MODEL_wpla)
+#undef  LNAME_EINSTELL_SPEICHERSOLLTEMP
+#define LNAME_EINSTELL_SPEICHERSOLLTEMP        "DHW Comfort Temperature"
+#undef  LNAME_EINSTELL_SPEICHERSOLLTEMP2
+#define LNAME_EINSTELL_SPEICHERSOLLTEMP2       "DHW Eco Temperature"
+#else
 #undef  LNAME_EINSTELL_SPEICHERSOLLTEMP
 #define LNAME_EINSTELL_SPEICHERSOLLTEMP        "DHW Target Temperature Setting"
 #undef  LNAME_EINSTELL_SPEICHERSOLLTEMP2
 #define LNAME_EINSTELL_SPEICHERSOLLTEMP2       "DHW Target Temperature 2 Setting"
+#endif
 #undef  LNAME_VERDAMPFERTEMP
 #define LNAME_VERDAMPFERTEMP                   "Evaporator Temperature"
 #undef  LNAME_RUECKLAUFISTTEMP
@@ -290,10 +297,17 @@
 // ============================================================================
 // Writable number friendly names
 // ============================================================================
+#if defined(HA_MODEL_wpla)
+#undef  LNAME_NUM_SPEICHERSOLLTEMP
+#define LNAME_NUM_SPEICHERSOLLTEMP             "DHW Comfort Temperature Setting"
+#undef  LNAME_NUM_SPEICHERSOLLTEMP2
+#define LNAME_NUM_SPEICHERSOLLTEMP2            "DHW Eco Temperature Setting"
+#else
 #undef  LNAME_NUM_SPEICHERSOLLTEMP
 #define LNAME_NUM_SPEICHERSOLLTEMP             "DHW Target Temperature Setting"
 #undef  LNAME_NUM_SPEICHERSOLLTEMP2
 #define LNAME_NUM_SPEICHERSOLLTEMP2            "DHW Target Temperature 2 Setting"
+#endif
 #undef  LNAME_NUM_SG_READY_BOOST3
 #define LNAME_NUM_SG_READY_BOOST3              "SG Ready Boost State 3"
 #undef  LNAME_NUM_SG_READY_BOOST4

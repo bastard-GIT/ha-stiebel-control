@@ -378,11 +378,11 @@ static const WritableNumberConfig writableNumbers[] = {
     // ============================================================
 
     // Primary storage target temperature (WW-Solltemperatur)
-    {"EINSTELL_SPEICHERSOLLTEMP", LNAME_NUM_SPEICHERSOLLTEMP,
+    {HA_NAME_DHW_SET, LNAME_NUM_SPEICHERSOLLTEMP,
      cm_manager, 20.0, 60.0, 1.0, "°C", "mdi:thermometer-high", "temperature"},
 
     // Secondary storage target temperature (comfort/eco modes)
-    {"EINSTELL_SPEICHERSOLLTEMP2", LNAME_NUM_SPEICHERSOLLTEMP2,
+    {HA_NAME_DHW_SET2, LNAME_NUM_SPEICHERSOLLTEMP2,
      cm_manager, 20.0, 60.0, 1.0, "°C", "mdi:thermometer-low", "temperature"},
 
     // SG Ready boost temperatures (not real CAN signals, handled internally)
@@ -800,6 +800,16 @@ const ElsterIndex *processCanMessage(const std::vector<uint8_t> &msg, uint32_t c
         break;
     }
 
+#if defined(HA_MODEL_wpla)
+    // Raw 0x9000 on a scaled value = parameter switched off ("AUS" on the display),
+    // e.g. 0x01ae EINSATZGRENZE_HZG; without this it shows up as -2867.2.
+    if ((byte2 + (byte1 << 8)) == 0x9000 &&
+        (ei->Type == et_dec_val || ei->Type == et_cent_val || ei->Type == et_mil_val))
+    {
+        strcpy(charValue, "AUS");
+    }
+#endif
+
     // Per-frame log: DEBUG only (compiled out at the default INFO level)
     ESP_LOGD("processCanMessage()", "%s (0x%02x):\t%s:\t%s\t(idx=0x%04x, raw=0x%04x, %s)", cm.Name, (unsigned)can_id, ei->Name, charValue,
              (unsigned)((msg[2] == 0xfa) ? (msg[4] + (msg[3] << 8)) : msg[2]), (unsigned)(byte2 + (byte1 << 8)), ElsterTypeToName(ei->Type));
@@ -1205,6 +1215,8 @@ void writeSignal(const CanMember *cm, const char *elsterName, const char *str)
 // Explicit read/writeSignal calls keep their original low-level semantics.
 void writeConfiguredSignal(CanMemberType fallback, const char* name, const char* value) {
     const ElsterIndex* ei = GetElsterIndex(name);
+    // Unknown signal name for this model (e.g. a topic of another model): ignore
+    if (ei == nullptr) return;
     const SignalRoute route = resolveSignalRoute(HA_DEVICE_MODEL_STR, ei->Index, fallback);
     writeSignal(&CanMembers[route.writeMember], name, value);
     readSignal(&CanMembers[route.readMember], ei);
@@ -1460,14 +1472,14 @@ void publishClimateDiscoveries() {
     }
 
     // Hot water: tank actual temperature + DHW setpoint
-    if (const WritableNumberConfig* dhw = findWritableNumber("EINSTELL_SPEICHERSOLLTEMP")) {
+    if (const WritableNumberConfig* dhw = findWritableNumber(HA_NAME_DHW_SET)) {
         const CanMember* cm = getWritableNumberMember(*dhw);
         std::ostringstream p;
         p << "{\"name\":\"" << LNAME_CLIMATE_WARMWASSER << "\",\"unique_id\":\"stiebel_climate_warmwasser\","
           << "\"modes\":[\"heat\"],\"temperature_unit\":\"C\","
           << "\"min_temp\":" << dhw->min << ",\"max_temp\":" << dhw->max << ",\"temp_step\":" << dhw->step << ","
-          << "\"temperature_command_topic\":\"heatingpump/" << cm->Name << "/EINSTELL_SPEICHERSOLLTEMP/set\","
-          << "\"temperature_state_topic\":\"heatingpump/" << cm->Name << "/EINSTELL_SPEICHERSOLLTEMP/state\","
+          << "\"temperature_command_topic\":\"heatingpump/" << cm->Name << "/" HA_NAME_DHW_SET "/set\","
+          << "\"temperature_state_topic\":\"heatingpump/" << cm->Name << "/" HA_NAME_DHW_SET "/state\","
           << "\"current_temperature_topic\":\"heatingpump/" << (dhwOnCanb ? HA_NAME_KESSEL_CANB : "KESSEL") << "/" HA_NAME_DHW_ACTUAL "/state\","
           << "\"availability_topic\":\"heatingpump/status\",\"icon\":\"mdi:water-boiler\"," << device << "}";
         std::string s = p.str();
@@ -1903,6 +1915,18 @@ inline std::string getOrCreateUID(const CanMember &cm, const char* signalName) {
     return result;
 }
 
+#if defined(HA_MODEL_wpla)
+// Parameters that can be switched off on the display (raw 0x9000 = "AUS").
+// Published as text ("AUS" or "<value> °C") instead of a numeric sensor, so HA shows the off state.
+static bool isAusCapable(const char *name) {
+    static const char *const kAus[] = {"MINIMAL_TEMPERATUR_HK_1", "BIVALENZALTERNATIVTEMPERATUR_HZG",
+                                       "BIVALENZALTERNATIVTEMPERATUR_WW"};
+    for (const char *n : kAus)
+        if (strcmp(name, n) == 0) return true;
+    return false;
+}
+#endif
+
 // Publish MQTT Discovery config for a signal
 void publishMqttDiscovery(const CanMember &cm, const ElsterIndex *ei) {
     
@@ -1941,6 +1965,15 @@ void publishMqttDiscovery(const CanMember &cm, const ElsterIndex *ei) {
         }
     }
     
+#if defined(HA_MODEL_wpla)
+    // Text sensor for parameters that can be "AUS" (see isAusCapable)
+    if (isAusCapable(ei->Name)) {
+        deviceClass = "";
+        unit = "";
+        stateClass = "";
+    }
+#endif
+
     // Build discovery topic
     char discoveryTopic[256];
     snprintf(discoveryTopic, sizeof(discoveryTopic), 
@@ -3153,10 +3186,24 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
         if (streak >= 3) {
             ESP_LOGD("BACKOFF", "%s_%s streak=%u", cm.Name, signalName, streak);
         }
+#if defined(HA_MODEL_wpla)
+        // WPL-A as the running firmware: -255 is never published, only counted for the back-off
+        return;
+#else
         if (discoveredSignals.find(key) == discoveredSignals.end()) return;
+#endif
     } else if (!invalidStreak.empty()) {
         invalidStreak.erase(key);
     }
+
+#if defined(HA_MODEL_wpla)
+    // Sentinels are not published (upstream #37 style, as in the running firmware):
+    // "AUS" = parameter off (published only for AUS-capable signals), "?"/"--"/"-32768" = undecodable.
+    if ((value == "AUS" && !isAusCapable(signalName)) || value == "?" || value == "--" || value == "-32768") {
+        ESP_LOGD("SENTINEL", "%s_%s = %s, not published", cm.Name, signalName, value.c_str());
+        return;
+    }
+#endif
 
     // Invert boolean logic for EVU_SPERRE_AKTIV signal
     // CAN: 1 = lock inactive (off), 0 = lock active (on)
@@ -3169,6 +3216,16 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
             publishValue = "on";
         }
     }
+
+#if defined(HA_MODEL_wpla)
+    // AUS-capable signals: publish the numeric value with a unit, or the text "AUS".
+    // ausValue lives at function scope because publishValue points into it.
+    std::string ausValue;
+    if (isAusCapable(signalName) && value != "AUS") {
+        ausValue = value + " °C";
+        publishValue = ausValue.c_str();
+    }
+#endif
     
 #if defined(HA_MODEL_wpla)
     // Hidden signals (inputs of a calculated sensor) get neither discovery nor state
@@ -3965,7 +4022,17 @@ void processAndUpdate(uint32_t can_id, const std::vector<uint8_t> &msg)
     // Elster telegram type = low nibble of byte 0 (0 write, 1 read request, 2 response).
     // A read request carries no value: decoding it attributed a fake 0 to the
     // requesting node (e.g. the WPMW II polling the IWS -> "MANAGER VERDICHTER 0.0").
+#if defined(HA_MODEL_wpla)
+    // WPL-A 07 as the running firmware: only frames that carry a real value pass: write (0),
+    // response (2), write-ack (4), write-respond (5). Read requests (1), ack (3) and system
+    // frames (6/7) carry value=0 placeholders that would be misdecoded as readings.
+    {
+        const uint8_t msgTypeId = msg[0] & 0x0F;
+        if (msgTypeId != 0 && msgTypeId != 2 && msgTypeId != 4 && msgTypeId != 5) return;
+    }
+#else
     if ((msg[0] & 0x0F) == 1) return;
+#endif
 
 #if defined(HA_MODEL_wpla)
     // Energy registers 0x091a-0x0931 are handled only by energy_counters.h
@@ -3983,10 +4050,14 @@ void processAndUpdate(uint32_t can_id, const std::vector<uint8_t> &msg)
     // Skip nodes that are not mapped in CanMembers and only broadcast
     // placeholder/unknown values (e.g. WPM3 display FES 0x100, mixer module 2
     // 0x601, redundant DHW duplicates). They fall back to the OTHER member.
+    // WPL-A 07: the running firmware publishes these frames as heatingpump/OTHER/...
+    // (relay and stepper motor signals of an unmapped node), so they are kept there.
+#if !defined(HA_MODEL_wpla)
     if (cm->CanId == 0x000)
     {
         return;
     }
+#endif
     // FES (0x100) is a CAN member only for the WPL-A 07. For all other models its
     // frames are still dropped as before (it used to fall back to OTHER above).
 #if !defined(HA_MODEL_wpla)

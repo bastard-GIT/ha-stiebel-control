@@ -214,6 +214,8 @@ mqtt:
     # (0x201) gehalten. Das writable number-Feld erscheint dort am KESSEL_CANB-Geraet
     # und nutzt den Topic heatingpump/KESSEL_CANB/.../set. Fuer andere Modelle
     # bleibt der MANAGER-Topic aktiv. Beide Topics werden abonniert.
+    # On WPL-A the signals are named WW_KOMFORT_TEMPERATUR/WW_ECO_TEMPERATUR, see wpla.yaml;
+    # these topics then stay unused (writeConfiguredSignal ignores unknown names).
     - topic: heatingpump/KESSEL_CANB/EINSTELL_SPEICHERSOLLTEMP/set
       then:
         - lambda: |-
@@ -385,6 +387,8 @@ mqtt:
     - topic: heatingpump/KESSEL_CANB/HEIZKURVE/set
       then:
         - lambda: |-
+            // WPL-A: HEIZKURVE is not offered, the running firmware has no such topic.
+            if (strcmp(HA_DEVICE_MODEL_STR, "wpla") == 0) return;
             ESP_LOGI("MQTT_CMD", "Received HEIZKURVE command: %s", x.c_str());
             publishWritableNumberDiscovery(writableNumbers[8]);
             const char* value = x.c_str();
@@ -394,6 +398,8 @@ mqtt:
     - topic: heatingpump/MANAGER/HEIZKURVE/set
       then:
         - lambda: |-
+            // WPL-A: HEIZKURVE is not offered, the running firmware has no such topic.
+            if (strcmp(HA_DEVICE_MODEL_STR, "wpla") == 0) return;
             ESP_LOGI("MQTT_CMD", "Received MANAGER HEIZKURVE command: %s", x.c_str());
             publishWritableNumberDiscovery(writableNumbers[8]);
             const char* value = x.c_str();
