@@ -18,3 +18,33 @@
 esphome:
   includes:
     - signal_requests_wpla.h
+
+# MQTT command topics under the SPEICHER name (0x201 is published as SPEICHER for the WPL-A,
+# see HA_NAME_KESSEL_CANB in ha-stiebel-control.h). Same handlers as the KESSEL_CANB topics
+# in common.yaml, which stay subscribed but are unused for this model.
+mqtt:
+  on_message:
+    - topic: heatingpump/SPEICHER/EINSTELL_SPEICHERSOLLTEMP/set
+      then:
+        - lambda: |-
+            ESP_LOGI("MQTT_CMD", "Received EINSTELL_SPEICHERSOLLTEMP (Speicher) command: %s", x.c_str());
+            publishWritableNumberDiscovery(writableNumbers[0]);
+            const char* value = x.c_str();
+            writeConfiguredSignal(cm_kessel_canb, "EINSTELL_SPEICHERSOLLTEMP", value);
+
+    - topic: heatingpump/SPEICHER/EINSTELL_SPEICHERSOLLTEMP2/set
+      then:
+        - lambda: |-
+            ESP_LOGI("MQTT_CMD", "Received EINSTELL_SPEICHERSOLLTEMP2 (Speicher) command: %s", x.c_str());
+            publishWritableNumberDiscovery(writableNumbers[1]);
+            const char* value = x.c_str();
+            writeConfiguredSignal(cm_kessel_canb, "EINSTELL_SPEICHERSOLLTEMP2", value);
+
+    - topic: heatingpump/SPEICHER/HEIZKURVE/set
+      then:
+        - lambda: |-
+            ESP_LOGI("MQTT_CMD", "Received HEIZKURVE command: %s", x.c_str());
+            publishWritableNumberDiscovery(writableNumbers[8]);
+            const char* value = x.c_str();
+            writeSignal(&CanMembers[cm_kessel_canb], "HEIZKURVE", value);
+            readSignal(&CanMembers[cm_kessel_canb], "HEIZKURVE");

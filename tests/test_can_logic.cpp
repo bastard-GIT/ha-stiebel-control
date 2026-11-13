@@ -1566,10 +1566,11 @@ TEST_CASE("climate: heating and hot water discoveries reuse the number /set topi
     const bool wpl17 = std::strcmp(HA_DEVICE_MODEL_STR, "wpl17") == 0;
     const bool wpla = std::strcmp(HA_DEVICE_MODEL_STR, "wpla") == 0;
     const bool canbSetpoint = wpl17 || wpla || std::strcmp(HA_DEVICE_MODEL_STR, "wpl9") == 0;
+    // CAN-B member name: "SPEICHER" on a WPL-A build (HA_MODEL_wpla), else "KESSEL_CANB".
     const std::string current = std::string("heatingpump/") +
-        ((wpl17 || wpla) ? "KESSEL_CANB" : "KESSEL") + "/SPEICHERISTTEMP/state";
+        ((wpl17 || wpla) ? HA_NAME_KESSEL_CANB : "KESSEL") + "/SPEICHERISTTEMP/state";
     const std::string command = std::string("heatingpump/") +
-        (canbSetpoint ? "KESSEL_CANB" : "MANAGER") + "/EINSTELL_SPEICHERSOLLTEMP/set";
+        (canbSetpoint ? HA_NAME_KESSEL_CANB : "MANAGER") + "/EINSTELL_SPEICHERSOLLTEMP/set";
     CHECK(dhw.find(current) != std::string::npos);
     CHECK(dhw.find(command) != std::string::npos);
 }
