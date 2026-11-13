@@ -34,7 +34,7 @@
 #define LNAME_VERDAMPFERTEMP                   "Verdampfer Temperatur"
 #define LNAME_RUECKLAUFISTTEMP                 "Rücklauf Ist Temperatur"
 #define LNAME_ABTAUUNGAKTIV                    "Abtauung Aktiv"
-#define LNAME_EVU_SPERRE_AKTIV                 "EVU Sperre Aktiv"
+#define LNAME_EVU_FREIGABE                     "EVU Freigabe"
 #define LNAME_SOLAR_AKT_LEISTUNG_W             "Solar Akt Leistung W"
 #define LNAME_SOLAR_TAGESERTRAG_WH             "Solar Tagesertrag Wh"
 #define LNAME_SOLAR_TAGESERTRAG_KWH            "Solar Tagesertrag kWh"
@@ -123,6 +123,7 @@
 #define LNAME_CALC_PUMPENSTATUS                "Pumpenstatus"
 #define LNAME_CALC_VERDICHTER_STATUS           "Verdichter-Status"
 #define LNAME_CALC_WP_STATUS_4EDA              "WP-Status (0x4eda)"
+#define LNAME_CALC_WP_RESTARTS                 "WP-Neustarts"
 
 // ============================================================================
 // Writable number friendly names (writableNumbers[])

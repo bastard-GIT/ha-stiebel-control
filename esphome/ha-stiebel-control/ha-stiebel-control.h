@@ -176,9 +176,14 @@ static const CalculatedSensorConfig calculatedSensors[] = {
     // WAERMEPUMPEN_STATUS_WPLA 0x4eda (MANAGER) as text, WPL-A only
     {"stiebel_calculated_wp_status_4eda", LNAME_CALC_WP_STATUS_4EDA, "heatingpump/calculated/wp_status_4eda/state",
      "sensor", "", "", "", "mdi:list-status", "", "", "", true, 900},  // source read every 1 min
+
+    // Heat pump restarts counted from the 0xFE round after a bus silence (boot capture 2026-11-13)
+    {"stiebel_calculated_wp_restarts", LNAME_CALC_WP_RESTARTS, "heatingpump/calculated/wp_restarts/state",
+     "sensor", "", "", "total_increasing", "mdi:restart-alert", "", "", "", true},
 };
 static const size_t CALC_IDX_VERDICHTER_STATUS = 13;
 static const size_t CALC_IDX_WP_STATUS_4EDA = 14;
+static const size_t CALC_IDX_WP_RESTARTS = 15;
 // Model check for WPL-A-only sensors (HA_DEVICE_MODEL is injected by the build, e.g. "wpla")
 static inline bool isModelWpla() { return strcmp(HA_DEVICE_MODEL_STR, "wpla") == 0; }
 
@@ -1411,10 +1416,13 @@ void publishStatusWpla(long raw) {
             text += STATUS_WPLA_BITS[b];
         }
     }
+    // Bit 14 seen once on 2026-11-13 at mains loss (0x4000 together with 0x0074=0 and 0xabe1=1),
+    // unconfirmed; an EVU lock might set the same bit.
     for (int b = 12; b < 16; b++) {
         if (raw & (1L << b)) {
             if (!text.empty()) text += ", ";
-            text += "Bit " + std::to_string(b);
+            if (b == 14) text += "Netzausfall/Abschaltung";
+            else text += "Bit " + std::to_string(b);
         }
     }
     if (text.empty()) text = "-";
@@ -1542,17 +1550,8 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
         return;
     }
 
-    // Invert boolean logic for EVU_SPERRE_AKTIV signal
-    // CAN: 1 = lock inactive (off), 0 = lock active (on)
-    // MQTT: "off" = lock inactive, "on" = lock active
+    // EVU_FREIGABE is no longer inverted: raw 1 = enabled = "on" (boot capture 2026-11-13)
     std::string publishValue = value;
-    if (strcmp(ei->Name, "EVU_SPERRE_AKTIV") == 0) {
-        if (value == "on") {
-            publishValue = "off";
-        } else if (value == "off") {
-            publishValue = "on";
-        }
-    }
     if (isAusCapable(ei->Name) && value != "AUS") {
         publishValue = value + " °C";
     }
@@ -2030,6 +2029,25 @@ void processSignalRequests() {
 
 #include "energy_counters.h"
 
+// Heat pump restart detection (boot capture 2026-11-13): after mains loss all participants
+// stay silent for about 28 s. Then FES (0x100) answers first, and about 16.6 s later the
+// MANAGER (0x480) sends the type-6 index-0xFE round. In normal operation this round comes
+// every 420 s, so it only counts after a silence.
+static constexpr unsigned long WP_SILENCE_MS = 10000;        // bus silence that arms the detector
+static constexpr unsigned long WP_RESTART_WINDOW_MS = 60000; // 0xFE round must follow the silence within this time
+static unsigned long lastForeignRxMs = 0;                    // time of the last frame not sent by the ESP (0x680)
+static bool haveForeignRx = false;                           // false until the first foreign frame (no silence before it)
+static bool restartPending = false;                          // silence seen, waiting for the 0xFE round
+static unsigned long restartPendingSinceMs = 0;              // time the silence ended
+static uint32_t wpRestartCount = 0;                          // restarts counted since boot
+
+// Publish the restart counter (retained state of calculatedSensors[CALC_IDX_WP_RESTARTS])
+void publishWpRestarts() {
+    publishCalculatedSensorDiscovery(calculatedSensors[CALC_IDX_WP_RESTARTS]);
+    std::string text = std::to_string(wpRestartCount);
+    id(mqtt_client).publish(calculatedSensors[CALC_IDX_WP_RESTARTS].stateTopic, text.c_str(), text.length(), 0, true);
+}
+
 void processAndUpdate(uint32_t can_id, std::vector<uint8_t> msg)
 {
     // processCanMessage() leaves the member unset for frames shorter than 7 bytes
@@ -2037,6 +2055,40 @@ void processAndUpdate(uint32_t can_id, std::vector<uint8_t> msg)
     if (msg.size() < 7)
     {
         return;
+    }
+
+    // Restart detection (boot capture 2026-11-13): runs before the type filter below,
+    // because the 0xFE round is a type-6 frame that is dropped there. Frames from the ESP
+    // itself (0x680) do not count as bus activity.
+    if (can_id != 0x680)
+    {
+        unsigned long now = millis();
+        if (haveForeignRx && (unsigned long)(now - lastForeignRxMs) > WP_SILENCE_MS)
+        {
+            restartPending = true;
+            restartPendingSinceMs = now;
+        }
+        haveForeignRx = true;
+        lastForeignRxMs = now;
+
+        if (restartPending && (unsigned long)(now - restartPendingSinceMs) > WP_RESTART_WINDOW_MS)
+        {
+            restartPending = false;
+        }
+
+        if (can_id == 0x480 && (msg[0] & 0x0F) == 6 && msg[2] == 0xFE && restartPending)
+        {
+            restartPending = false;
+            wpRestartCount++;
+            ESP_LOGI("WP_RESTART", "Heat pump restart detected, count %u", (unsigned) wpRestartCount);
+
+            // Poll everything again at once; the scheduler still limits requests per iteration
+            invalidStreak.clear();
+            for (auto &entry : nextRequestTime) {
+                entry.second = now;
+            }
+            publishWpRestarts();
+        }
     }
 
     // Only handle frames that carry a real value: write(0), response(2),

@@ -131,6 +131,8 @@ mqtt:
         publishAllWritableNumberDiscoveries();
         // Publish MQTT select discoveries for operating mode control
         publishAllWritableSelectDiscoveries();
+        // WP restart counter: publish the current value (0 after boot) once per connect
+        publishWpRestarts();
         // Datetime control now handled by Home Assistant input_datetime helpers
         ESP_LOGI("MQTT_CONN", "Discovery publication complete");
 

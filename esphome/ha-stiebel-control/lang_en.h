@@ -54,8 +54,8 @@
 #define LNAME_RUECKLAUFISTTEMP                 "Return Actual Temperature"
 #undef  LNAME_ABTAUUNGAKTIV
 #define LNAME_ABTAUUNGAKTIV                    "Defrost Active"
-#undef  LNAME_EVU_SPERRE_AKTIV
-#define LNAME_EVU_SPERRE_AKTIV                 "Grid Lock Active"
+#undef  LNAME_EVU_FREIGABE
+#define LNAME_EVU_FREIGABE                     "Grid Enable"
 #undef  LNAME_SOLAR_AKT_LEISTUNG_W
 #define LNAME_SOLAR_AKT_LEISTUNG_W             "Solar Current Power W"
 #undef  LNAME_SOLAR_TAGESERTRAG_WH
@@ -224,6 +224,8 @@
 #define LNAME_CALC_VERDICHTER_STATUS           "Compressor status"
 #undef  LNAME_CALC_WP_STATUS_4EDA
 #define LNAME_CALC_WP_STATUS_4EDA              "HP status (0x4eda)"
+#undef  LNAME_CALC_WP_RESTARTS
+#define LNAME_CALC_WP_RESTARTS                 "HP restarts"
 
 // ============================================================================
 // Writable number friendly names

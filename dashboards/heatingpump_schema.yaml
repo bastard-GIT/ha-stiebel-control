@@ -23,7 +23,7 @@ elements:
       "off": /local/heatingpump/transparent.svg
     style: {top: 50%, left: 50%, width: 100%}
   - type: image
-    entity: binary_sensor.manager_evu_sperre_aktiv
+    entity: binary_sensor.manager_evu_freigabe
     tap_action: {action: more-info}
     state_image:
       "on": /local/heatingpump/evu.svg

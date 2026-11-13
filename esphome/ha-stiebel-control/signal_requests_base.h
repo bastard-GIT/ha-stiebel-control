@@ -41,7 +41,7 @@
     /* -------------------------------------------------------------------- */ \
     /* OPERATING STATE                                                       */ \
     /* -------------------------------------------------------------------- */ \
-    {"EVU_SPERRE_AKTIV", FREQ_1MIN,  cm_manager},   \
+    {"EVU_FREIGABE", FREQ_1MIN,  cm_manager},   \
     {"PROGRAMMSCHALTER", FREQ_10MIN, cm_manager},   \
     {"SOMMERBETRIEB",    FREQ_1MIN,  cm_manager},   \
     {"VERDICHTER",       FREQ_30S,   cm_heizmodul}, \

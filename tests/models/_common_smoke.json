@@ -8,7 +8,7 @@
     "heatingpump/calculated/cop_gesamt/state",
     "heatingpump/calculated/cop_heiz/state",
     "heatingpump/calculated/cop_ww/state",
-    "heatingpump/MANAGER/EVU_SPERRE_AKTIV/state",
+    "heatingpump/MANAGER/EVU_FREIGABE/state",
     "heatingpump/MANAGER/PROGRAMMSCHALTER/state",
     "heatingpump/MANAGER/SG_READY_STATE/state",
     "heatingpump/MANAGER/WW_ECO/state",

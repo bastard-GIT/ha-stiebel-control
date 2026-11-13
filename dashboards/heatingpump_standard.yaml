@@ -48,7 +48,7 @@ views:
             entity: binary_sensor.heizmodul_abtauung_aktiv
             name: Abtauen
           - type: tile
-            entity: binary_sensor.manager_evu_sperre_aktiv
+            entity: binary_sensor.manager_evu_freigabe
             name: EVU-Sperre
           - type: tile
             entity: binary_sensor.stiebel_eltron_warmepumpe_sommerbetrieb_aktiv

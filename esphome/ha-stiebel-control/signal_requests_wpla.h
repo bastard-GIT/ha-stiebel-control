@@ -141,7 +141,8 @@ extern const SignalRequest signalRequests[] = {
     {"WW_LEG_SOLLTEMPERATUR",                  FREQ_10MIN, cm_kessel},           // 0x4ef9 °C
     {"STILLSTANDSZEIT",                        FREQ_10MIN, cm_kessel},           // 0x4f2e min
     {"EVU_SPERRE",                             FREQ_10MIN, cm_manager},          // 0xabe1 Scan 0
-    {"EVU_SPERRE",                             FREQ_10MIN, cm_wpumpe},           // 0xabe1 Scan 1
+    // EVU_SPERRE on cm_wpumpe is not requested: on 0x514 index 0xabe1 follows the compressor
+    // (1 while running, 0 when stopped; boot capture 2026-11-13), it is not an EVU lock there.
     {"EVU_SPERRE_CONFIG",                      FREQ_10MIN, cm_manager},          // 0x4f84 Scan 3
     {"PUMPENLEISTUNG_STANDBY_WPLA",            FREQ_10MIN, cm_manager},          // 0x4f8a %
     {"PUMPENLEISTUNG_HEIZEN_WPLA",             FREQ_10MIN, cm_manager},          // 0x4f8c %
