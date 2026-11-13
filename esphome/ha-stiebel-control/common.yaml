@@ -21,17 +21,21 @@ substitutions:
   read_only: "false"          # "true": never write to the heat pump (no setpoints/modes/clock; reading and bus scan only)
   # Network package from this folder: network_wifi.yaml (default) or network_ethernet_w5500.yaml
   network_package: "network_wifi.yaml"
+  device_name: "heatingpump"            # esphome name (also the MQTT/HA device name)
+  friendly_name: "Heating Pump CAN Interface"
+  fw_version: "2.6.0"                   # firmware version; shown as project version and in the Firmware Version sensor (boot_info.h)
+  ntp_server: "pool.ntp.org"            # SNTP server (e.g. your router in an isolated network)
 
 packages:
   network: !include ${network_package}
 
 esphome:
   min_version: 2026.7.0
-  name: heatingpump
-  friendly_name: "Heating Pump CAN Interface"
+  name: ${device_name}
+  friendly_name: ${friendly_name}
   project:
     name: "bullitt186.ha-stiebel-control"
-    version: "2.6.0"
+    version: "${fw_version}"
   on_boot:
     priority: 600
     then:
@@ -54,7 +58,12 @@ esphome:
     - lang_base.h
     - lang_en.h
     - sg_ready_controller.h
+    # unix_time.h: UTC time helper used by boot_info.h
+    - unix_time.h
     - ha-stiebel-control.h
+    # boot_info.h includes crash_trace.h and unix_time.h
+    - crash_trace.h
+    - boot_info.h
     - signal_requests_base.h
     # model-specific signal_requests_*.h is declared by each model yaml package
   build_flags:
@@ -499,6 +508,7 @@ interval:
     then:
       - lambda: |-
           processCalculatedSensors();
+          bootinfo::loop();  // restart info once per boot to HA (boot_info.h)
 
   # Keep the retained SG Ready state/boost values fresh (survive a broker restart)
   - interval: 5min
@@ -517,6 +527,21 @@ interval:
           stateRepublishStep();
           pendingReadbackStep();
           sgReadyPublishStep();
+
+#########################################
+#                                       #
+#   NTP / TIME                          #
+#                                       #
+#########################################
+time:
+  - platform: sntp
+    id: sntp_time
+    servers:
+      - ${ntp_server}
+    on_time_sync:
+      - lambda: |-
+          auto t = id(sntp_time).utcnow();
+          ESP_LOGI("ntp", "Time synchronized (UTC): %04d-%02d-%02d %02d:%02d:%02d", t.year, t.month, t.day_of_month, t.hour, t.minute, t.second);
 
 #########################################
 #                                       #
