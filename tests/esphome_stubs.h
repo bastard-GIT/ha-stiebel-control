@@ -70,6 +70,22 @@ struct FakeMqttClient {
 inline FakeMqttClient& mqtt_client_instance() { static FakeMqttClient c; return c; }
 #define mqtt_client mqtt_client_instance()
 
+#if defined(HA_MODEL_wpla)
+// ── SNTP time stub (energy_counters.h, WPL-A 07) ─────────────────────────────
+// Invalid time by default, so energy_counters.h uses its fallback without a clock.
+struct ESPTime {
+    int hour = 0, minute = 0, second = 0, day_of_year = 0;
+    bool valid = false;
+    bool is_valid() const { return valid; }
+};
+struct FakeTimeSource {
+    ESPTime t;
+    ESPTime now() const { return t; }
+};
+inline FakeTimeSource& sntp_time_instance() { static FakeTimeSource s; return s; }
+#define sntp_time sntp_time_instance()
+#endif
+
 // ── NVS / Preferences stub ───────────────────────────────────────────────────
 // ESPPreferenceObject is only needed by EspHomeSgReadyIO which we don't test here.
 // Defined as a no-op struct so the header compiles.
