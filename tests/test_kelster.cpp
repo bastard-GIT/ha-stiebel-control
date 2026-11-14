@@ -250,11 +250,19 @@ TEST_CASE("TranslateString: et_little_bool off → 0", "[kelster]") {
     const char* s = "off";
     CHECK(TranslateString(s, et_little_bool) == 0);
 }
+// BetriebsartList differs per model (ElsterTable.h): WPL 10 AC / WPL-A has no "Automatik"
+#if defined(HA_MODEL_wpl10ac) || defined(HA_MODEL_wpla)
+TEST_CASE("TranslateString: et_betriebsart Komfortbetrieb", "[kelster]") {
+    const char* s = "Komfortbetrieb";
+    CHECK(TranslateString(s, et_betriebsart) == 0x0300);
+}
+#else
 TEST_CASE("TranslateString: et_betriebsart Automatik", "[kelster]") {
     const char* s = "Automatik";
     int result = TranslateString(s, et_betriebsart);
     CHECK(result >= 0); // Valid betriebsart index
 }
+#endif
 TEST_CASE("TranslateString: et_default parses integer", "[kelster]") {
     const char* s = "42";
     CHECK(TranslateString(s, et_default) == 42);

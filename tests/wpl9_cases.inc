@@ -50,12 +50,12 @@ TEST_CASE("configured DHW commands send short and extended register frames", "[r
     const uint8_t writeFirst = (wpl9 || wpl17 || wpla) ? 0x40 : 0x90;
     const uint8_t writeSecond = (wpl9 || wpl17 || wpla) ? 0x01 : 0x00;
     fake_can().sent.clear();
-    writeConfiguredSignal(cm_manager, "EINSTELL_SPEICHERSOLLTEMP", "49");
+    writeConfiguredSignal(cm_manager, HA_NAME_DHW_SET, "49");
     REQUIRE(fake_can().sent.size() == 2);
     CHECK(fake_can().sent[0] == std::vector<uint8_t>{writeFirst, writeSecond, 0x13, 0x01, 0xea, 0, 0});
     CHECK(fake_can().sent[1] == std::vector<uint8_t>{static_cast<uint8_t>(writeFirst + 1), writeSecond, 0x13, 0, 0, 0, 0});
     fake_can().sent.clear();
-    writeConfiguredSignal(cm_manager, "EINSTELL_SPEICHERSOLLTEMP2", "49");
+    writeConfiguredSignal(cm_manager, HA_NAME_DHW_SET2, "49");
     REQUIRE(fake_can().sent.size() == 2);
     CHECK(fake_can().sent[0] == std::vector<uint8_t>{writeFirst, writeSecond, 0xfa, 0x0a, 0x06, 0x01, 0xea});
     const uint8_t readFirst = static_cast<uint8_t>(writeFirst + 1);
