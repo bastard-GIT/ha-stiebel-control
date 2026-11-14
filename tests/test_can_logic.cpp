@@ -1375,7 +1375,7 @@ TEST_CASE("writeSignal: et_betriebsart with unrecognized string is not sent to C
 
 TEST_CASE("writeSignal: et_betriebsart with valid German string is sent", "[can]") {
     fake_can().sent.clear();
-    const char* value = "Automatik";
+    const char* value = BetriebsartList[2].Name;  // "Automatik" (WPM2) or the WPL-A 07 name
     writeSignal(&CanMembers[cm_manager], "PROGRAMMSCHALTER", value);
     CHECK(fake_can().sent.size() == 1);
 }
@@ -1569,7 +1569,8 @@ TEST_CASE("climate: heating and hot water discoveries reuse the number /set topi
     std::string dhw  = mqttFindPayload("climate/heatingpump/stiebel_climate_warmwasser/config");
     CHECK(heat.find("heatingpump/MANAGER/RAUMSOLLTEMP_I/set") != std::string::npos);
     CHECK(heat.find("PROGRAMMSCHALTER/set") != std::string::npos);
-    CHECK(heat.find("\"Tagbetrieb\"") != std::string::npos);
+    // Preset = programmschalterOptions[3]: "Tagbetrieb" (WPM2) or "Komfortbetrieb" (WPL-A 07)
+    CHECK(heat.find(std::string("\"") + programmschalterOptions[3] + "\"") != std::string::npos);
     CHECK(dhw.find("EINSTELL_SPEICHERSOLLTEMP/set") != std::string::npos);
     const bool wpl17 = std::strcmp(HA_DEVICE_MODEL_STR, "wpl17") == 0;
     const bool wpla = std::strcmp(HA_DEVICE_MODEL_STR, "wpla") == 0;
@@ -2077,7 +2078,7 @@ TEST_CASE("SG Ready IO: write is sent at once, read-back ~100 ms later from the 
     pendingReadbackCount = 0;
     fake_can().sent.clear();
     fake_millis() = 5000;
-    sgReadyIO.writeCanSignal("PROGRAMMSCHALTER", "Automatik");
+    sgReadyIO.writeCanSignal("PROGRAMMSCHALTER", BetriebsartList[2].Name);
     sgReadyIO.writeCanSignal("EINSTELL_SPEICHERSOLLTEMP", "55.0");
     REQUIRE(fake_can().sent.size() == 2);          // two writes, no read yet
     CHECK((fake_can().sent[0][0] & 0x0F) == 0);    // telegram type 0 = write
@@ -2101,8 +2102,8 @@ TEST_CASE("SG Ready IO: write is sent at once, read-back ~100 ms later from the 
     CHECK(pendingReadbackCount == 0);
 
     // the same signal twice -> one early and one settle read-back
-    sgReadyIO.writeCanSignal("PROGRAMMSCHALTER", "Automatik");
-    sgReadyIO.writeCanSignal("PROGRAMMSCHALTER", "Bereitschaft");
+    sgReadyIO.writeCanSignal("PROGRAMMSCHALTER", BetriebsartList[2].Name);
+    sgReadyIO.writeCanSignal("PROGRAMMSCHALTER", BetriebsartList[1].Name);
     CHECK(pendingReadbackCount == 2);
     pendingReadbackCount = 0;
     fake_millis() = 0;
