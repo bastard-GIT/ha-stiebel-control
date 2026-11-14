@@ -685,29 +685,21 @@ struct CanIdBytes {
     uint8_t second;
 };
 
-// Sub-address mask of the second CAN ID byte. Upstream keeps 3 bits (all members
-// except 0x514 have a sub-address <= 7). WPL-A 07: the heating module 0x514 needs
-// sub-address 0x14, so it gets 7 bits (verified on WPL-A hardware: with the 3-bit
-// mask 0x514 does not answer at all). Other models keep the 3-bit mask.
-#if defined(HA_MODEL_wpla)
-#define HA_CAN_SUB_ADDR_MASK 0x7F
-#else
-#define HA_CAN_SUB_ADDR_MASK 7
-#endif
-
 /**
  * Generate CAN read ID from member CAN ID
  */
+// Elster frame header: data[0] = (id & 0x780) >> 3 plus the message type, data[1] = the lower
+// 7 bits of the receiver id. With only 3 bits a request to 0x514 (HEIZMODUL_WPL) went to 0x504.
 CanIdBytes generate_read_id(unsigned short can_id)
 {
     uint8_t address = (can_id & 0x780) / 8;
-    return {static_cast<uint8_t>((address & 0xF0) + 1), static_cast<uint8_t>(can_id & HA_CAN_SUB_ADDR_MASK)};
+    return {static_cast<uint8_t>((address & 0xF0) + 1), static_cast<uint8_t>(can_id & 0x7F)};
 }
 
 CanIdBytes generate_write_id(unsigned short can_id)
 {
     uint8_t address = (can_id & 0x780) / 8;
-    return {static_cast<uint8_t>(address & 0xF0), static_cast<uint8_t>(can_id & HA_CAN_SUB_ADDR_MASK)};
+    return {static_cast<uint8_t>(address & 0xF0), static_cast<uint8_t>(can_id & 0x7F)};
 }
 
 const CanMember &lookupCanMember(uint32_t canId)
@@ -3961,12 +3953,10 @@ void processSignalRequests() {
         currentIndex = (currentIndex + 1) % SIGNAL_REQUEST_COUNT;
     }
 
-#if defined(HA_MODEL_wpla)
-    // Continue after the last checked signal next time. Without this every iteration
-    // started at index 0 and, with more due requests than 1/s, the end of the table
-    // was never polled (seen on WPL-A 07, 2026-11-03: PUMPENSTATUS starved).
+    // Continue after the last checked signal next time. Without this every call started
+    // at index 0 and, with more due requests than one per second, the end of the table
+    // was never polled.
     signalProcessingStartIndex = currentIndex;
-#endif
 }
 
 // Heat pump restart detection (boot capture 2026-11-13): after mains loss all participants
