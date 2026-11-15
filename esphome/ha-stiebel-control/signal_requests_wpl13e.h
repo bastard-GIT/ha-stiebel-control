@@ -40,7 +40,6 @@ extern const SignalRequest signalRequests[] = {
     {"WPVORLAUFIST",               FREQ_30S,   cm_kessel},
     {"EINSTELL_SPEICHERSOLLTEMP2", FREQ_30S,   cm_kessel},
     {"EINSTELL_SPEICHERSOLLTEMP2", FREQ_30S,   cm_manager},
-    {"ABTAUUNGAKTIV",              FREQ_1MIN,  cm_heizmodul},
     {"BETRIEBSART_WP",             FREQ_10MIN, cm_manager},
 
     // ========================================================================
@@ -105,7 +104,9 @@ extern const SignalRequest signalRequests[] = {
     {"SOLLWERT_UEBERHITZUNG",            FREQ_10MIN, cm_heizmodul},
     {"ISTWERT_UEBERHITZUNG_VERDAMPFER",  FREQ_1MIN,  cm_heizmodul},
     {"STARTS_ABTAUUNG",                  FREQ_30MIN, cm_heizmodul},
-    {"ZEITDAUER_LETZTE_ABTAUUNG",        FREQ_10MIN, cm_heizmodul},
+    // 0 while a defrost runs (calculated abtauung_laeuft); ABTAUUNGAKTIV stays off on the
+    // WPL13E during a defrost and is no longer requested.
+    {"ZEITDAUER_LETZTE_ABTAUUNG",        FREQ_1MIN,  cm_heizmodul},
     {"VORLAUFSOLLTEMP",                  FREQ_1MIN,  cm_kessel},
     {"ANZEIGE_HOCHDRUCK",          FREQ_1MIN,  cm_heizmodul},
     {"ANZEIGE_NIEDERDRUCK",        FREQ_1MIN,  cm_heizmodul},
@@ -126,6 +127,55 @@ extern const SignalRequest signalRequests[] = {
     // ========================================================================
     {"LZ_VERD_2_HEIZBETRIEB",      FREQ_10MIN, cm_heizmodul},
     {"LZ_VERD_2_WW_BETRIEB",       FREQ_10MIN, cm_heizmodul},
+
+    // ========================================================================
+    // DHW TIME PROGRAM (manager): three periods per day, shown as one text per
+    // day and writable from Home Assistant (#82)
+    // ========================================================================
+    {"W_WASSERPROG_1_MO",           FREQ_10MIN, cm_manager},
+    {"W_WASSERPROG_1_MO_SCHALT_2",  FREQ_10MIN, cm_manager},
+    {"W_WASSERPROG_1_MO_SCHALT_3",  FREQ_10MIN, cm_manager},
+    {"W_WASSERPROG_1_DI",           FREQ_10MIN, cm_manager},
+    {"W_WASSERPROG_1_DI_SCHALT_2",  FREQ_10MIN, cm_manager},
+    {"W_WASSERPROG_1_DI_SCHALT_3",  FREQ_10MIN, cm_manager},
+    {"W_WASSERPROG_1_MI",           FREQ_10MIN, cm_manager},
+    {"W_WASSERPROG_1_MI_SCHALT_2",  FREQ_10MIN, cm_manager},
+    {"W_WASSERPROG_1_MI_SCHALT_3",  FREQ_10MIN, cm_manager},
+    {"W_WASSERPROG_1_DO",           FREQ_10MIN, cm_manager},
+    {"W_WASSERPROG_1_DO_SCHALT_2",  FREQ_10MIN, cm_manager},
+    {"W_WASSERPROG_1_DO_SCHALT_3",  FREQ_10MIN, cm_manager},
+    {"W_WASSERPROG_1_FR",           FREQ_10MIN, cm_manager},
+    {"W_WASSERPROG_1_FR_SCHALT_2",  FREQ_10MIN, cm_manager},
+    {"W_WASSERPROG_1_FR_SCHALT_3",  FREQ_10MIN, cm_manager},
+    {"W_WASSERPROG_1_SA",           FREQ_10MIN, cm_manager},
+    {"W_WASSERPROG_1_SA_SCHALT_2",  FREQ_10MIN, cm_manager},
+    {"W_WASSERPROG_1_SA_SCHALT_3",  FREQ_10MIN, cm_manager},
+    {"W_WASSERPROG_1_SO",           FREQ_10MIN, cm_manager},
+    {"W_WASSERPROG_1_SO_SCHALT_2",  FREQ_10MIN, cm_manager},
+    {"W_WASSERPROG_1_SO_SCHALT_3",  FREQ_10MIN, cm_manager},
+
+    // Heating program of heating circuit 1 (manager), same layout
+    {"HEIZPROG_1_MO",               FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_MO_SCHALT_2",      FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_MO_SCHALT_3",      FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_DI",               FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_DI_SCHALT_2",      FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_DI_SCHALT_3",      FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_MI",               FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_MI_SCHALT_2",      FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_MI_SCHALT_3",      FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_DO",               FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_DO_SCHALT_2",      FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_DO_SCHALT_3",      FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_FR",               FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_FR_SCHALT_2",      FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_FR_SCHALT_3",      FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_SA",               FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_SA_SCHALT_2",      FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_SA_SCHALT_3",      FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_SO",               FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_SO_SCHALT_2",      FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_SO_SCHALT_3",      FREQ_10MIN, cm_manager},
 };
 
 extern const size_t SIGNAL_REQUEST_COUNT_VALUE = sizeof(signalRequests) / sizeof(SignalRequest);

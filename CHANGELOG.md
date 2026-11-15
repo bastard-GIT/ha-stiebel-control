@@ -7,6 +7,26 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [Sem
 
 ## [Unreleased]
 
+## [2.7.0] — 2026-11-15
+
+Contributions from SolderAndSyntax and bastard-GIT: WPMW II clock/date writes, W5500 Ethernet,
+0x9000 handling, request and addressing fixes. SG Ready is more reliable and can leave the time
+programs active, which are now writable from Home Assistant.
+
+### Upgrade notes
+
+- WPL13E/WPL18E: `ABTAUUNGAKTIV` is no longer polled. Its HA entity
+  (`binary_sensor.heizmodul_abtauung_aktiv`) stays as unavailable and can be deleted; use
+  "Abtauung läuft" instead.
+- TTL 33: the raw sensors `W_WASSERPROG_1_<day>` are replaced by one text entity per day; the old
+  ones stay as unavailable entities and can be deleted.
+- SG Ready writes now go out one at a time and are checked (about 6 s per write), so a change of
+  state takes up to 20 s on the bus instead of happening at once.
+- A boost now starts from the setpoints read from the heat pump. If your DHW or room setpoint was
+  left boosted by an older version, set it back once before the next SG Ready cycle.
+- `common.yaml` no longer contains WiFi; a local copy that patches the `wifi:` block must patch
+  `network_wifi.yaml` instead.
+
 ### Added
 
 - New model `wpla` (WPL-A 07, WPM3, CAN 50 kbps): `wpla.yaml`, `signal_requests_wpla.h`, CI
@@ -21,10 +41,25 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [Sem
   WE_KONFIGURATION), 0x0a36 FROSTSCHUTZTEMPERATUR, 0x0a37 VERFLUESSIGERTEMP_WPLA, 0x0a39
   OELSUMPFTEMP (were EINGANG14/15/17; names from jojo18222's WPL-A fork). No other model polls
   these indices.
+- WPMW II: DHW time program as one text entity per day (`W_WASSERPROG_1_<day>` with up to three
+  periods, e.g. `06:30-09:00,11:00-17:00`), read on WPL13E, WPL18E and TTL 33, writable on WPL13E
+  and TTL 33. Input is checked (15-minute steps, start before end, no overlap) before anything is
+  written. On TTL 33 the former raw sensors `W_WASSERPROG_1_<day>` are replaced by these entities (#82).
+  The heating program of heating circuit 1 (`HEIZPROG_1_<day>`, manager) is shown the same way on
+  WPL13E and WPL18E.
+- SG Ready: select for the operating mode in state 2, `Tagbetrieb` (default, as before) or
+  `Automatik`, so the time programs and the DHW setpoint 2 apply in normal operation (#85).
+- Calculated binary sensor "Abtauung läuft" (`abtauung_laeuft`): on while the heat pump module's
+  last defrost duration reads 0, which it does from the start of a defrost until it ends. On a WPL13E
+  `ABTAUUNGAKTIV` stayed off through three defrosts; the `wpl13e` table now polls the duration every
+  minute instead of `ABTAUUNGAKTIV` (#48).
+- WPMW II models: the "Update Uhrzeit" and "Update Datum" buttons write `UHRZEIT` as one value and `DATUM`
+  followed by `JAHR`, the way the WPMW II manager accepts them (#68). The single `STUNDE`/`MINUTE`/`SEKUNDE`
+  writes are ignored there, and `DATUM` alone resets the year to 2000. Other models are unchanged.
 - Network package selectable by the substitution `network_package`: `network_wifi.yaml`
-  (default, WiFi moved out of `common.yaml` unchanged) or the new `network_ethernet_w5500.yaml`
-  (W5500 SPI Ethernet, pin defaults for the Waveshare ESP32-S3-POE-ETH). Existing configurations
-  need no change.
+  (default, WiFi, captive portal and WiFi sensors moved out of `common.yaml` unchanged) or the
+  new `network_ethernet_w5500.yaml` (W5500 SPI Ethernet, DHCP, pin defaults for the Waveshare
+  ESP32-S3-POE-ETH). Existing configurations need no change.
 - SG Ready room setpoint boost is configurable per state (`number.…_sg_ready_raum_boost_zustand_3/4`,
   0–5 K, defaults 1 K and 2 K as before). With 0 the room setpoint of heating circuit 1 is left
   alone, so SG Ready no longer shifts the heating curve (#50).
@@ -36,6 +71,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [Sem
 
 ### Fixed
 
+- SG Ready: the boost baseline is the DHW and room setpoint read from the heat pump, not the
+  constants 48 °C / 20 °C, so leaving state 3/4 restores the user's setpoints (#85).
+- SG Ready: writes sent back to back were partly lost on a WPL13E (DHW boost not applied, room
+  setpoint not restored). SG Ready writes now go out one at a time with a gap, each checked against
+  the read-back and sent once more if it did not take; every write is logged (#85).
+- Numeric signals answering `0x9000` (function switched off, e.g. `BIVALENZALTERNATIVTEMPERATUR_HZG`
+  on KESSEL) were published as a number: `et_dec_val` showed -2867.2 °C and went into the long-term
+  statistics. `0x9000` is now not published for `et_dec_val`, `et_cent_val` and `et_mil_val`: the
+  entity keeps its last state, and it does not count for the poll back-off, because the device does
+  answer (#78). `et_hours` and `et_little_endian` are unchanged, because there `0x9000` is a valid
+  value.
 - The request manager started every call at the top of the request table, because
   `signalProcessingStartIndex` was never updated. With more due requests than one per second
   (e.g. wpl13e/wpl18e about 68, wpl17 about 63 per minute) the end of the table could starve;

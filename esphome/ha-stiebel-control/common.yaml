@@ -23,7 +23,7 @@ substitutions:
   network_package: "network_wifi.yaml"
   device_name: "heatingpump"            # esphome name (also the MQTT/HA device name)
   friendly_name: "Heating Pump CAN Interface"
-  fw_version: "2.6.0"                   # firmware version; shown as project version and in the Firmware Version sensor (boot_info.h)
+  fw_version: "2.7.0"                   # firmware version; shown as project version and in the Firmware Version sensor (boot_info.h)
   ntp_server: "pool.ntp.org"            # SNTP server (e.g. your router in an isolated network)
   api_reboot_timeout: "15min"           # reboot if no API client connects for this long; "0s" disables (e.g. when only MQTT is used, no API client)
 
@@ -61,6 +61,7 @@ esphome:
     - sg_ready_controller.h
     # unix_time.h: UTC time helper used by boot_info.h
     - unix_time.h
+    - dhw_program.h
     - ha-stiebel-control.h
     # boot_info.h includes crash_trace.h and unix_time.h
     - crash_trace.h
@@ -472,6 +473,63 @@ mqtt:
             writeSignal(&CanMembers[cm_manager], "SW_AUSSENTEMP", value);
             readSignal(&CanMembers[cm_manager], "SW_AUSSENTEMP");
 
+    # SG Ready: operating mode in state 2 (Tagbetrieb or Automatik, #85)
+    - topic: heatingpump/MANAGER/SG_READY_NORMAL_MODE/set
+      then:
+        - lambda: |-
+            ESP_LOGI("MQTT_CMD", "Received SG_READY_NORMAL_MODE command: %s", x.c_str());
+            publishWritableSelectDiscovery(writableSelects[2]);
+            if (!handleSgReadyNormalMode(x)) {
+              ESP_LOGW("MQTT_CMD", "Invalid SG Ready state 2 mode: %s", x.c_str());
+            }
+
+    # DHW time program, one text per day (WPMW II, #82): "11:00-17:00", up to three
+    # periods separated by commas, "-" = no period. Ignored on other models.
+    - topic: heatingpump/dhw_program/mo/set
+      then:
+        - lambda: handleDhwProgramCommand(0, x);
+    - topic: heatingpump/dhw_program/di/set
+      then:
+        - lambda: handleDhwProgramCommand(1, x);
+    - topic: heatingpump/dhw_program/mi/set
+      then:
+        - lambda: handleDhwProgramCommand(2, x);
+    - topic: heatingpump/dhw_program/do/set
+      then:
+        - lambda: handleDhwProgramCommand(3, x);
+    - topic: heatingpump/dhw_program/fr/set
+      then:
+        - lambda: handleDhwProgramCommand(4, x);
+    - topic: heatingpump/dhw_program/sa/set
+      then:
+        - lambda: handleDhwProgramCommand(5, x);
+    - topic: heatingpump/dhw_program/so/set
+      then:
+        - lambda: handleDhwProgramCommand(6, x);
+
+    # Heating program of heating circuit 1, same format (WPMW II)
+    - topic: heatingpump/heating_program/mo/set
+      then:
+        - lambda: handleHeatingProgramCommand(0, x);
+    - topic: heatingpump/heating_program/di/set
+      then:
+        - lambda: handleHeatingProgramCommand(1, x);
+    - topic: heatingpump/heating_program/mi/set
+      then:
+        - lambda: handleHeatingProgramCommand(2, x);
+    - topic: heatingpump/heating_program/do/set
+      then:
+        - lambda: handleHeatingProgramCommand(3, x);
+    - topic: heatingpump/heating_program/fr/set
+      then:
+        - lambda: handleHeatingProgramCommand(4, x);
+    - topic: heatingpump/heating_program/sa/set
+      then:
+        - lambda: handleHeatingProgramCommand(5, x);
+    - topic: heatingpump/heating_program/so/set
+      then:
+        - lambda: handleHeatingProgramCommand(6, x);
+
     # SG Ready room setpoint boost (heating circuit 1) for State 3, 0 = off
     - topic: heatingpump/MANAGER/SG_READY_ROOM_BOOST_STATE3/set
       then:
@@ -546,6 +604,7 @@ interval:
           discoveryRepublishStep();
           stateRepublishStep();
           pendingReadbackStep();
+          pacedWriteStep();
           sgReadyPublishStep();
 
 #########################################
