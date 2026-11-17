@@ -1733,7 +1733,8 @@ static bool numberLimitsWanted(size_t i) {
 #endif
     const char* sig = writableNumbers[i].signalName;
     if (strncmp(sig, "SG_READY_", 9) == 0) return false;   // virtual, not on the bus
-    if (!writableNumberApplies(sig)) return false;
+    // By row, not by name: RAUMSOLLTEMP_I also exists for heating circuit 2 on MISCHERMODUL_3
+    if (!writableNumberApplies(writableNumbers[i])) return false;
     return GetElsterIndex(sig) != &ElsterTable[0];
 }
 

@@ -3130,6 +3130,18 @@ TEST_CASE("limits: virtual SG Ready numbers are never requested", "[limits]") {
         if (strncmp(writableNumbers[i].signalName, "SG_READY_", 9) == 0) CHECK_FALSE(numberLimitsWanted(i));
 }
 
+// Rows that do not apply to the model are never asked for limits: a limit answer publishes the
+// discovery again. Same signal name on another member (heating circuit 2 RAUMSOLLTEMP_I on
+// MISCHERMODUL_3 0x602) must be checked by its own row, not by the first row with that name.
+TEST_CASE("limits: only rows that apply to the model are requested", "[limits]") {
+    for (size_t i = 0; i < WRITABLE_NUMBER_COUNT; i++) {
+        INFO(writableNumbers[i].signalName << " member " << writableNumbers[i].member);
+        if (!writableNumberApplies(writableNumbers[i])) CHECK_FALSE(numberLimitsWanted(i));
+        if (writableNumbers[i].member == cm_mischermodul_3 && !kModel.wpmw2WritesVerified)
+            CHECK_FALSE(numberLimitsWanted(i));
+    }
+}
+
 TEST_CASE("limits: no clamping with the static range, clamping with the device range", "[limits]") {
     resetDiscoveryState();
     const int i = writableNumberIndexByName("RAUMSOLLTEMP_I");
