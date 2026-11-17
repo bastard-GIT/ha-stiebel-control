@@ -70,11 +70,11 @@ static void pub(const char *topic, const char *payload) {
 
 static void discovery(const char *obj, const char *name, const char *extra) {
   char topic[96];
-  snprintf(topic, sizeof topic, "homeassistant/sensor/heatingpump/%s/config", obj);
+  snprintf(topic, sizeof topic, "homeassistant/sensor/" HA_TOPIC_ROOT "/%s/config", obj);
   char buf[640];
   snprintf(buf, sizeof buf,
-           "{\"name\":\"%s\",\"unique_id\":\"%s\",\"state_topic\":\"heatingpump/calculated/%s/state\","
-           "\"entity_category\":\"diagnostic\",\"availability_topic\":\"heatingpump/status\"%s,"
+           "{\"name\":\"%s\",\"unique_id\":\"%s\",\"state_topic\":\"" HA_TOPIC_ROOT "/calculated/%s/state\","
+           "\"entity_category\":\"diagnostic\",\"availability_topic\":\"" HA_TOPIC_ROOT "/status\"%s,"
            "\"device\":{\"identifiers\":[\"stiebel_eltron_" HA_DEVICE_MODEL_STR "\"],"
            "\"name\":\"Stiebel Eltron Wärmepumpe\",\"manufacturer\":\"Stiebel Eltron\","
            "\"sw_version\":\"" ESPHOME_PROJECT_VERSION "\"}}",
@@ -92,16 +92,16 @@ static void loop() {
 
   discovery("stiebel_mk1_letzter_neustart", "Letzter Neustart", ",\"device_class\":\"timestamp\",\"icon\":\"mdi:restart\"");
   discovery("stiebel_mk1_neustart_grund", "Neustart Grund",
-            ",\"icon\":\"mdi:restart-alert\",\"json_attributes_topic\":\"heatingpump/calculated/stiebel_mk1_neustart_grund/attr\"");
+            ",\"icon\":\"mdi:restart-alert\",\"json_attributes_topic\":\"" HA_TOPIC_ROOT "/calculated/stiebel_mk1_neustart_grund/attr\"");
   discovery("stiebel_mk1_laufzeit_vor_neustart", "Laufzeit vor Neustart",
             ",\"device_class\":\"duration\",\"unit_of_measurement\":\"s\",\"state_class\":\"measurement\",\"icon\":\"mdi:timer-outline\"");
   discovery("stiebel_mk1_neustarts", "Neustarts", ",\"state_class\":\"total_increasing\",\"icon\":\"mdi:counter\"");
   discovery("stiebel_mk1_firmware_version", "Firmware Version", ",\"icon\":\"mdi:tag-outline\"");
   discovery("stiebel_mk1_firmware_build", "Firmware Build", ",\"icon\":\"mdi:calendar-clock\"");
-  pub("heatingpump/calculated/stiebel_mk1_firmware_version/state", ESPHOME_PROJECT_VERSION);
+  pub(HA_TOPIC_ROOT "/calculated/stiebel_mk1_firmware_version/state", ESPHOME_PROJECT_VERSION);
   char bt[24];
   build_time(bt, sizeof bt);
-  pub("heatingpump/calculated/stiebel_mk1_firmware_build/state", bt);
+  pub(HA_TOPIC_ROOT "/calculated/stiebel_mk1_firmware_build/state", bt);
 
   // Startzeit = jetzt - Laufzeit
   const time_t boot_s = (time_t)((now_ms - (uint64_t)millis()) / 1000ULL);
@@ -126,17 +126,17 @@ static void loop() {
     n = snprintf(buf, sizeof buf, "{\"code\":%d,\"grund\":\"%s\",\"start\":%lu,\"laufzeit_davor_s\":%lu}", r,
                  reason_text(r), (unsigned long)ct::g_tr.boot, (unsigned long)(ct::g_prev_up_ms / 1000));
   }
-  if (n > 0 && (size_t)n < sizeof buf) pub("heatingpump/calculated/stiebel_mk1_neustart_grund/attr", buf);
+  if (n > 0 && (size_t)n < sizeof buf) pub(HA_TOPIC_ROOT "/calculated/stiebel_mk1_neustart_grund/attr", buf);
 
-  pub("heatingpump/calculated/stiebel_mk1_letzter_neustart/state", ts);
-  pub("heatingpump/calculated/stiebel_mk1_neustart_grund/state", reason_text(r));
+  pub(HA_TOPIC_ROOT "/calculated/stiebel_mk1_letzter_neustart/state", ts);
+  pub(HA_TOPIC_ROOT "/calculated/stiebel_mk1_neustart_grund/state", reason_text(r));
   char v[16];
   if (ct::g_prev_valid) {
     snprintf(v, sizeof v, "%lu", (unsigned long)(ct::g_prev_up_ms / 1000));
-    pub("heatingpump/calculated/stiebel_mk1_laufzeit_vor_neustart/state", v);
+    pub(HA_TOPIC_ROOT "/calculated/stiebel_mk1_laufzeit_vor_neustart/state", v);
   }
   snprintf(v, sizeof v, "%lu", (unsigned long)ct::g_tr.boot);
-  pub("heatingpump/calculated/stiebel_mk1_neustarts/state", v);
+  pub(HA_TOPIC_ROOT "/calculated/stiebel_mk1_neustarts/state", v);
   ESP_LOGI("BOOT", "Firmware %s, Build %s", ESPHOME_PROJECT_VERSION, bt);
   ESP_LOGI("BOOT", "Neustart: %s (code %d), Start %lu, Laufzeit davor %lu s, Absturzspur %s", reason_text(r), r,
            (unsigned long)ct::g_tr.boot, (unsigned long)(ct::g_prev_up_ms / 1000), ct::g_have_last ? "ja" : "nein");

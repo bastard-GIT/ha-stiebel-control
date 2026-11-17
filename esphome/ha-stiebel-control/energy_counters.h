@@ -44,30 +44,30 @@ struct Counter {
 
 // Reihenfolge = Index fuer die COP-Berechnung (siehe C_*)
 static const Counter kCounters[] = {
-  {0x0921, 0x0920, {"stiebel_energie_el_heiz_summe", LNAME_EN_EL_HEIZ_SUM, "heatingpump/calculated/energie_el_heiz_summe/state",
-                    "sensor", "energy", "MWh", "total_increasing", "mdi:flash", "", "", "", true, kExpireS}},
-  {0x091d, 0x091c, {"stiebel_energie_el_ww_summe", LNAME_EN_EL_WW_SUM, "heatingpump/calculated/energie_el_ww_summe/state",
-                    "sensor", "energy", "MWh", "total_increasing", "mdi:flash", "", "", "", true, kExpireS}},
-  {0x0931, 0x0930, {"stiebel_energie_waerme_heiz_summe", LNAME_EN_WAERME_HEIZ_SUM, "heatingpump/calculated/energie_waerme_heiz_summe/state",
-                    "sensor", "energy", "MWh", "total_increasing", "mdi:fire", "", "", "", true, kExpireS}},
-  {0x092d, 0x092c, {"stiebel_energie_waerme_ww_summe", LNAME_EN_WAERME_WW_SUM, "heatingpump/calculated/energie_waerme_ww_summe/state",
-                    "sensor", "energy", "MWh", "total_increasing", "mdi:fire", "", "", "", true, kExpireS}},
-  {0x0929, 0x0928, {"stiebel_energie_waerme_2we_heiz_summe", LNAME_EN_WAERME_2WE_HEIZ_SUM, "heatingpump/calculated/energie_waerme_2we_heiz_summe/state",
-                    "sensor", "energy", "MWh", "total_increasing", "mdi:fire", "", "", "", true, kExpireS}},
-  {0x0925, 0x0924, {"stiebel_energie_waerme_2we_ww_summe", LNAME_EN_WAERME_2WE_WW_SUM, "heatingpump/calculated/energie_waerme_2we_ww_summe/state",
-                    "sensor", "energy", "MWh", "total_increasing", "mdi:fire", "", "", "", true, kExpireS}},
-  {0x091f, 0x091e, {"stiebel_energie_el_heiz_tag", LNAME_EN_EL_HEIZ_TAG, "heatingpump/calculated/energie_el_heiz_tag/state",
-                    "sensor", "energy", "kWh", "total_increasing", "mdi:flash", "", "", "", true, kExpireS}},
-  {0x091b, 0x091a, {"stiebel_energie_el_ww_tag", LNAME_EN_EL_WW_TAG, "heatingpump/calculated/energie_el_ww_tag/state",
-                    "sensor", "energy", "kWh", "total_increasing", "mdi:flash", "", "", "", true, kExpireS}},
-  {0x092f, 0x092e, {"stiebel_energie_waerme_heiz_tag", LNAME_EN_WAERME_HEIZ_TAG, "heatingpump/calculated/energie_waerme_heiz_tag/state",
-                    "sensor", "energy", "kWh", "total_increasing", "mdi:fire", "", "", "", true, kExpireS}},
-  {0x092b, 0x092a, {"stiebel_energie_waerme_ww_tag", LNAME_EN_WAERME_WW_TAG, "heatingpump/calculated/energie_waerme_ww_tag/state",
-                    "sensor", "energy", "kWh", "total_increasing", "mdi:fire", "", "", "", true, kExpireS}},
-  {0x0927, 0x0926, {"stiebel_energie_waerme_2we_heiz_tag", LNAME_EN_WAERME_2WE_HEIZ_TAG, "heatingpump/calculated/energie_waerme_2we_heiz_tag/state",
-                    "sensor", "energy", "kWh", "total_increasing", "mdi:fire", "", "", "", true, kExpireS}},
-  {0x0923, 0x0922, {"stiebel_energie_waerme_2we_ww_tag", LNAME_EN_WAERME_2WE_WW_TAG, "heatingpump/calculated/energie_waerme_2we_ww_tag/state",
-                    "sensor", "energy", "kWh", "total_increasing", "mdi:fire", "", "", "", true, kExpireS}},
+  {0x0921, 0x0920, {"stiebel_energie_el_heiz_summe", LNAME_EN_EL_HEIZ_SUM, HA_TOPIC_ROOT "/calculated/energie_el_heiz_summe/state",
+                    "sensor", "energy", "MWh", "total_increasing", "mdi:flash", "", "", "", true, false, nullptr, kExpireS}},
+  {0x091d, 0x091c, {"stiebel_energie_el_ww_summe", LNAME_EN_EL_WW_SUM, HA_TOPIC_ROOT "/calculated/energie_el_ww_summe/state",
+                    "sensor", "energy", "MWh", "total_increasing", "mdi:flash", "", "", "", true, false, nullptr, kExpireS}},
+  {0x0931, 0x0930, {"stiebel_energie_waerme_heiz_summe", LNAME_EN_WAERME_HEIZ_SUM, HA_TOPIC_ROOT "/calculated/energie_waerme_heiz_summe/state",
+                    "sensor", "energy", "MWh", "total_increasing", "mdi:fire", "", "", "", true, false, nullptr, kExpireS}},
+  {0x092d, 0x092c, {"stiebel_energie_waerme_ww_summe", LNAME_EN_WAERME_WW_SUM, HA_TOPIC_ROOT "/calculated/energie_waerme_ww_summe/state",
+                    "sensor", "energy", "MWh", "total_increasing", "mdi:fire", "", "", "", true, false, nullptr, kExpireS}},
+  {0x0929, 0x0928, {"stiebel_energie_waerme_2we_heiz_summe", LNAME_EN_WAERME_2WE_HEIZ_SUM, HA_TOPIC_ROOT "/calculated/energie_waerme_2we_heiz_summe/state",
+                    "sensor", "energy", "MWh", "total_increasing", "mdi:fire", "", "", "", true, false, nullptr, kExpireS}},
+  {0x0925, 0x0924, {"stiebel_energie_waerme_2we_ww_summe", LNAME_EN_WAERME_2WE_WW_SUM, HA_TOPIC_ROOT "/calculated/energie_waerme_2we_ww_summe/state",
+                    "sensor", "energy", "MWh", "total_increasing", "mdi:fire", "", "", "", true, false, nullptr, kExpireS}},
+  {0x091f, 0x091e, {"stiebel_energie_el_heiz_tag", LNAME_EN_EL_HEIZ_TAG, HA_TOPIC_ROOT "/calculated/energie_el_heiz_tag/state",
+                    "sensor", "energy", "kWh", "total_increasing", "mdi:flash", "", "", "", true, false, nullptr, kExpireS}},
+  {0x091b, 0x091a, {"stiebel_energie_el_ww_tag", LNAME_EN_EL_WW_TAG, HA_TOPIC_ROOT "/calculated/energie_el_ww_tag/state",
+                    "sensor", "energy", "kWh", "total_increasing", "mdi:flash", "", "", "", true, false, nullptr, kExpireS}},
+  {0x092f, 0x092e, {"stiebel_energie_waerme_heiz_tag", LNAME_EN_WAERME_HEIZ_TAG, HA_TOPIC_ROOT "/calculated/energie_waerme_heiz_tag/state",
+                    "sensor", "energy", "kWh", "total_increasing", "mdi:fire", "", "", "", true, false, nullptr, kExpireS}},
+  {0x092b, 0x092a, {"stiebel_energie_waerme_ww_tag", LNAME_EN_WAERME_WW_TAG, HA_TOPIC_ROOT "/calculated/energie_waerme_ww_tag/state",
+                    "sensor", "energy", "kWh", "total_increasing", "mdi:fire", "", "", "", true, false, nullptr, kExpireS}},
+  {0x0927, 0x0926, {"stiebel_energie_waerme_2we_heiz_tag", LNAME_EN_WAERME_2WE_HEIZ_TAG, HA_TOPIC_ROOT "/calculated/energie_waerme_2we_heiz_tag/state",
+                    "sensor", "energy", "kWh", "total_increasing", "mdi:fire", "", "", "", true, false, nullptr, kExpireS}},
+  {0x0923, 0x0922, {"stiebel_energie_waerme_2we_ww_tag", LNAME_EN_WAERME_2WE_WW_TAG, HA_TOPIC_ROOT "/calculated/energie_waerme_2we_ww_tag/state",
+                    "sensor", "energy", "kWh", "total_increasing", "mdi:fire", "", "", "", true, false, nullptr, kExpireS}},
 };
 static const size_t kCount = sizeof(kCounters) / sizeof(kCounters[0]);
 enum { C_EL_HEIZ = 0, C_EL_WW, C_W_HEIZ, C_W_WW, C_W2_HEIZ, C_W2_WW };   // + 6 = Tag-Variante
@@ -76,18 +76,18 @@ static const size_t kTag = 6;
 // COP: Summe aus MWh (unique_ids wie bisher, HA-Historie bleibt), Tag aus kWh
 static const CalculatedSensorConfig kCop[] = {
   // discoveryId = altes Topic (homeassistant/sensor/heatingpump/cop_*/config): Entity-IDs bleiben
-  {"stiebel_cop_heiz", LNAME_COP_HEIZ, "heatingpump/calculated/cop_heiz/state",
-   "sensor", "", "", "measurement", "mdi:radiator", "", "", "", true, kExpireS, "cop_heiz"},
-  {"stiebel_cop_ww", LNAME_COP_WW, "heatingpump/calculated/cop_ww/state",
-   "sensor", "", "", "measurement", "mdi:water-boiler", "", "", "", true, kExpireS, "cop_ww"},
-  {"stiebel_cop_gesamt", LNAME_COP_GESAMT, "heatingpump/calculated/cop_gesamt/state",
-   "sensor", "", "", "measurement", "mdi:chart-line", "", "", "", true, kExpireS, "cop_gesamt"},
-  {"stiebel_cop_heiz_tag", LNAME_COP_HEIZ_TAG, "heatingpump/calculated/cop_heiz_tag/state",
-   "sensor", "", "", "measurement", "mdi:radiator", "", "", "", true, kExpireS},
-  {"stiebel_cop_ww_tag", LNAME_COP_WW_TAG, "heatingpump/calculated/cop_ww_tag/state",
-   "sensor", "", "", "measurement", "mdi:water-boiler", "", "", "", true, kExpireS},
-  {"stiebel_cop_gesamt_tag", LNAME_COP_GESAMT_TAG, "heatingpump/calculated/cop_gesamt_tag/state",
-   "sensor", "", "", "measurement", "mdi:chart-line", "", "", "", true, kExpireS},
+  {"stiebel_cop_heiz", LNAME_COP_HEIZ, HA_TOPIC_ROOT "/calculated/cop_heiz/state",
+   "sensor", "", "", "measurement", "mdi:radiator", "", "", "", true, false, "cop_heiz", kExpireS},
+  {"stiebel_cop_ww", LNAME_COP_WW, HA_TOPIC_ROOT "/calculated/cop_ww/state",
+   "sensor", "", "", "measurement", "mdi:water-boiler", "", "", "", true, false, "cop_ww", kExpireS},
+  {"stiebel_cop_gesamt", LNAME_COP_GESAMT, HA_TOPIC_ROOT "/calculated/cop_gesamt/state",
+   "sensor", "", "", "measurement", "mdi:chart-line", "", "", "", true, false, "cop_gesamt", kExpireS},
+  {"stiebel_cop_heiz_tag", LNAME_COP_HEIZ_TAG, HA_TOPIC_ROOT "/calculated/cop_heiz_tag/state",
+   "sensor", "", "", "measurement", "mdi:radiator", "", "", "", true, false, nullptr, kExpireS},
+  {"stiebel_cop_ww_tag", LNAME_COP_WW_TAG, HA_TOPIC_ROOT "/calculated/cop_ww_tag/state",
+   "sensor", "", "", "measurement", "mdi:water-boiler", "", "", "", true, false, nullptr, kExpireS},
+  {"stiebel_cop_gesamt_tag", LNAME_COP_GESAMT_TAG, HA_TOPIC_ROOT "/calculated/cop_gesamt_tag/state",
+   "sensor", "", "", "measurement", "mdi:chart-line", "", "", "", true, false, nullptr, kExpireS},
 };
 static const float kMinElSum = 0.001f;   // MWh, darunter kein COP Summe
 static const float kMinElTag = 0.2f;     // kWh, darunter kein COP Tag (kurz nach Mitternacht)
@@ -262,17 +262,17 @@ static void cleanup_step() {
     std::string name(ei->Name);
     std::transform(name.begin(), name.end(), name.begin(), ::tolower);
     char topic[160];
-    snprintf(topic, sizeof topic, "homeassistant/sensor/heatingpump/stiebel_%s_%s/config",
+    snprintf(topic, sizeof topic, "homeassistant/sensor/" HA_TOPIC_ROOT "/stiebel_%s_%s/config",
              kOldMembers[g_cleanup_pos / n_idx], name.c_str());
     id(mqtt_client).publish(topic, "", 0, 0, true);
   }
   if (g_cleanup_pos >= total) {
     // Entfernt 2026-10-31: calculated/betriebsart, Number RAUMSOLLTEMP_II/_III
     static const char *const kLegacy[] = {
-        "homeassistant/sensor/heatingpump/stiebel_calculated_betriebsart/config",
-        "heatingpump/calculated/betriebsart/state",
-        "homeassistant/number/heatingpump/stiebel_manager_raumsolltemp_ii/config",
-        "homeassistant/number/heatingpump/stiebel_manager_raumsolltemp_iii/config"};
+        "homeassistant/sensor/" HA_TOPIC_ROOT "/stiebel_calculated_betriebsart/config",
+        HA_TOPIC_ROOT "/calculated/betriebsart/state",
+        "homeassistant/number/" HA_TOPIC_ROOT "/stiebel_manager_raumsolltemp_ii/config",
+        "homeassistant/number/" HA_TOPIC_ROOT "/stiebel_manager_raumsolltemp_iii/config"};
     for (const char *t : kLegacy) id(mqtt_client).publish(t, "", 0, 0, true);
     g_cleanup_done = true;
   }

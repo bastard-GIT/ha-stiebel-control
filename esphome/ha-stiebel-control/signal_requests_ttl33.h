@@ -37,6 +37,7 @@
 
 extern const SignalRequest signalRequests[] = {
     SIGNAL_REQUESTS_BASE   // date/time, EVU lock, operating mode, energy counters
+    {"WW_ECO",                     FREQ_1MIN,  cm_manager},  // DHW eco mode (was a YAML poller, #98)
 
     // ========================================================================
     // TTL33-SPECIFIC: temperatures and setpoints
@@ -58,26 +59,59 @@ extern const SignalRequest signalRequests[] = {
     {"RAUMSOLLTEMP_NACHT",         FREQ_10MIN, cm_manager},
     {"HEIZKURVE",                  FREQ_10MIN, cm_manager},
     {"HEIZPROG_1_MO",              FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_MO_SCHALT_2",      FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_MO_SCHALT_3",      FREQ_10MIN, cm_manager},
     {"HEIZPROG_1_DI",              FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_DI_SCHALT_2",      FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_DI_SCHALT_3",      FREQ_10MIN, cm_manager},
     {"HEIZPROG_1_MI",              FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_MI_SCHALT_2",      FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_MI_SCHALT_3",      FREQ_10MIN, cm_manager},
     {"HEIZPROG_1_DO",              FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_DO_SCHALT_2",      FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_DO_SCHALT_3",      FREQ_10MIN, cm_manager},
     {"HEIZPROG_1_FR",              FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_FR_SCHALT_2",      FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_FR_SCHALT_3",      FREQ_10MIN, cm_manager},
     {"HEIZPROG_1_SA",              FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_SA_SCHALT_2",      FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_SA_SCHALT_3",      FREQ_10MIN, cm_manager},
     {"HEIZPROG_1_SO",              FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_SO_SCHALT_2",      FREQ_10MIN, cm_manager},
+    {"HEIZPROG_1_SO_SCHALT_3",      FREQ_10MIN, cm_manager},
 
     // ========================================================================
     // Heating circuit 2, mixer circuit (MISCHERMODUL_3, 0x602)
     // ========================================================================
+    // Room actual temperature as the controller sees it, per heating circuit: the manager's
+    // virtual members 0x601 (HC1) and 0x602 (HC2) answer RAUMISTTEMP, the manager itself does
+    // not. Scanned on a WPL13E: 0x601 21.7 = display "Raum ist" 21.7.
+    {"RAUMISTTEMP",                 FREQ_1MIN,  cm_mischermodul_2},
+    {"RAUMISTTEMP",                 FREQ_1MIN,  cm_mischermodul_3},
     {"RAUMSOLLTEMP_I",             FREQ_10MIN, cm_mischermodul_3},
     {"RAUMSOLLTEMP_NACHT",         FREQ_10MIN, cm_mischermodul_3},
     {"HEIZKURVE",                  FREQ_10MIN, cm_mischermodul_3},
     {"HEIZPROG_1_MO",              FREQ_10MIN, cm_mischermodul_3},
+    {"HEIZPROG_1_MO_SCHALT_2",      FREQ_10MIN, cm_mischermodul_3},
+    {"HEIZPROG_1_MO_SCHALT_3",      FREQ_10MIN, cm_mischermodul_3},
     {"HEIZPROG_1_DI",              FREQ_10MIN, cm_mischermodul_3},
+    {"HEIZPROG_1_DI_SCHALT_2",      FREQ_10MIN, cm_mischermodul_3},
+    {"HEIZPROG_1_DI_SCHALT_3",      FREQ_10MIN, cm_mischermodul_3},
     {"HEIZPROG_1_MI",              FREQ_10MIN, cm_mischermodul_3},
+    {"HEIZPROG_1_MI_SCHALT_2",      FREQ_10MIN, cm_mischermodul_3},
+    {"HEIZPROG_1_MI_SCHALT_3",      FREQ_10MIN, cm_mischermodul_3},
     {"HEIZPROG_1_DO",              FREQ_10MIN, cm_mischermodul_3},
+    {"HEIZPROG_1_DO_SCHALT_2",      FREQ_10MIN, cm_mischermodul_3},
+    {"HEIZPROG_1_DO_SCHALT_3",      FREQ_10MIN, cm_mischermodul_3},
     {"HEIZPROG_1_FR",              FREQ_10MIN, cm_mischermodul_3},
+    {"HEIZPROG_1_FR_SCHALT_2",      FREQ_10MIN, cm_mischermodul_3},
+    {"HEIZPROG_1_FR_SCHALT_3",      FREQ_10MIN, cm_mischermodul_3},
     {"HEIZPROG_1_SA",              FREQ_10MIN, cm_mischermodul_3},
+    {"HEIZPROG_1_SA_SCHALT_2",      FREQ_10MIN, cm_mischermodul_3},
+    {"HEIZPROG_1_SA_SCHALT_3",      FREQ_10MIN, cm_mischermodul_3},
     {"HEIZPROG_1_SO",              FREQ_10MIN, cm_mischermodul_3},
+    {"HEIZPROG_1_SO_SCHALT_2",      FREQ_10MIN, cm_mischermodul_3},
+    {"HEIZPROG_1_SO_SCHALT_3",      FREQ_10MIN, cm_mischermodul_3},
 
     // ========================================================================
     // DHW time program (manager): three periods per day, one text per day (#82)

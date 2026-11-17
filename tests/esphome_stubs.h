@@ -18,6 +18,7 @@
 #ifndef HA_DEVICE_MODEL
 #define HA_DEVICE_MODEL test_model
 #endif
+#include "model_profile.h"   // HA_CONTROLLER_WPLA for the WPL-A stubs below
 
 
 // ── Logging ──────────────────────────────────────────────────────────────────
@@ -70,7 +71,7 @@ struct FakeMqttClient {
 inline FakeMqttClient& mqtt_client_instance() { static FakeMqttClient c; return c; }
 #define mqtt_client mqtt_client_instance()
 
-#if defined(HA_MODEL_wpla)
+#if defined(HA_CONTROLLER_WPLA)
 // ── SNTP time stub (energy_counters.h, WPL-A 07) ─────────────────────────────
 // Invalid time by default, so energy_counters.h uses its fallback without a clock.
 struct ESPTime {
