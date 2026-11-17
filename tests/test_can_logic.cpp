@@ -1566,7 +1566,7 @@ TEST_CASE("writableNumbers: WPMW II parameters are only offered on wpl13e and tt
     CHECK(writableNumberApplies("HEIZKURVE") == (verified || model == "wpl17"));
     CHECK(writableNumberApplies(HA_NAME_DHW_SET));
     // Single heating circuit: no number entities for circuits 2 and 3.
-    const bool singleCircuit = model == "wpl17" || model == "wpla";
+    const bool singleCircuit = model == "wpl17" || model == "wpla7";
     CHECK(writableNumberApplies("RAUMSOLLTEMP_II") == !singleCircuit);
     CHECK(writableNumberApplies("RAUMSOLLTEMP_III") == !singleCircuit);
 }
@@ -1675,7 +1675,7 @@ TEST_CASE("climate: heating and hot water discoveries reuse the number /set topi
     CHECK(heat.find(std::string("\"") + programmschalterOptions[3] + "\"") != std::string::npos);
     CHECK(dhw.find(HA_NAME_DHW_SET "/set") != std::string::npos);
     const bool wpl17 = std::strcmp(HA_DEVICE_MODEL_STR, "wpl17") == 0;
-    const bool wpla = std::strcmp(HA_DEVICE_MODEL_STR, "wpla") == 0;
+    const bool wpla = std::strcmp(HA_DEVICE_MODEL_STR, "wpla7") == 0;
     const bool canbSetpoint = wpl17 || wpla || std::strcmp(HA_DEVICE_MODEL_STR, "wpl9") == 0;
     // CAN-B member name: "SPEICHER" on a WPL-A build (HA_CONTROLLER_WPLA), else "KESSEL_CANB".
     const std::string current = std::string("heatingpump/") +
@@ -2389,8 +2389,8 @@ TEST_CASE("model profile: one place decides the model's capabilities (#94)", "[m
     CHECK(kModel.wpmw2WritesVerified == (m == "wpl13e" || m == "ttl33"));
     CHECK(kModel.canBDhwRoutes == (m == "wpl9"));
     CHECK(kModel.canBRoutes == (m == "wpl17"));
-    CHECK(kModel.singleHeatingCircuit == (m == "wpl17" || m == "wpla"));
-    CHECK(kModel.dhwOnKesselCanb == (m == "wpla"));
+    CHECK(kModel.singleHeatingCircuit == (m == "wpl17" || m == "wpla7"));
+    CHECK(kModel.dhwOnKesselCanb == (m == "wpla7"));
     CHECK(kModel.perMemberEnergy == (m == "wpl17"));
     CHECK(kModel.ignoreUnusedIwsRuntime == (m == "wpl13e"));
 #ifdef HA_CONTROLLER_WPM3
@@ -2633,7 +2633,7 @@ TEST_CASE("writeSignal: a second read-back follows once the value has settled", 
 
 
 #if defined(HA_CONTROLLER_WPLA)
-// WPL-A 07 only. Run with: make test MODEL_TEST_FLAGS="-DHA_DEVICE_MODEL=wpla"
+// WPL-A 07 only. Run with: make test MODEL_TEST_FLAGS="-DHA_DEVICE_MODEL=wpla7"
 
 // ============================================================================
 // WP restart detection (processAndUpdate, ha-stiebel-control.h)

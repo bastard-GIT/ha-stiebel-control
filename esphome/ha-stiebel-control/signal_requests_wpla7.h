@@ -16,7 +16,7 @@
  *                           supported), so nothing is polled there.
  *
  * Scaling: ANZEIGE_NIEDERDRUCK (hundredths of bar) and SOLLWERT/ISTWERT_UEBERHITZUNG
- * (tenths of K) behave as on the WPMW II, so ElsterTable.h uses the WPMW II rows for wpla.
+ * (tenths of K) behave as on the WPMW II, so ElsterTable.h uses the WPMW II rows for wpla7.
  *
  * Known differences to the shared ElsterTable.h types (kept as upstream, see PR):
  *   - VERDICHTERDREHZAHLGRENZE 0x4fac, PUMPENSTATUS 0x01d2, STEIGUNG_HEIZKURVE 0x4f2b,
@@ -27,8 +27,8 @@
  *   - SAMMEL_RELAISSTATUS 0x0a20 is blacklisted in the table, so it is not polled.
  */
 
-#ifndef SIGNAL_REQUESTS_WPLA_H
-#define SIGNAL_REQUESTS_WPLA_H
+#ifndef SIGNAL_REQUESTS_WPLA7_H
+#define SIGNAL_REQUESTS_WPLA7_H
 
 #include "config.h"
 #include "signal_requests_base.h"
@@ -168,4 +168,4 @@ extern const SignalRequest signalRequests[] = {
 
 extern const size_t SIGNAL_REQUEST_COUNT_VALUE = sizeof(signalRequests) / sizeof(SignalRequest);
 
-#endif // SIGNAL_REQUESTS_WPLA_H
+#endif // SIGNAL_REQUESTS_WPLA7_H

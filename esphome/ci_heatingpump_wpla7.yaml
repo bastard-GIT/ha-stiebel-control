@@ -3,7 +3,7 @@
 substitutions:
   device_name: heatingpump
   friendly_name: "Stiebel Eltron Wärmepumpe"
-  device_model: "wpla"
+  device_model: "wpla7"
   language: "DE"
   can_tx_pin: GPIO18
   can_rx_pin: GPIO16
@@ -15,4 +15,4 @@ packages:
   board: !include ha-stiebel-control/board_esp32s3.yaml
   can: !include ha-stiebel-control/can_esp32.yaml
   base: !include ha-stiebel-control/common.yaml
-  sensors: !include ha-stiebel-control/wpla.yaml
+  sensors: !include ha-stiebel-control/wpla7.yaml

@@ -16,7 +16,7 @@ jobs:
     name: Unit Tests (${{ matrix.model }})
     strategy:
       matrix:
-        model: [test_model, wpl9, wpl10ac, wpl13e, wpl17, wpf10, ttl33, wpl18e, wpla]
+        model: [test_model, wpl9, wpl10ac, wpl13e, wpl17, wpf10, ttl33, wpl18e, wpla7]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -96,7 +96,7 @@ jobs:
       - run: cp esphome/ci_secrets.yaml esphome/secrets.yaml
       - run: esphome compile esphome/ci_heatingpump_wpl9.yaml
 
-  compile-wpla:
+  compile-wpla7:
     name: Compile WPL-A (ESP32-S3, W5500 Ethernet)
     runs-on: ubuntu-latest
     steps:
@@ -112,7 +112,7 @@ jobs:
           key: esphome-idf-esphome-2026.10.1
           restore-keys: esphome-idf-
       - run: cp esphome/ci_secrets.yaml esphome/secrets.yaml
-      - run: esphome compile esphome/ci_heatingpump_wpla.yaml
+      - run: esphome compile esphome/ci_heatingpump_wpla7.yaml
 
   compile-esp32:
     name: Compile ESP32 (MCP2515)

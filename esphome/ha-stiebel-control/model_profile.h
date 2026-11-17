@@ -31,7 +31,7 @@
 #define HA_MODEL_ID_wpc7       7
 #define HA_MODEL_ID_wpf10      8
 #define HA_MODEL_ID_ttl33      9
-#define HA_MODEL_ID_wpla       10
+#define HA_MODEL_ID_wpla7       10
 
 #define HA_PP_CAT_(a, b) a##b
 #define HA_PP_CAT(a, b) HA_PP_CAT_(a, b)
@@ -45,15 +45,15 @@
 #if HA_MODEL_ID == HA_MODEL_ID_wpl10ac
   #define HA_CONTROLLER_WPM3
 #endif
-// WPL-A 07 (fork model "wpla", WPM3 operating mode names via HA_CONTROLLER_WPM3 || HA_CONTROLLER_WPLA):
+// WPL-A 07 (fork model "wpla7", WPM3 operating mode names via HA_CONTROLLER_WPM3 || HA_CONTROLLER_WPLA):
 // own request table, signal names and status sensors
-#if HA_MODEL_ID == HA_MODEL_ID_wpla
+#if HA_MODEL_ID == HA_MODEL_ID_wpla7
   #define HA_CONTROLLER_WPLA
 #endif
 // WPL family registers (CAN-B models, WPM3 and WPL-A) in the signal table
 #if HA_MODEL_ID == HA_MODEL_ID_wpl17 || HA_MODEL_ID == HA_MODEL_ID_wpl23 || \
     HA_MODEL_ID == HA_MODEL_ID_wpl10ac || HA_MODEL_ID == HA_MODEL_ID_wpc7 || \
-    HA_MODEL_ID == HA_MODEL_ID_wpla
+    HA_MODEL_ID == HA_MODEL_ID_wpla7
   #define HA_ELSTER_WPL_FAMILY
 #endif
 
@@ -97,7 +97,7 @@ inline constexpr ModelProfile kProfileWpl17  {false, false,   true,  true,  fals
 inline constexpr ModelProfile kProfileWpl18e {true,  false,   false, false, false,  false,    false,    false};
 inline constexpr ModelProfile kProfileTtl33  {true,  true,    false, false, false,  false,    false,    false};
 // WPL-A 07: one heating circuit, DHW on 0x201
-inline constexpr ModelProfile kProfileWpla   {false, false,   true,  false, false,  false,    false,    true};
+inline constexpr ModelProfile kProfileWpla7   {false, false,   true,  false, false,  false,    false,    true};
 
 #if HA_MODEL_ID == HA_MODEL_ID_wpl9
 inline constexpr const ModelProfile& kModel = kProfileWpl9;
@@ -109,8 +109,8 @@ inline constexpr const ModelProfile& kModel = kProfileWpl17;
 inline constexpr const ModelProfile& kModel = kProfileWpl18e;
 #elif HA_MODEL_ID == HA_MODEL_ID_ttl33
 inline constexpr const ModelProfile& kModel = kProfileTtl33;
-#elif HA_MODEL_ID == HA_MODEL_ID_wpla
-inline constexpr const ModelProfile& kModel = kProfileWpla;
+#elif HA_MODEL_ID == HA_MODEL_ID_wpla7
+inline constexpr const ModelProfile& kModel = kProfileWpla7;
 #else
 inline constexpr const ModelProfile& kModel = kProfileGeneric;
 #endif
