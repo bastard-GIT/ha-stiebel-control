@@ -481,5 +481,7 @@
 #define LNAME_WW_SOLLTEMPERATUR                "DHW Target Temperature"
 #undef  LNAME_WW_ISTTEMPERATUR
 #define LNAME_WW_ISTTEMPERATUR                 "DHW Actual Temperature"
+#undef  LNAME_PUMPENSTATUS_ROH
+#define LNAME_PUMPENSTATUS_ROH                 "Pump status (bit field)"
 #endif
 #endif // HA_LANGUAGE_EN

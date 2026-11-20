@@ -466,7 +466,11 @@ const ElsterIndex ElsterTable[] =
 #ifdef HA_CONTROLLER_WPMW2
   { "BETRIEBS_STATUS"                             , 0x0176, 0               , false, true  },
 #else
+#if defined(HA_CONTROLLER_WPLA)
+  { "BETRIEBS_STATUS"                             , 0x0176, 0               , false, true },
+#else
   { "BETRIEBS_STATUS"                             , 0x0176, 0               , false, false },
+#endif
 #endif
   { "ZUSTAND_BCC"                                 , 0x0177, 0               , false, false },
   { "K_OS_GERAETEKONFIGURATON"                    , 0x0179, 0               , false, false },
@@ -582,7 +586,11 @@ const ElsterIndex ElsterTable[] =
 #ifdef HA_CONTROLLER_WPMW2
   { "PUMPENSTATUS"                                , 0x01d2, et_little_endian, false, true  },
 #else
+#if defined(HA_CONTROLLER_WPLA)
+  { "PUMPENSTATUS"                                , 0x01d2, et_default      , false, true },
+#else
   { "PUMPENSTATUS"                                , 0x01d2, et_little_endian, false, false },
+#endif
 #endif
   { "QUELLE_IST"                                  , 0x01d4, et_dec_val      , false, false },
 #ifdef HA_CONTROLLER_WPMW2
@@ -816,7 +824,7 @@ const ElsterIndex ElsterTable[] =
   { "BUS_SCAN"                                    , 0x02e0, 0               , false, false },
   { "WE2_ISTTEMP"                                 , 0x02e1, 0               , false, false },
 #if defined(HA_CONTROLLER_WPLA)
-  { "WP_WASSERVOLUMENSTROM"                       , 0x02e2, 0               , false, false },
+  { "WP_WASSERVOLUMENSTROM"                       , 0x02e2, et_dec_val      , false, true  }, // WPL-A 05/07 (jojo18222/ha-stiebel-control), checked on a WPL-A 07; was WE_KONFIGURATION
 #else
   { "WE_KONFIGURATION"                            , 0x02e2, 0               , false, false },
 #endif
@@ -910,7 +918,11 @@ const ElsterIndex ElsterTable[] =
   { "NACHTKUEHLUNG_LUEFTUNG"                      , 0x033a, 0               , false, false },
   { "SOMMERBETRIEB_LUEFTUNG"                      , 0x033b, 0               , false, false },
   { "FILTER_RESET_NACH_LAUFZEIT"                  , 0x033c, 0               , false, false },
+#if defined(HA_CONTROLLER_WPLA)
+  { "INTEGRAL_REGELABWEICHUNG"                    , 0x033d, et_dec_val      , false, true  }, // WPL-A 07, checked on the device (bastard-GIT)
+#else
   { "INTEGRAL_REGELABWEICHUNG"                    , 0x033d, 0               , false, false },
+#endif
   { "REGELABWEICHUNG"                             , 0x033e, 0               , false, false },
   { "PROGRAMMSCHALTER_LUEFTUNG"                   , 0x033f, 0               , false, false },
   { "ABLUFTTEMPERATUR_SOLL"                       , 0x0340, 0               , false, false },
@@ -1723,8 +1735,16 @@ const ElsterIndex ElsterTable[] =
   { "TEST_OBJEKT_33"                              , 0x0662, 0               , false, false },
   { "TEST_OBJEKT_34"                              , 0x0663, 0               , false, false },
   { "TEST_OBJEKT_35"                              , 0x0664, 0               , false, false },
+#if defined(HA_CONTROLLER_WPLA)
+  { "AUSLEGUNGSTEMPERATUR"                        , 0x0665, et_dec_val      , false, true },
+#else
   { "AUSLEGUNGSTEMPERATUR"                        , 0x0665, et_dec_val      , false, false },
+#endif
+#if defined(HA_CONTROLLER_WPLA)
+  { "WAERMEBEDARF"                                , 0x0666, et_dec_val      , false, true },
+#else
   { "WAERMEBEDARF"                                , 0x0666, et_dec_val      , false, false },
+#endif
   { "TEST_OBJEKT_38"                              , 0x0667, 0               , false, false },
   { "TEST_OBJEKT_39"                              , 0x0668, 0               , false, false },
   { "TEST_OBJEKT_40"                              , 0x0669, 0               , false, false },
@@ -1748,7 +1768,11 @@ const ElsterIndex ElsterTable[] =
   { "TEST_OBJEKT_58"                              , 0x067b, 0               , false, false },
   { "TEST_OBJEKT_59"                              , 0x067c, 0               , false, false },
   { "STANDBY_PUMPENLEISTUNG"                      , 0x067d, 0               , false, false },
+#if defined(HA_CONTROLLER_WPLA)
+  { "SOLLSPREIZUNG"                               , 0x067e, et_dec_val      , false, true },
+#else
   { "SOLLSPREIZUNG"                               , 0x067e, et_dec_val      , false, false },
+#endif
   { "MAXIMALE_PUMPENLEISTUNG"                     , 0x067f, 0               , false, false },
   { "TEST_OBJEKT_63"                              , 0x0680, 0               , false, false },
   { "TEST_OBJEKT_64"                              , 0x0681, 0               , false, false },
@@ -1803,10 +1827,22 @@ const ElsterIndex ElsterTable[] =
   { "TEST_OBJEKT_109"                             , 0x06ae, 0               , false, false },
   { "TEST_OBJEKT_110"                             , 0x06af, 0               , false, false },
   { "TEST_OBJEKT_111"                             , 0x06b0, 0               , false, false },
+#if defined(HA_CONTROLLER_WPLA)
+  { "SPANNUNG_INVERTER"                           , 0x06b1, et_dec_val      , false, true  },
+#else
   { "SPANNUNG_INVERTER"                           , 0x06b1, et_dec_val      , false, false },
+#endif
+#if defined(HA_CONTROLLER_WPLA)
+  { "STROM_INVERTER"                              , 0x06b2, et_dec_val      , false, true  },
+#else
   { "STROM_INVERTER"                              , 0x06b2, et_dec_val      , false, false },
+#endif
   { "TEST_OBJEKT_114"                             , 0x06b3, 0               , false, false },
+#if defined(HA_CONTROLLER_WPLA)
+  { "STROM_MOTOR"                                 , 0x06b4, et_dec_val      , false, true  },
+#else
   { "STROM_MOTOR"                                 , 0x06b4, et_dec_val      , false, false },
+#endif
   { "TEST_OBJEKT_116"                             , 0x06b5, 0               , false, false },
   { "TEST_OBJEKT_117"                             , 0x06b6, 0               , false, false },
   { "TEST_OBJEKT_118"                             , 0x06b7, 0               , false, false },
@@ -2071,13 +2107,21 @@ const ElsterIndex ElsterTable[] =
   // WPL13E (WPMW II/IWS): hundredths of bar - verified: standstill 7.5 bar, run HP 13.1 / LP 4.1 bar
   { "ANZEIGE_HOCHDRUCK"                           , 0x07a6, et_cent_val     , false, true  },
 #else
+#if defined(HA_CONTROLLER_WPLA)
+  { "ANZEIGE_HOCHDRUCK"                           , 0x07a6, et_cent_val     , false, false },
+#else
   { "ANZEIGE_HOCHDRUCK"                           , 0x07a6, et_dec_val      , false, false },
+#endif
 #endif
 #ifdef HA_CONTROLLER_WPMW2
   // WPL13E (WPMW II/IWS): hundredths of bar - verified: standstill 7.5 bar, run HP 13.1 / LP 4.1 bar
   { "ANZEIGE_NIEDERDRUCK"                         , 0x07a7, et_cent_val     , false, true  },
 #else
+#if defined(HA_CONTROLLER_WPLA)
+  { "ANZEIGE_NIEDERDRUCK"                         , 0x07a7, et_cent_val     , false, false },
+#else
   { "ANZEIGE_NIEDERDRUCK"                         , 0x07a7, et_dec_val      , false, false },
+#endif
 #endif
 #ifdef HA_CONTROLLER_WPMW2
   // WPL13E: status word, not a power. Raw 0x0008 at standstill, 0x0221/0x0228 while running (bit 9 = compressor on,
@@ -2127,7 +2171,11 @@ const ElsterIndex ElsterTable[] =
   { "EXV_OEFFNUNGSGRAD_MIN"                       , 0x07c7, 0               , false, false },
   { "EXV_OEFFNUNGSGRAD_MAX"                       , 0x07c8, 0               , false, false },
   { "EXV_TOTZONE"                                 , 0x07c9, 0               , false, false },
+#if defined(HA_CONTROLLER_WPLA)
+  { "EXV_OEFFNUNGSGRAD"                           , 0x07ca, et_dec_val      , false, true  }, // WPL-A 07, checked on the device (bastard-GIT)
+#else
   { "EXV_OEFFNUNGSGRAD"                           , 0x07ca, 0               , false, false },
+#endif
   { "TIEFPASS_ND"                                 , 0x07cc, 0               , false, false },
   { "ELEKTRONISCHE_ABTAUBEDARFSERKENNUNG"         , 0x07cd, 0               , false, false },
   { "ELEKTRONISCHE_ABTAUENDEERKENNUNG"            , 0x07ce, 0               , false, false },
@@ -2187,19 +2235,43 @@ const ElsterIndex ElsterTable[] =
   // WPL13E: tenths of K (setpoint 56 = 5.6 K)
   { "SOLLWERT_UEBERHITZUNG"                       , 0x07f3, et_dec_val      , false, true  },
 #else
+#if defined(HA_CONTROLLER_WPLA)
+  { "SOLLWERT_UEBERHITZUNG"                       , 0x07f3, et_dec_val      , false, true  },
+#else
   { "SOLLWERT_UEBERHITZUNG"                       , 0x07f3, 0               , false, false },
+#endif
 #endif
 #ifdef HA_CONTROLLER_WPMW2
   // WPL13E: tenths of K (setpoint 56 = 5.6 K)
   { "ISTWERT_UEBERHITZUNG_VERDAMPFER"             , 0x07f4, et_dec_val      , false, true  },
 #else
+#if defined(HA_CONTROLLER_WPLA)
+  { "ISTWERT_UEBERHITZUNG_VERDAMPFER"             , 0x07f4, et_dec_val      , false, true  },
+#else
   { "ISTWERT_UEBERHITZUNG_VERDAMPFER"             , 0x07f4, 0               , false, false },
 #endif
+#endif
   { "ISTWERT_UEBERHITZUNG_REKUPERATOR_KUEHLEN"    , 0x07f5, 0               , false, false },
+#if defined(HA_CONTROLLER_WPLA)
+  { "VORSTEUER_OEFFNUNGSGRAD"                     , 0x07f6, et_dec_val      , false, true  }, // WPL-A 07, checked on the device (bastard-GIT)
+#else
   { "VORSTEUER_OEFFNUNGSGRAD"                     , 0x07f6, 0               , false, false },
+#endif
+#if defined(HA_CONTROLLER_WPLA)
+  { "P_ANTEIL_EXV"                                , 0x07f7, et_cent_val     , false, true  }, // WPL-A 07, checked on the device (bastard-GIT)
+#else
   { "P_ANTEIL_EXV"                                , 0x07f7, 0               , false, false },
+#endif
+#if defined(HA_CONTROLLER_WPLA)
+  { "I_ANTEIL_EXV"                                , 0x07f8, et_cent_val     , false, true  }, // WPL-A 07, checked on the device (bastard-GIT)
+#else
   { "I_ANTEIL_EXV"                                , 0x07f8, 0               , false, false },
+#endif
+#if defined(HA_CONTROLLER_WPLA)
+  { "D_ANTEIL_EXV"                                , 0x07f9, et_cent_val     , false, true  }, // WPL-A 07, checked on the device (bastard-GIT)
+#else
   { "D_ANTEIL_EXV"                                , 0x07f9, 0               , false, false },
+#endif
   { "PENDELN_RELATIV"                             , 0x07fa, 0               , false, false },
   { "FAKTOR_REGELDYNAMIK"                         , 0x07fb, 0               , false, false },
   { "LZ_DHC12"                                    , 0x0805, 0               , false, true  },
@@ -2255,7 +2327,11 @@ const ElsterIndex ElsterTable[] =
   // WPMW II: IWS: display INFO IWS LUEFTER in %, 0 at standstill, about 83 running
   { "LUEFTERDREHZAHL"                             , 0x0833, 0               , false, true  },
 #else
+#if defined(HA_CONTROLLER_WPLA)
+  { "LUEFTERDREHZAHL"                             , 0x0833, 0               , false, true },
+#else
   { "LUEFTERDREHZAHL"                             , 0x0833, 0               , false, false },
+#endif
 #endif
   { "D_ANTEIL_ZWISCHENEINSPRITZUNG"               , 0x0834, 0               , false, false },
   { "SOLLWERT_UEBERHITZUNG_ZWISCHENEINSPRITZUNG"  , 0x0835, 0               , false, false },
@@ -2590,18 +2666,18 @@ const ElsterIndex ElsterTable[] =
   { "EINGANG12"                                   , 0x0a34, 0               , false, false },
   { "EINGANG13"                                   , 0x0a35, 0               , false, false },
 #if defined(HA_CONTROLLER_WPLA)
-  { "FROSTSCHUTZTEMPERATUR"                       , 0x0a36, 0               , false, false },
+  { "FROSTSCHUTZTEMPERATUR"                       , 0x0a36, et_dec_val      , false, true  }, // WPL-A 05/07 (jojo18222/ha-stiebel-control), checked on a WPL-A 07; was EINGANG14
 #else
   { "EINGANG14"                                   , 0x0a36, 0               , false, false },
 #endif
 #if defined(HA_CONTROLLER_WPLA)
-  { "VERFLUESSIGER_TEMP_WPLA"                     , 0x0a37, 0               , false, false },
+  { "VERFLUESSIGER_TEMP_WPLA"                     , 0x0a37, et_dec_val      , false, true  }, // WPL-A 05/07 (jojo18222/ha-stiebel-control), checked on a WPL-A 07; was EINGANG15. Suffixed: VERFLUESSIGERTEMP already used (0x034f)
 #else
   { "EINGANG15"                                   , 0x0a37, 0               , false, false },
 #endif
   { "EINGANG16"                                   , 0x0a38, 0               , false, false },
 #if defined(HA_CONTROLLER_WPLA)
-  { "OELSUMPFTEMP"                                , 0x0a39, 0               , false, false },
+  { "OELSUMPFTEMP"                                , 0x0a39, et_dec_val      , false, true  }, // WPL-A 05/07 (jojo18222/ha-stiebel-control), checked on a WPL-A 07; was EINGANG17
 #else
   { "EINGANG17"                                   , 0x0a39, 0               , false, false },
 #endif
@@ -3943,7 +4019,11 @@ const ElsterIndex ElsterTable[] =
   { "ZWEITER_WE_STATUS"                           , 0xfdab, et_little_endian, false, false },
 #endif
   { "WP_EVU"                                      , 0xfdac, et_little_endian, false, false },
+#if defined(HA_CONTROLLER_WPLA)
+  { "WP_PUMPENSTATUS"                             , 0xfdad, et_little_bool  , false, true },
+#else
   { "WP_PUMPENSTATUS"                             , 0xfdad, et_little_bool  , false, false },
+#endif
   { "WP_STATUS"                                   , 0xfdae, et_little_endian, false, true  },
   { "DAUERLAUF_PUFFERLADEPUMPE"                   , 0xfdaf, et_little_endian, false, false },
   { "PUMPENZYKLEN"                                , 0xfdb2, et_little_endian, false, false },
@@ -4042,7 +4122,7 @@ const ElsterIndex ElsterTable[] =
   // kr0ner/OneESP32ToRuleThemAll index facts (WPM3 generation)
 #ifdef HA_ELSTER_WPL_FAMILY
 #if defined(HA_CONTROLLER_WPLA)
-  { "UNTERKUEHLUNG_KONDENSATOR"                   , 0x0aff, et_dec_val      , false, false },
+  { "UNTERKUEHLUNG_KONDENSATOR"                   , 0x0aff, et_dec_val      , false, true  },
 #else
   { "UNTERK_COND"                                 , 0x0aff, et_dec_val      , false, false },
 #endif
@@ -4056,31 +4136,51 @@ const ElsterIndex ElsterTable[] =
   { "WAERMEPUMPE_AUS"                             , 0x4ea1, 0               , false, false },
   { "RAUMEINFLUSS_4EA4"                           , 0x4ea4, 0               , false, false },
 #if defined(HA_CONTROLLER_WPLA)
-  { "MINIMAL_TEMPERATUR_HK_1"                     , 0x4ea7, et_dec_val      , false, false },
+  { "MINIMAL_TEMPERATUR_HK_1"                     , 0x4ea7, et_dec_val      , false, true  },
 #else
   { "MINTEMP"                                     , 0x4ea7, et_dec_val      , false, false },
 #endif
+#if defined(HA_CONTROLLER_WPLA)
+  { "MAXTEMP"                                     , 0x4ea8, et_dec_val      , false, true  },
+#else
   { "MAXTEMP"                                     , 0x4ea8, et_dec_val      , false, false },
+#endif
   { "MISCHERDYNAMIK"                              , 0x4ea9, 0               , false, false },
   { "PUFFERTRIEB"                                 , 0x4eaf, 0               , false, false },
+#if defined(HA_CONTROLLER_WPLA)
+  { "SOLLTEMPERATUR"                              , 0x4eb0, et_dec_val      , false, true  },
+#else
   { "SOLLTEMPERATUR"                              , 0x4eb0, et_dec_val      , false, false },
+#endif
   { "WW_ANFORDERUNG"                              , 0x4eb2, 0               , false, false },
+#if defined(HA_CONTROLLER_WPLA)
+  { "ISTTEMPERATUR"                               , 0x4eb4, et_dec_val      , false, true  },
+#else
   { "ISTTEMPERATUR"                               , 0x4eb4, et_dec_val      , false, false },
+#endif
+#if defined(HA_CONTROLLER_WPLA)
+  { "KOMFORTTEMPERATUR"                           , 0x4eb8, et_dec_val      , false, true  },
+#else
   { "KOMFORTTEMPERATUR"                           , 0x4eb8, et_dec_val      , false, false },
+#endif
+#if defined(HA_CONTROLLER_WPLA)
+  { "ECOTEMPERATUR"                               , 0x4eb9, et_dec_val      , false, true  },
+#else
   { "ECOTEMPERATUR"                               , 0x4eb9, et_dec_val      , false, false },
+#endif
   { "KONSTANTE_LEISTUNG"                          , 0x4eba, et_dec_val      , false, false },
   { "REDUZIERUNG_LEISTUNG"                        , 0x4ebf, 0               , false, false },
   { "FET_ECO"                                     , 0x4ec4, 0               , false, false },
   { "BETRIEBS_STATUS_4ECD"                        , 0x4ecd, 0               , false, false },
   { "RAUMSOLLTEMP"                                , 0x4ece, et_dec_val      , false, false },
 #if defined(HA_CONTROLLER_WPLA)
-  { "WAERMEPUMPEN_STATUS_WPLA"                    , 0x4eda, 0               , false, false },
+  { "WAERMEPUMPEN_STATUS_WPLA"                    , 0x4eda, 0               , false, true  },
 #else
   { "WAERMEPUMPEN_STATUS_4EDA"                    , 0x4eda, 0               , false, false },
 #endif
   { "TAUPUNKTTEMP"                                , 0x4ee0, et_dec_val      , false, false },
 #if defined(HA_CONTROLLER_WPLA)
-  { "STATUS_WPLA"                                 , 0x4eef, 0               , false, false },
+  { "STATUS_WPLA"                                 , 0x4eef, 0               , false, true  },
 #else
   { "BETRIEBS_STATUS_4EEF"                        , 0x4eef, 0               , false, false },
 #endif
@@ -4097,19 +4197,23 @@ const ElsterIndex ElsterTable[] =
   { "VERDICHTER_SOFORTSTART"                      , 0x4ef4, 0               , false, false },
   { "INBETRIEBNAHME_NOTBETRIEB"                   , 0x4ef5, 0               , false, false },
 #if defined(HA_CONTROLLER_WPLA)
-  { "WW_LEG_SOLLTEMPERATUR"                       , 0x4ef9, et_dec_val      , false, false },
+  { "WW_LEG_SOLLTEMPERATUR"                       , 0x4ef9, et_dec_val      , false, true  },
 #else
   { "WW_SOLLTEMPERATUR"                           , 0x4ef9, et_dec_val      , false, false },
 #endif
-  { "EINGESCHALTETE_STUFEN"                       , 0x4efa, 0               , false, false },
 #if defined(HA_CONTROLLER_WPLA)
-  { "LAUFZEIT_VERDICHTER_HEIZEN_WPLA"             , 0x4efb, 0               , false, false },
+  { "EINGESCHALTETE_STUFEN"                       , 0x4efa, 0               , false, true },
+#else
+  { "EINGESCHALTETE_STUFEN"                       , 0x4efa, 0               , false, false },
+#endif
+#if defined(HA_CONTROLLER_WPLA)
+  { "LAUFZEIT_VERDICHTER_HEIZEN_WPLA"             , 0x4efb, 0               , false, true  },
 #else
   { "LAUFZEIT_VD_HEIZEN"                          , 0x4efb, 0               , false, false },
 #endif
   { "LAUFZEIT_VD_KUEHLEN"                         , 0x4efc, 0               , false, false },
 #if defined(HA_CONTROLLER_WPLA)
-  { "LAUFZEIT_VERDICHTER_WW_WPLA"                 , 0x4efd, 0               , false, false },
+  { "LAUFZEIT_VERDICHTER_WW_WPLA"                 , 0x4efd, 0               , false, true  },
 #else
   { "LAUFZEIT_VD_WW"                              , 0x4efd, 0               , false, false },
 #endif
@@ -4118,7 +4222,7 @@ const ElsterIndex ElsterTable[] =
   { "RAUMSOLLTEMP_KUEHLEN"                        , 0x4f04, et_dec_val      , false, false },
   { "KUEHLART"                                    , 0x4f05, 0               , false, false },
 #if defined(HA_CONTROLLER_WPLA)
-  { "LAUFZEIT_VERDICHTER_ABTAUEN"                 , 0x4f06, 0               , false, false },
+  { "LAUFZEIT_VERDICHTER_ABTAUEN"                 , 0x4f06, 0               , false, true  },
 #else
   { "LAUFZEIT_VD_ABTAUEN"                         , 0x4f06, 0               , false, false },
 #endif
@@ -4131,12 +4235,32 @@ const ElsterIndex ElsterTable[] =
   { "SOMMERBETRIEB_4F1E"                          , 0x4f1e, 0               , false, false },
   { "GEBAEUDEDAEMPFUNG"                           , 0x4f1f, 0               , false, false },
   { "PUMPENZYKLEN_4F21"                           , 0x4f21, 0               , false, false },
+#if defined(HA_CONTROLLER_WPLA)
+  { "WARMWASSERBETRIEB"                           , 0x4f24, 0               , false, true },
+#else
   { "WARMWASSERBETRIEB"                           , 0x4f24, 0               , false, false },
+#endif
+#if defined(HA_CONTROLLER_WPLA)
+  { "WARMWASSERHYSTERESE"                         , 0x4f25, et_dec_val      , false, true },
+#else
   { "WARMWASSERHYSTERESE"                         , 0x4f25, et_dec_val      , false, false },
+#endif
+#if defined(HA_CONTROLLER_WPLA)
+  { "ANTILEGIONELLENBEHANDLUNG"                   , 0x4f28, et_little_bool  , false, true  }, // WPL-A 05/07 (jojo18222/ha-stiebel-control), checked on a WPL-A 07
+#else
   { "ANTILEGIONELLENBEHANDLUNG"                   , 0x4f28, 0               , false, false },
+#endif
+#if defined(HA_CONTROLLER_WPLA)
+  { "STEIGUNG_HEIZKURVE"                          , 0x4f2b, et_cent_val      , false, true  },
+#else
   { "STEIGUNG_HEIZKURVE"                          , 0x4f2b, et_dec_val      , false, false },
+#endif
   { "ABTAUEN_EINLEITEN"                           , 0x4f2d, 0               , false, false },
+#if defined(HA_CONTROLLER_WPLA)
+  { "STILLSTANDSZEIT"                             , 0x4f2e, 0               , false, true },
+#else
   { "STILLSTANDSZEIT"                             , 0x4f2e, 0               , false, false },
+#endif
   { "MINIMALE_ABTAUZEIT"                          , 0x4f2f, 0               , false, false },
   { "MAXIMALER_STROM"                             , 0x4f3f, et_dec_val      , false, false },
   { "VORLAUFISTTEMP_NHZ"                          , 0x4f40, et_dec_val      , false, false },
@@ -4147,43 +4271,59 @@ const ElsterIndex ElsterTable[] =
   { "HEIZUNGSDRUCK"                               , 0x4f46, et_cent_val     , false, false },
   { "VOLUMENSTROM_4F47"                           , 0x4f47, et_cent_val     , false, false },
 #if defined(HA_CONTROLLER_WPLA)
-  { "ZEITINTERVALL"                               , 0x4f4d, et_dec_val      , false, false },
+  { "ZEITINTERVALL"                               , 0x4f4d, et_default      , false, true  },
 #else
   { "ZEITINTERVALL_4F4D"                          , 0x4f4d, et_dec_val      , false, false },
 #endif
-  { "RESTSTILLSTANDSZEIT"                         , 0x4f4e, 0               , false, false },
-  { "AUSSENTEMPERATUR_WP"                         , 0x4f4f, et_dec_val      , false, false },
-  { "EVU_SPERRE_CONFIG"                           , 0x4f84, 0               , false, false },
 #if defined(HA_CONTROLLER_WPLA)
-  { "PUMPENLEISTUNG_STANDBY_WPLA"                 , 0x4f8a, 0               , false, false },
+  { "RESTSTILLSTANDSZEIT"                         , 0x4f4e, 0               , false, true  },
+#else
+  { "RESTSTILLSTANDSZEIT"                         , 0x4f4e, 0               , false, false },
+#endif
+  { "AUSSENTEMPERATUR_WP"                         , 0x4f4f, et_dec_val      , false, false },
+#if defined(HA_CONTROLLER_WPLA)
+  { "EVU_SPERRE_CONFIG"                           , 0x4f84, 0               , false, true  },
+#else
+  { "EVU_SPERRE_CONFIG"                           , 0x4f84, 0               , false, false },
+#endif
+#if defined(HA_CONTROLLER_WPLA)
+  { "PUMPENLEISTUNG_STANDBY_WPLA"                 , 0x4f8a, 0               , false, true  },
 #else
   { "PUMPENLEISTUNG_STANDBY_4F8A"                 , 0x4f8a, 0               , false, false },
 #endif
 #if defined(HA_CONTROLLER_WPLA)
-  { "PUMPENLEISTUNG_HEIZEN_WPLA"                  , 0x4f8c, 0               , false, false },
+  { "PUMPENLEISTUNG_HEIZEN_WPLA"                  , 0x4f8c, 0               , false, true  },
 #else
   { "PUMPENLEISTUNG_HEIZEN"                       , 0x4f8c, 0               , false, false },
 #endif
+#if defined(HA_CONTROLLER_WPLA)
+  { "PUMPENLEISTUNG_WW_WPLA"                      , 0x4f8f, 0               , false, true  },
+#else
   { "PUMPENLEISTUNG_WW_4F8F"                      , 0x4f8f, 0               , false, false },
+#endif
   { "SPREIZUNG"                                   , 0x4f91, et_dec_val      , false, true  }, // WPL-A 07, checked on the device
 #if defined(HA_CONTROLLER_WPLA)
-  { "PUMPENLEISTUNG_KUEHLEN_WPLA"                 , 0x4f92, 0               , false, false },
+  { "PUMPENLEISTUNG_KUEHLEN_WPLA"                 , 0x4f92, 0               , false, true  },
 #else
   { "PUMPENLEISTUNG_KUEHLEN"                      , 0x4f92, 0               , false, false },
 #endif
   { "MINIMALE_PUMPLEISTUNG"                       , 0x4f98, et_default      , false, true  }, // WPL-A 07, checked on the device
   { "MAXIMALE_PUMPLEISTUNG"                       , 0x4f99, et_default      , false, true  }, // WPL-A 07, checked on the device
   { "LAUFZEIT_PASSIVKUEHLUNG"                     , 0x4f9a, et_dec_val      , false, false },
+#if defined(HA_CONTROLLER_WPLA)
+  { "ADAPTION_UEBERHITZUNG"                       , 0x4f9e, et_dec_val      , false, true  },
+#else
   { "ADAPTION_UEBERHITZUNG"                       , 0x4f9e, et_dec_val      , false, false },
+#endif
   { "UNTERKUEHLUNG_EXVENTIL_EIN"                  , 0x4f9f, et_dec_val      , false, true  }, // WPL-A 07, checked on the device
   { "BETRIEBSART_KAELTEKREISREGLER"               , 0x4fa0, et_default      , false, false }, // WPL-A 07, checked on the device
 #if defined(HA_CONTROLLER_WPLA)
-  { "SOLL_UEBERHITZUNG_SAUGGAS_VENTIL"            , 0x4fa1, et_dec_val      , false, false },
+  { "SOLL_UEBERHITZUNG_SAUGGAS_VENTIL"            , 0x4fa1, et_dec_val      , false, true  },
 #else
   { "SOLL_UEBERHITZUNG_SAUGGAS_VERDICHTER"        , 0x4fa1, et_dec_val      , false, false },
 #endif
 #if defined(HA_CONTROLLER_WPLA)
-  { "IST_UEBERHITZUNG_SAUGGAS_VENTIL"             , 0x4fa2, et_dec_val      , false, false },
+  { "IST_UEBERHITZUNG_SAUGGAS_VENTIL"             , 0x4fa2, et_dec_val      , false, true  },
 #else
   { "IST_UEBERHITZUNG_SAUGGAS_VERDICHTER"         , 0x4fa2, et_dec_val      , false, false },
 #endif
@@ -4191,13 +4331,21 @@ const ElsterIndex ElsterTable[] =
   { "VORLAUFTEMP_QUELLE"                          , 0x4fa7, et_dec_val      , false, false },
   { "QUELLENDRUCK_4FA8"                           , 0x4fa8, et_dec_val      , false, false },
   { "LEISTUNG_QUELLENPUMPE"                       , 0x4fa9, et_dec_val      , false, false },
+#if defined(HA_CONTROLLER_WPLA)
+  { "VERDICHTERDREHZAHLGRENZE"                    , 0x4fac, et_default      , false, false },
+#else
   { "VERDICHTERDREHZAHLGRENZE"                    , 0x4fac, et_dec_val      , false, false },
+#endif
   { "STEIGUNG_KUEHLKURVE"                         , 0x4fb9, et_dec_val      , false, false },
   { "STARTTEMPERATUR"                             , 0x4fbe, et_dec_val      , false, false },
   { "HEIZEN_EFFIZIENZ_TAG"                        , 0x501d, et_cent_val     , false, false },
   { "HEIZEN_EFFIZIENZ_JAHR"                       , 0x501e, et_cent_val     , false, false },
   { "LEISTUNG_KUEHLEN"                            , 0x7a40, et_dec_val      , false, false },
+#if defined(HA_CONTROLLER_WPLA)
+  { "EVU_SPERRE"                                  , 0xabe1, 0               , false, true  },
+#else
   { "EVU_SPERRE"                                  , 0xabe1, 0               , false, false },
+#endif
   { "ENTLEERUNG_HYD_2"                            , 0xabe7, 0               , false, false },
   { "ENTLEERUNG_HYD_1"                            , 0xb3bd, 0               , false, false },
   { "RELAIS_NHZ1"                                 , 0xb3be, 0               , false, false },
@@ -4233,7 +4381,7 @@ const ElsterIndex ElsterTable[] =
   { "ISTDREHZAHL_LUEFTER"                         , 0xc283, 0               , false, false },
   { "TEMPERATUR_INV_LUEFTER"                      , 0xc2c2, et_dec_val      , false, false },
 #if defined(HA_CONTROLLER_WPLA)
-  { "OEFFNUNGSGRAD_BYPASSVENTIL"                  , 0xc2c3, et_dec_val      , false, false },
+  { "OEFFNUNGSGRAD_BYPASSVENTIL"                  , 0xc2c3, et_dec_val      , false, true  },
 #else
   { "OEFFNUNGSGRAD_BYPASSVENT"                    , 0xc2c3, et_dec_val      , false, false },
 #endif
@@ -4349,8 +4497,16 @@ const ElsterMeta ElsterMetaTable[] =
   { 0x01d6, "WPVORLAUFIST", LNAME_WPVORLAUFIST, "sensor", "temperature", "°C", "measurement", "mdi:thermometer-lines", NULL, NULL },
   { 0x01d7, "HILFSKESSELSOLL", LNAME_HILFSKESSELSOLL, "sensor", "temperature", "°C", "measurement", "mdi:thermometer", NULL, NULL },
   { 0x01e8, "MAX_HEIZUNG_TEMP", "Max. Vorlauftemperatur Heizung", "sensor", "temperature", "°C", "measurement", "mdi:thermometer", NULL, NULL },
+#if defined(HA_CONTROLLER_WPLA)
+  { 0x0259, "LAUFZEIT_DHC1", "Laufzeit DHC1", "sensor", "duration", "h", "", "mdi:timer-outline", NULL, NULL },
+#else
   { 0x0259, "LAUFZEIT_DHC1", "Laufzeit Nacherwärmung Stufe 1", "sensor", "duration", "h", "total_increasing", "mdi:timer", NULL, NULL },
+#endif
+#if defined(HA_CONTROLLER_WPLA)
+  { 0x025a, "LAUFZEIT_DHC2", "Laufzeit DHC2", "sensor", "duration", "h", "", "mdi:timer-outline", NULL, NULL },
+#else
   { 0x025a, "LAUFZEIT_DHC2", "Laufzeit Nacherwärmung Stufe 2", "sensor", "duration", "h", "total_increasing", "mdi:timer", NULL, NULL },
+#endif
   { 0x0265, "HEISSGAS_TEMP", "Heißgastemperatur", "sensor", "temperature", "°C", "measurement", "mdi:thermometer-high", NULL, NULL },
   { 0x027e, "WW_ECO", LNAME_WW_ECO, NULL, NULL, NULL, NULL, NULL, NULL, NULL },
   { 0x02e6, "SOLAR_WOCHENERTRAG_WH", LNAME_SOLAR_WOCHENERTRAG_WH, "sensor", "energy", "Wh", "total_increasing", "mdi:solar-power", NULL, NULL },
@@ -4429,7 +4585,11 @@ const ElsterMeta ElsterMetaTable[] =
   { 0x07f4, "ISTWERT_UEBERHITZUNG_VERDAMPFER", "Überhitzung Ist", "sensor", "temperature", "K", "measurement", "mdi:thermometer-alert", NULL, NULL },
 #else
 #endif
+#if defined(HA_CONTROLLER_WPLA)
+  { 0x0805, "LZ_DHC12", "Laufzeit DHC12", "sensor", "duration", "h", "", "mdi:timer-outline", NULL, NULL },
+#else
   { 0x0805, "LZ_DHC12", "Laufzeit Nacherwärmung Stufe 1+2", "sensor", "duration", "h", "total_increasing", "mdi:timer", NULL, NULL },
+#endif
   { 0x0806, "STARTS_ABTAUUNG", "Abtauungen gesamt", "sensor", "", "", "total_increasing", "mdi:snowflake-melt", NULL, NULL },
   { 0x0807, "ZEITDAUER_LETZTE_ABTAUUNG", "Dauer letzte Abtauung", "sensor", "duration", "s", "measurement", "mdi:timer-snowflake", NULL, NULL },
 #ifdef HA_CONTROLLER_WPMW2
@@ -4484,7 +4644,11 @@ const ElsterMeta ElsterMetaTable[] =
 #else
 #endif
   { 0xfdae, "WP_STATUS", LNAME_WP_STATUS, "sensor", "", "", "", "mdi:heat-pump", NULL, NULL },
+#if defined(HA_CONTROLLER_WPLA)
+  { 0xfdb4, "SOMMERBETRIEB", LNAME_SOMMERBETRIEB, "binary_sensor", "", "", "", "mdi:weather-sunny", NULL, NULL },
+#else
   { 0xfdb4, "SOMMERBETRIEB", LNAME_SOMMERBETRIEB, "binary_sensor", "", "", "", "mdi:weather-sunny", "on", "off" },
+#endif
   { 0xfdf5, "ANTILEGIONELLEN_ZEITPUNKT", LNAME_ANTILEGIONELLEN_ZEITPUNKT, NULL, NULL, NULL, NULL, NULL, NULL, NULL },
   { 0x0075, "RAUMFEUCHTE", "Raumfeuchte", "sensor", "humidity", "%", "measurement", "mdi:water-percent", NULL, NULL },
 #ifdef HA_ELSTER_WPL_FAMILY
@@ -4492,6 +4656,62 @@ const ElsterMeta ElsterMetaTable[] =
   { 0x4f98, "MINIMALE_PUMPLEISTUNG", "Minimale Pumpleistung", "sensor", "", "%", "measurement", "mdi:pump", NULL, NULL },
   { 0x4f99, "MAXIMALE_PUMPLEISTUNG", "Maximale Pumpleistung", "sensor", "", "%", "measurement", "mdi:pump", NULL, NULL },
   { 0x4f9f, "UNTERKUEHLUNG_EXVENTIL_EIN", "Unterkühlung Exventil Ein", "sensor", "", "K", "measurement", "mdi:thermometer-lines", NULL, NULL },
+#endif
+// WPL-A: metadata rows of the running firmware for rows whose upstream metadata is missing
+#if defined(HA_CONTROLLER_WPLA)
+  { 0x0176, "BETRIEBS_STATUS", LNAME_BETRIEBS_STATUS_ROH, "sensor", "", "", "", "mdi:list-status", NULL, NULL },
+  { 0x01d2, "PUMPENSTATUS", LNAME_PUMPENSTATUS_ROH, "sensor", "", "", "", "mdi:pump", NULL, NULL },
+  { 0x02e2, "WP_WASSERVOLUMENSTROM", "WP Wasservolumenstrom", "sensor", "", "l/min", "measurement", "mdi:water-pump", NULL, NULL },
+  { 0x033d, "INTEGRAL_REGELABWEICHUNG", "Integral Regelabweichung", "sensor", "", "", "measurement", "mdi:sigma", NULL, NULL },
+  { 0x0665, "AUSLEGUNGSTEMPERATUR", "Auslegungstemperatur", "sensor", "temperature", "°C", "", "mdi:thermometer-low", NULL, NULL },
+  { 0x0666, "WAERMEBEDARF", "Wärmebedarf", "sensor", "power", "kW", "", "mdi:home-thermometer", NULL, NULL },
+  { 0x067e, "SOLLSPREIZUNG", "Sollspreizung", "sensor", "", "K", "", "mdi:arrow-expand-vertical", NULL, NULL },
+  { 0x06b1, "SPANNUNG_INVERTER", "Spannung Inverter", "sensor", "voltage", "V", "measurement", "mdi:flash", NULL, NULL },
+  { 0x06b2, "STROM_INVERTER", "Strom Inverter", "sensor", "current", "A", "measurement", "mdi:current-ac", NULL, NULL },
+  { 0x06b4, "STROM_MOTOR", "Strom Motor", "sensor", "current", "A", "measurement", "mdi:current-ac", NULL, NULL },
+  { 0x07ca, "EXV_OEFFNUNGSGRAD", "EXV Öffnungsgrad", "sensor", "", "%", "measurement", "mdi:valve", NULL, NULL },
+  { 0x07f3, "SOLLWERT_UEBERHITZUNG", "Sollwert Überhitzung", "sensor", "", "K", "measurement", "mdi:thermometer-chevron-up", NULL, NULL },
+  { 0x07f4, "ISTWERT_UEBERHITZUNG_VERDAMPFER", "Istwert Überhitzung Verdampfer", "sensor", "", "K", "measurement", "mdi:thermometer-chevron-up", NULL, NULL },
+  { 0x07f6, "VORSTEUER_OEFFNUNGSGRAD", "Vorsteuer Öffnungsgrad", "sensor", "", "%", "measurement", "mdi:valve", NULL, NULL },
+  { 0x07f7, "P_ANTEIL_EXV", "P-Anteil EXV", "sensor", "", "", "measurement", "mdi:tune-variant", NULL, NULL },
+  { 0x07f8, "I_ANTEIL_EXV", "I-Anteil EXV", "sensor", "", "", "measurement", "mdi:tune-variant", NULL, NULL },
+  { 0x07f9, "D_ANTEIL_EXV", "D-Anteil EXV", "sensor", "", "", "measurement", "mdi:tune-variant", NULL, NULL },
+  { 0x0833, "LUEFTERDREHZAHL", "Lüfterdrehzahl", "sensor", "", "%", "", "mdi:fan", NULL, NULL },
+  { 0x0a36, "FROSTSCHUTZTEMPERATUR", "Frostschutztemperatur", "sensor", "temperature", "°C", "measurement", "mdi:snowflake-thermometer", NULL, NULL },
+  { 0x0a37, "VERFLUESSIGER_TEMP_WPLA", "Verflüssigertemperatur", "sensor", "temperature", "°C", "measurement", "mdi:thermometer", NULL, NULL },
+  { 0x0a39, "OELSUMPFTEMP", "Ölsumpftemperatur", "sensor", "temperature", "°C", "measurement", "mdi:thermometer", NULL, NULL },
+  { 0x0aff, "UNTERKUEHLUNG_KONDENSATOR", "Unterkühlung Kondensator", "sensor", "", "K", "measurement", "mdi:thermometer-lines", NULL, NULL },
+  { 0x4ea7, "MINIMAL_TEMPERATUR_HK_1", NULL, "sensor", "", "", "", "mdi:thermometer", NULL, NULL },
+  { 0x4ea8, "MAXTEMP", "HK1 Maximaltemperatur", "sensor", "temperature", "°C", "", "mdi:thermometer-high", NULL, NULL },
+  { 0x4eb0, "SOLLTEMPERATUR", "HK1 Solltemperatur", "sensor", "temperature", "°C", "measurement", "mdi:thermometer", NULL, NULL },
+  { 0x4eb4, "ISTTEMPERATUR", "HK1 Isttemperatur", "sensor", "temperature", "°C", "measurement", "mdi:thermometer", NULL, NULL },
+  { 0x4eb8, "KOMFORTTEMPERATUR", "HK1 Komforttemperatur", "sensor", "temperature", "°C", "", "mdi:home-thermometer", NULL, NULL },
+  { 0x4eb9, "ECOTEMPERATUR", "HK1 Ecotemperatur", "sensor", "temperature", "°C", "", "mdi:home-thermometer-outline", NULL, NULL },
+  { 0x4eda, "WAERMEPUMPEN_STATUS_WPLA", "Wärmepumpenstatus (roh)", "sensor", "", "", "", "mdi:list-status", NULL, NULL },
+  { 0x4eef, "STATUS_WPLA", LNAME_STATUS_WPLA_ROH, "sensor", "", "", "", "mdi:list-status", NULL, NULL },
+  { 0x4ef9, "WW_LEG_SOLLTEMPERATUR", "Legionellen Solltemperatur", "sensor", "temperature", "°C", "", "mdi:bacteria", NULL, NULL },
+  { 0x4efa, "EINGESCHALTETE_STUFEN", "Verdichterstufen", "sensor", "", "", "", "mdi:stairs", NULL, NULL },
+  { 0x4efb, "LAUFZEIT_VERDICHTER_HEIZEN_WPLA", "Laufzeit Verdichter Heizen", "sensor", "duration", "h", "", "mdi:timer-outline", NULL, NULL },
+  { 0x4efd, "LAUFZEIT_VERDICHTER_WW_WPLA", "Laufzeit Verdichter Warmwasser", "sensor", "duration", "h", "", "mdi:timer-outline", NULL, NULL },
+  { 0x4f06, "LAUFZEIT_VERDICHTER_ABTAUEN", "Laufzeit Verdichter Abtauen", "sensor", "duration", "h", "", "mdi:timer-outline", NULL, NULL },
+  { 0x4f24, "WARMWASSERBETRIEB", "Warmwasserbetrieb (roh)", "sensor", "", "", "", "mdi:water-boiler", NULL, NULL },
+  { 0x4f25, "WARMWASSERHYSTERESE", "Warmwasserhysterese", "sensor", "", "K", "", "mdi:water-thermometer", NULL, NULL },
+  { 0x4f28, "ANTILEGIONELLENBEHANDLUNG", "Antilegionellenbehandlung", "binary_sensor", "", "", "", "mdi:bacteria-outline", "on", "off" },
+  { 0x4f2b, "STEIGUNG_HEIZKURVE", "HK1 Steigung Heizkurve", "sensor", "", "", "", "mdi:chart-line", NULL, NULL },
+  { 0x4f2e, "STILLSTANDSZEIT", "Stillstandszeit", "sensor", "duration", "min", "", "mdi:timer-pause-outline", NULL, NULL },
+  { 0x4f4d, "ZEITINTERVALL", "Zeitintervall", "sensor", "", "", "measurement", "mdi:timer-outline", NULL, NULL },
+  { 0x4f4e, "RESTSTILLSTANDSZEIT", "Reststillstandszeit", "sensor", "duration", "min", "measurement", "mdi:timer-sand", NULL, NULL },
+  { 0x4f84, "EVU_SPERRE_CONFIG", "EVU Sperre Konfiguration (roh)", "sensor", "", "", "", "mdi:transmission-tower", NULL, NULL },
+  { 0x4f8a, "PUMPENLEISTUNG_STANDBY_WPLA", "Pumpenleistung Standby", "sensor", "", "%", "", "mdi:pump", NULL, NULL },
+  { 0x4f8c, "PUMPENLEISTUNG_HEIZEN_WPLA", "Pumpenleistung Heizen", "sensor", "", "%", "", "mdi:pump", NULL, NULL },
+  { 0x4f8f, "PUMPENLEISTUNG_WW_WPLA", "Pumpenleistung Warmwasser", "sensor", "", "%", "", "mdi:pump", NULL, NULL },
+  { 0x4f92, "PUMPENLEISTUNG_KUEHLEN_WPLA", "Pumpenleistung Kühlen", "sensor", "", "%", "", "mdi:pump", NULL, NULL },
+  { 0x4f9e, "ADAPTION_UEBERHITZUNG", "Adaption Überhitzung", "sensor", "", "K", "measurement", "mdi:thermometer-lines", NULL, NULL },
+  { 0x4fa1, "SOLL_UEBERHITZUNG_SAUGGAS_VENTIL", "Soll Überhitzung Sauggas Ventil", "sensor", "", "K", "measurement", "mdi:thermometer-lines", NULL, NULL },
+  { 0x4fa2, "IST_UEBERHITZUNG_SAUGGAS_VENTIL", "Ist Überhitzung Sauggas Ventil", "sensor", "", "K", "measurement", "mdi:thermometer-lines", NULL, NULL },
+  { 0xabe1, "EVU_SPERRE", "EVU Sperre (roh)", "sensor", "", "", "", "mdi:transmission-tower-off", NULL, NULL },
+  { 0xc2c3, "OEFFNUNGSGRAD_BYPASSVENTIL", "Öffnungsgrad Bypassventil", "sensor", "", "%", "measurement", "mdi:valve", NULL, NULL },
+  { 0xfdad, "WP_PUMPENSTATUS", "Wärmepumpe Pumpenstatus", "binary_sensor", "running", "", "", "mdi:pump", "on", "off" },
 #endif
 };
 const unsigned ElsterMetaCount = sizeof(ElsterMetaTable) / sizeof(ElsterMetaTable[0]);

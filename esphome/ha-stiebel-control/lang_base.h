@@ -285,4 +285,7 @@
 #if defined(HA_CONTROLLER_WPLA)
 #define LNAME_WW_SOLLTEMPERATUR                "Warmwasser Soll Temperatur"
 #define LNAME_WW_ISTTEMPERATUR                 "Warmwasser Ist Temperatur"
+#define LNAME_PUMPENSTATUS_ROH                 "Pumpenstatus (Bitfeld)"
+#define LNAME_BETRIEBS_STATUS_ROH              "Betriebsstatus (Bitfeld)"
+#define LNAME_STATUS_WPLA_ROH                  "Statuswort WPL-A (Bitfeld)"
 #endif

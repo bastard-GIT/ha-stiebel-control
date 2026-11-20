@@ -1533,7 +1533,9 @@ TEST_CASE("WPMW II: IWS values and parameters carry read-only metadata (#52)", "
         const ElsterMeta* meta = GetElsterMeta(ei);
         if (!isWpmw2Model()) {
             CHECK(ei->Type == r.typeOther);
-            CHECK(meta == nullptr);
+#if !defined(HA_CONTROLLER_WPLA)
+            CHECK(meta == nullptr);   // the WPL-A build carries metadata rows of its own for some of these
+#endif
             continue;
         }
         CHECK(ei->Type == r.type);
