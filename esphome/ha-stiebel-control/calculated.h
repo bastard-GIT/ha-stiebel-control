@@ -146,7 +146,12 @@ static const CalculatedSensorConfig calculatedSensors[] = {
     {"stiebel_cop_heiz", LNAME_COP_HEIZ, HA_TOPIC_ROOT "/calculated/cop_heiz/state",
      "sensor", "", "", "measurement", "mdi:radiator", "", "", "", true, true, "cop_heiz"},
     {"stiebel_cop_gesamt", LNAME_COP_GESAMT, HA_TOPIC_ROOT "/calculated/cop_gesamt/state",
-     "sensor", "", "", "measurement", "mdi:chart-line", "", "", "", true, true, "cop_gesamt"}
+     "sensor", "", "", "measurement", "mdi:chart-line", "", "", "", true, true, "cop_gesamt"},
+#if defined(HA_CONTROLLER_WPLA)
+    // WPL-A 07: heat pump restart counter (wp_restart.h)
+    {"stiebel_calculated_wp_restarts", LNAME_CALC_WP_RESTARTS, HA_TOPIC_ROOT "/calculated/wp_restarts/state",
+     "sensor", "", "", "total_increasing", "mdi:restart-alert", "", "", "", true},
+#endif
 };
 
 static const size_t CALCULATED_SENSOR_COUNT = sizeof(calculatedSensors) / sizeof(CalculatedSensorConfig);
@@ -188,6 +193,9 @@ enum CalcIdx : size_t {
     CALC_IDX_COP_WW,
     CALC_IDX_COP_HEIZ,
     CALC_IDX_COP_GESAMT,
+#if defined(HA_CONTROLLER_WPLA)
+    CALC_IDX_WP_RESTARTS,
+#endif
     CALC_IDX_COUNT
 };
 static_assert(CALCULATED_SENSOR_COUNT == CALC_IDX_COUNT, "calculatedSensors and CalcIdx must have the same rows");

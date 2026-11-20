@@ -515,5 +515,7 @@
 #define LNAME_EN_WAERME_2WE_HEIZ_TAG          "Heat Backup Heating Today"
 #undef  LNAME_EN_WAERME_2WE_WW_TAG
 #define LNAME_EN_WAERME_2WE_WW_TAG            "Heat Backup Hot Water Today"
+#undef  LNAME_CALC_WP_RESTARTS
+#define LNAME_CALC_WP_RESTARTS                 "HP restarts"
 #endif
 #endif // HA_LANGUAGE_EN

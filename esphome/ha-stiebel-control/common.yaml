@@ -86,6 +86,8 @@ esphome:
     - energy.h
     # energy_counters.h: energy counters and COP for WPL-A 07 (used only with HA_CONTROLLER_WPLA)
     - energy_counters.h
+    # wp_restart.h: heat pump restart counter (WPL-A 07 only)
+    - wp_restart.h
     - writables.h
     - sg_ready_io.h
     - time_programs.h
@@ -183,6 +185,8 @@ mqtt:
         tag: "MQTT_CONN"
     - lambda: |-
         noteMqttConnected();
+        // WPL-A: restart counter (0 after boot), cached state is re-sent by republishAllStates() below
+        publishWpRestarts();
         // Anything "published" during boot before the broker connection was up
         // was lost, but is already marked as discovered. Re-sends writable
         // numbers/selects, climate, calculated sensors and raw signals, paced by

@@ -3261,3 +3261,137 @@ TEST_CASE("climate: mode follows the ESP availability instead of staying off", "
     const std::string hk2 = mqttFindPayload("climate/heatingpump/stiebel_climate_heizung_hk2/config");
     if (kModel.wpmw2WritesVerified) CHECK(hk2.find(expected) != std::string::npos);
 }
+
+#if defined(HA_CONTROLLER_WPLA)
+// WPL-A 07 only. Run with: make test MODEL_TEST_FLAGS="-DHA_DEVICE_MODEL=wpla7"
+
+// ============================================================================
+// WP restart detection (processAndUpdate, ha-stiebel-control.h)
+// ============================================================================
+
+static void resetWpRestartState() {
+    resetDiscoveryState();              // also clears the state cache
+    nextRequestTime.clear();
+    lastForeignRxMs = 0;
+    haveForeignRx = false;
+    restartPending = false;
+    restartPendingSinceMs = 0;
+    wpRestartCount = 0;
+}
+
+// Foreign frame (type 2 response from FES, 0x100): counts as bus activity
+static void sendWpOtherFrame() {
+    processAndUpdate(0x100, {0xD2, 0x00, 0xFA, 0x07, 0xA8, 0x00, 0x08});
+}
+
+// Own frame (0x680): must not count as bus activity
+static void sendWpOwnFrame() {
+    processAndUpdate(0x680, {0xD1, 0x00, 0xFA, 0x07, 0xA8, 0x00, 0x00});
+}
+
+// 0xFE round from MANAGER (0x480, type 6, index 0xFE)
+static void sendWpFeRound() {
+    processAndUpdate(0x480, {0x06, 0x79, 0xFE, 0x01, 0x00, 0x00, 0x00});
+}
+
+TEST_CASE("wp_restart: normal operation with short gaps is not a restart", "[wp_restart]") {
+    resetWpRestartState();
+    fake_millis() = 1000;
+    sendWpOtherFrame();
+    fake_millis() = 6000;
+    sendWpOtherFrame();
+    fake_millis() = 11000;
+    sendWpOtherFrame();
+    fake_millis() = 16000;
+    sendWpFeRound();
+    CHECK(wpRestartCount == 0u);
+    CHECK(!restartPending);
+}
+
+TEST_CASE("wp_restart: silence then 0xFE counts once, burst does not count again", "[wp_restart]") {
+    resetWpRestartState();
+    fake_millis() = 0;
+    sendWpOtherFrame();                    // first foreign frame
+    fake_millis() = 28000;
+    sendWpOtherFrame();                    // ends the 28 s silence, arms detector
+    CHECK(restartPending);
+    CHECK(restartPendingSinceMs == 28000UL);
+
+    // state that the restart must clear / reset
+    invalidStreak[1ULL] = 3;
+    nextRequestTime[1ULL] = 900000000UL;
+    mqtt_client_instance().clear();
+
+    fake_millis() = 44600;                 // 16.6 s after the silence ended
+    sendWpFeRound();
+    CHECK(wpRestartCount == 1u);
+    CHECK(!restartPending);
+    CHECK(invalidStreak.empty());
+    CHECK(nextRequestTime[1ULL] == fake_millis());
+    CHECK(mqttFindPayload("wp_restarts/state") == "1");
+
+    // burst of further 0xFE frames (7 in total with the first one)
+    for (int i = 1; i <= 6; i++) {
+        fake_millis() = 44600 + i * 100UL;
+        sendWpFeRound();
+    }
+    CHECK(wpRestartCount == 1u);
+}
+
+TEST_CASE("wp_restart: silence then other frame without 0xFE is not a restart", "[wp_restart]") {
+    resetWpRestartState();
+    fake_millis() = 0;
+    sendWpOtherFrame();
+    fake_millis() = 28000;
+    sendWpOtherFrame();
+    CHECK(restartPending);
+    fake_millis() = 30000;
+    sendWpOtherFrame();
+    CHECK(wpRestartCount == 0u);
+    CHECK(restartPending);                 // still armed, no 0xFE seen
+}
+
+TEST_CASE("wp_restart: 0xFE after the 60 s window (frames in between) is not a restart", "[wp_restart]") {
+    resetWpRestartState();
+    fake_millis() = 0;
+    sendWpOtherFrame();
+    fake_millis() = 28000;
+    sendWpOtherFrame();                    // silence ends at 28000, window starts
+    CHECK(restartPending);
+    // keep the bus busy (gaps 5 s, so no re-arm) until the window has expired
+    for (unsigned long t = 33000; t <= 88000; t += 5000) {
+        fake_millis() = t;
+        sendWpOtherFrame();
+    }
+    fake_millis() = 89000;                 // 61 s after the silence ended
+    sendWpFeRound();
+    CHECK(wpRestartCount == 0u);
+    CHECK(!restartPending);
+}
+
+TEST_CASE("wp_restart: own 0x680 frames do not end the silence", "[wp_restart]") {
+    resetWpRestartState();
+    fake_millis() = 0;
+    sendWpOtherFrame();                    // lastForeignRxMs = 0
+    fake_millis() = 5000;
+    sendWpOwnFrame();
+    fake_millis() = 15000;
+    sendWpOwnFrame();                      // 15 s after the last foreign frame, still silence
+    CHECK(lastForeignRxMs == 0UL);
+    CHECK(!restartPending);
+    CHECK(haveForeignRx);
+    // 0xFE 16.6 s after the last foreign frame: the 0x680 frames did not reset the silence
+    fake_millis() = 16600;
+    sendWpFeRound();
+    CHECK(wpRestartCount == 1u);
+}
+
+TEST_CASE("wp_restart: first foreign frame after start is not a silence", "[wp_restart]") {
+    resetWpRestartState();
+    fake_millis() = 50000;
+    sendWpFeRound();                       // first frame ever is the 0xFE round
+    CHECK(wpRestartCount == 0u);
+    CHECK(haveForeignRx);
+    CHECK(!restartPending);
+}
+#endif

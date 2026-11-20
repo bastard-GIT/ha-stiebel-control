@@ -393,10 +393,16 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
 #include "energy_counters.h"
 #endif
 
+// Heat pump restart counter (wp_restart.h): empty stubs on the other models
+#include "wp_restart.h"
+
 void processAndUpdate(uint32_t can_id, const std::vector<uint8_t> &msg)
 {
     // processCanMessage() leaves the member unset for short frames
     if (msg.size() < 7) return;
+    // Restart detection runs before the type filter: the 0xFE round is a type-6 frame.
+    // Frames from the ESP itself (0x680) do not count as bus activity.
+    wpRestartOnFrame(can_id, msg);
     // Elster telegram type = low nibble of byte 0 (0 write, 1 read request, 2 response).
     // A read request carries no value: decoding it attributed a fake 0 to the
     // requesting node (e.g. the WPMW II polling the IWS -> "MANAGER VERDICHTER 0.0").

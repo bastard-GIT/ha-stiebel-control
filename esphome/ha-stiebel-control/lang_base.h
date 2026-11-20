@@ -304,4 +304,5 @@
 #define LNAME_EN_WAERME_WW_TAG                 "Wärme Warmwasser Tag"
 #define LNAME_EN_WAERME_2WE_HEIZ_TAG           "Wärme 2. WE Heizung Tag"
 #define LNAME_EN_WAERME_2WE_WW_TAG             "Wärme 2. WE Warmwasser Tag"
+#define LNAME_CALC_WP_RESTARTS                 "WP-Neustarts"
 #endif
