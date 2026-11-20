@@ -221,6 +221,7 @@ void readSignalRaw(const CanMember *cm, uint16_t index, [[maybe_unused]] const c
              data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
 
     id(my_can).send_data(CanMembers[cm_pc].CanId, use_extended_id, data);
+    STIEBEL_DEBUG_TX(CanMembers[cm_pc].CanId, data);
 }
 
 void readSignal(const CanMember *cm, const ElsterIndex *ei)
@@ -293,6 +294,7 @@ void writeSignal(const CanMember *cm, const ElsterIndex *ei, const char *&strIn)
     ESP_LOGI("writeSignal()", "%s", logmsg);
 
     id(my_can).send_data(CanMembers[cm_pc].CanId, use_extended_id, data);
+    STIEBEL_DEBUG_TX(CanMembers[cm_pc].CanId, data);
     // Command echo: publish the read-back even if the value did not change
     forceNextStatePublish(*cm, ei);
     // The immediate read-back may still return the old value; read again once settled

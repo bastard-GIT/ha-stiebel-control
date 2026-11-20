@@ -17,12 +17,16 @@
 #
 # Defaults — override in your top-level heatingpump.yaml substitutions
 substitutions:
-  device_name: heatingpump    # ESPHome node name, hostname and root of every MQTT topic (lower case, a-z 0-9 -)
+  device_name: heatingpump    # ESPHome node name and hostname (lower case, a-z 0-9 -); default root of the MQTT topics
+  topic_root: ${device_name}  # root of every MQTT topic, discovery node ID and default entity ID (HA_TOPIC_ROOT); set it when the hostname must differ from the topic root
   friendly_name: "Heating Pump CAN Interface"   # ESPHome device name in Home Assistant
   disable_sg_ready: "false"   # "true" hides all SG Ready entities (e.g. WPC7, which has no SG Ready input)
   read_only: "false"          # "true": never write to the heat pump (no setpoints/modes/clock; reading and bus scan only)
   # Network package from this folder: network_wifi.yaml (default) or network_ethernet_w5500.yaml
   network_package: "network_wifi.yaml"
+  fw_version: "2.7.0"                   # firmware version; shown as project version and in the Firmware Version sensor (boot_info.h)
+  ntp_server: "pool.ntp.org"            # SNTP server (e.g. your router in an isolated network)
+  api_reboot_timeout: "15min"           # reboot if no API client connects for this long; "0s" disables (e.g. when only MQTT is used, no API client)
 
 packages:
   network: !include ${network_package}
@@ -33,7 +37,7 @@ esphome:
   friendly_name: ${friendly_name}
   project:
     name: "bullitt186.ha-stiebel-control"
-    version: "2.7.0"
+    version: "${fw_version}"
   on_boot:
     priority: 600
     then:
@@ -66,6 +70,8 @@ esphome:
     - lang_base.h
     - lang_en.h
     - sg_ready_controller.h
+    # unix_time.h: UTC time helper used by boot_info.h
+    - unix_time.h
     - dhw_program.h
     # Firmware modules (#109), in include order; each header includes what it needs,
     # ha-stiebel-control.h includes all of them. Listed so ESPHome copies them.
@@ -85,11 +91,14 @@ esphome:
     - fault_list.h
     - republish.h
     - ha-stiebel-control.h
+    # boot_info.h includes crash_trace.h and unix_time.h
+    - crash_trace.h
+    - boot_info.h
     - signal_requests_base.h
     # model-specific signal_requests_*.h is declared by each model yaml package
   build_flags:
     - "-DHA_DEVICE_MODEL=${device_model}"
-    - "-DHA_DEVICE_NAME=${device_name}"
+    - "-DHA_DEVICE_NAME=${topic_root}"
     - "-DHA_LANGUAGE_${language}"
     - "-DHA_DISABLE_SG_READY_${disable_sg_ready}"
     - "-DHA_READ_ONLY_${read_only}"
@@ -114,13 +123,14 @@ debug:
 #                                       #
 #########################################
 api:
-  reboot_timeout: 15min
+  reboot_timeout: ${api_reboot_timeout}
   encryption:
     key: !secret api_encryption_key
 
 ota:
-  platform: esphome
-  password: !secret ota_password
+  - platform: esphome
+    id: ota_esphome   # id lets external packages extend this component via !extend
+    password: !secret ota_password
 
 safe_mode:
   reboot_timeout: 5min
@@ -138,16 +148,16 @@ mqtt:
   # Disable native ESPHome discovery - using custom auto-discovery instead
   discovery: false
   discovery_prefix: homeassistant
-  topic_prefix: ${device_name}
+  topic_prefix: ${topic_root}
   # Birth message - sent when ESP32 connects
   birth_message:
-    topic: ${device_name}/status
+    topic: ${topic_root}/status
     payload: online
     qos: 1
     retain: true
   # Last Will Testament - sent by broker if ESP32 disconnects unexpectedly
   will_message:
-    topic: ${device_name}/status
+    topic: ${topic_root}/status
     payload: offline
     qos: 1
     retain: true
@@ -158,7 +168,7 @@ mqtt:
   # Remote log via MQTT: warnings and errors only. Per-frame CAN logs are DEBUG and
   # INFO stays on the API/serial log (esphome logs).
   log_topic:
-    topic: ${device_name}/debug
+    topic: ${topic_root}/debug
     level: WARN
   # Keepalive for connection monitoring
   keepalive: 15s
@@ -191,7 +201,7 @@ mqtt:
         level: WARN
         format: "Disconnected from MQTT broker - will automatically retry"
   on_message:
-    - topic: ${device_name}/reconnect
+    - topic: ${topic_root}/reconnect
       then:
         - logger.log: "Manual reconnect triggered"
 
@@ -203,15 +213,15 @@ mqtt:
             if (x == "online") republishAllDiscoveries();
 
     # Bus scan: payload "<MEMBER>" (all table indices) or "<MEMBER> 0x0000 0x0fff"
-    - topic: ${device_name}/scan/start
+    - topic: ${topic_root}/scan/start
       then:
         - lambda: startScan(x);
-    - topic: ${device_name}/scan/stop
+    - topic: ${topic_root}/scan/stop
       then:
         - lambda: stopScan();
 
     # Force republish all discoveries (including writable entities)
-    - topic: ${device_name}/republish_discoveries
+    - topic: ${topic_root}/republish_discoveries
       then:
         - lambda: |-
             ESP_LOGI("MQTT_CMD", "Manual discovery republish triggered");
@@ -236,7 +246,7 @@ interval:
     then:
       - lambda: faultListStep();
 
-  # Bus scan (idle unless started via <device_name>/scan/start)
+  # Bus scan (idle unless started via <topic_root>/scan/start)
   - interval: 150ms
     then:
       - lambda: scanStep();
@@ -246,6 +256,7 @@ interval:
     then:
       - lambda: |-
           processCalculatedSensors();
+          bootinfo::loop();  // restart info once per boot to HA (boot_info.h)
 
   # Keep the retained SG Ready state/boost values fresh (survive a broker restart)
   - interval: 5min
@@ -265,6 +276,21 @@ interval:
           pendingReadbackStep();
           pacedWriteStep();
           sgReadyPublishStep();
+
+#########################################
+#                                       #
+#   NTP / TIME                          #
+#                                       #
+#########################################
+time:
+  - platform: sntp
+    id: sntp_time
+    servers:
+      - ${ntp_server}
+    on_time_sync:
+      - lambda: |-
+          auto t = id(sntp_time).utcnow();
+          ESP_LOGI("ntp", "Time synchronized (UTC): %04d-%02d-%02d %02d:%02d:%02d", t.year, t.month, t.day_of_month, t.hour, t.minute, t.second);
 
 #########################################
 #                                       #

@@ -36,4 +36,5 @@ canbus:
         can_id_mask: 0
         then:
           - lambda: |-
+              STIEBEL_DEBUG_RX(can_id, x);
               processAndUpdate(can_id, x);
