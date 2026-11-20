@@ -1,14 +1,15 @@
-# CI-only entry point for ESP32-S3 compilation check.
+# CI-only entry point: WPL-A on an ESP32-S3 with W5500 Ethernet (network_package).
 # Not intended for end-user use — heatingpump.yaml is the user-facing config.
 substitutions:
   device_name: heatingpump
   friendly_name: "Stiebel Eltron Wärmepumpe"
   device_model: "wpla7"
   language: "DE"
-  can_tx_pin: GPIO15
+  can_tx_pin: GPIO18
   can_rx_pin: GPIO16
   can_id_pc: "0x680"
   can_bit_rate: 50kbps
+  network_package: network_ethernet_w5500.yaml
 
 packages:
   board: !include ha-stiebel-control/board_esp32s3.yaml

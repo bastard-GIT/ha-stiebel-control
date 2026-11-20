@@ -155,6 +155,32 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [Sem
   `make mutate-all`, weekly non-blocking CI workflow), a Claude Code Stop hook that runs the fast
   local checks, and design-first test rules in `CLAUDE.md`.
 
+### WPL-A 07 / production branch (fork)
+
+#### Added
+
+- `LICENSE` (GPL-3.0) and a README note on AI assistance for the WPL-A 07 branches.
+- Boot info sensors `stiebel_mk1_*` (`boot_info.h`, with `crash_trace.h` and `unix_time.h`).
+- Substitutions `topic_root`, `fw_version`, `ntp_server`, `api_reboot_timeout` and the id `ota_esphome`.
+  The MQTT root follows `topic_root`; SNTP time block in `common.yaml`.
+- Debug hooks `STIEBEL_DEBUG_RX` / `STIEBEL_DEBUG_TX` (package `stiebel-debug`).
+- WPL-A names of the running firmware: members `WPUMPE` and `SPEICHER`, signal names and `HA_NAME_*`
+  macros. Type, flag and metadata rows for WPL-A under `HA_CONTROLLER_WPLA`, the FES member and rows
+  0x4f30-0x4f34, `EVU_FREIGABE` on WPL-A.
+- `energy_counters.h`: energy counters and COP of the WPL-A 07. Replaces the COP and sums of
+  `energy.h` there.
+- WP restart counter (`wp_restart.h`, `wp_restarts`).
+- Status bit texts: `status_wpla`, `wp_status_4eda`, `verdichter_status`, `pumpenstatus`,
+  `betriebsstatus` (from `BETRIEBS_STATUS`), `verdichter_starts` (`status_bits.h`).
+- Receive path on WPL-A: type filter 0/2/4/5, OTHER frames.
+- Sentinel handling: -255, "?", "--" and -32768 are not published. Raw 0x9000 on AUS-capable
+  signals is published as the text AUS.
+- CI compile job for the WPL-A with W5500 Ethernet (`ci_heatingpump_wpla7.yaml`, `can_tx_pin: GPIO18`).
+
+#### Changed
+
+- WPM3 operating mode names also for WPL-A.
+
 ## [2.7.0] — 2026-11-15
 
 Contributions from SolderAndSyntax and bastard-GIT: WPMW II clock/date writes, W5500 Ethernet,

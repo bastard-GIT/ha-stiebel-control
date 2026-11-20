@@ -159,6 +159,9 @@ modules and not listed.
 `tests/check_modules.py` (CI) checks that the includes form no cycle, that
 `ha-stiebel-control.h` stays below 800 lines and that every included module is listed.
 
+WPL-A 07 and fork headers of the production branch: `status_bits.h`, `energy_counters.h`, `wp_restart.h`,
+`boot_info.h`, `crash_trace.h`, `unix_time.h`. They are not rows of the table above.
+
 ---
 
 ## CAN Bus Architecture

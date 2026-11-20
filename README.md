@@ -1,5 +1,7 @@
 # ha-stiebel-control
 
+> **AI assistance (WPL-A 07 branches only):** The changes of these branches for the WPL-A 07 (signals, debug hooks, network packages) were created with AI assistance (Claude by Anthropic) and tested on the author's own device. The upstream content is not affected.
+
 Requires ESPHome 2026.7.0 or newer. CI uses ESPHome 2026.10.1.
 
 ESPHome firmware for monitoring and controlling Stiebel Eltron heat pumps via CAN bus.
@@ -22,6 +24,7 @@ community work by [roberreiters](https://community.home-assistant.io/t/configure
 - [SG Ready — PV Integration](#sg-ready--pv-integration)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
+- [Fork: WPL-A 07 production branch](#fork-wpl-a-07-production-branch)
 - [Credits & License](#credits--license)
 
 ---
@@ -105,6 +108,10 @@ Raum-Soll-Temp, Heizkurve, Energien, Betriebsmodus) is only readable on **CAN-B
 (X1.2, 50 kbps)** — the same bus the ISG-Web connects to. Set
 `can_bit_rate: 50kbps` and `device_model: "wpl17"` in `heatingpump.yaml`.
 See `signal_requests_wpl17.h` header for details.
+
+**WPL-A note:** set `can_bit_rate: 50kbps` and `device_model: "wpla7"`. DHW values and
+setpoints live on `KESSEL_CANB` (0x201), compressor and inverter values on `HEIZMODUL_WPL`
+(0x514). See the `signal_requests_wpla7.h` header.
 
 To add support for your heat pump, see [Contributing](#contributing) below.
 
@@ -244,6 +251,23 @@ This repo has a fully configured agentic harness. See [docs/AGENTIC_DEVELOPMENT.
 - Signal metadata (friendly names, units, icons) in `ElsterMetaTable` — see [Signal table](docs/CONTRIBUTING.md#signal-table-elstertableh)
 - Dashboard examples
 - Documentation improvements
+
+---
+
+## Fork: WPL-A 07 production branch
+
+The `wpla07-modular` branch of the fork `bastard-GIT/ha-stiebel-control` runs on a WPL-A 07 HK 230
+Premium with HSBC 300 cylinder. Besides the upstream content it adds (details in
+[CHANGELOG.md](CHANGELOG.md), section "WPL-A 07 / production branch (fork)"):
+
+- Names of the running WPL-A firmware (MQTT topics and unique IDs), WPL-A signal names
+- `energy_counters.h`: energy counters and COP of the WPL-A 07
+- Texts for the status bit fields
+- Heat pump restart counter
+- Debug hooks `STIEBEL_DEBUG_RX` / `STIEBEL_DEBUG_TX` (package `stiebel-debug`)
+- Boot info sensors, substitutions `topic_root`, `fw_version`, `ntp_server`, `api_reboot_timeout`
+- Handling of "not available" and sentinel values (AUS, `-255`, `-32768`)
+- CI compile job for the WPL-A with W5500 Ethernet
 
 ---
 
