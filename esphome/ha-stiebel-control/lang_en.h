@@ -517,5 +517,15 @@
 #define LNAME_EN_WAERME_2WE_WW_TAG            "Heat Backup Hot Water Today"
 #undef  LNAME_CALC_WP_RESTARTS
 #define LNAME_CALC_WP_RESTARTS                 "HP restarts"
+#undef  LNAME_CALC_VERDICHTER_STARTS
+#define LNAME_CALC_VERDICHTER_STARTS           "Compressor starts total"
+#undef  LNAME_CALC_STATUS_WPLA
+#define LNAME_CALC_STATUS_WPLA                 "WPL-A status"
+#undef  LNAME_CALC_PUMPENSTATUS
+#define LNAME_CALC_PUMPENSTATUS                "Pump status"
+#undef  LNAME_CALC_VERDICHTER_STATUS
+#define LNAME_CALC_VERDICHTER_STATUS           "Compressor status"
+#undef  LNAME_CALC_WP_STATUS_4EDA
+#define LNAME_CALC_WP_STATUS_4EDA              "HP status (0x4eda)"
 #endif
 #endif // HA_LANGUAGE_EN

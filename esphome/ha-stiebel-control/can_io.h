@@ -112,6 +112,17 @@ const ElsterIndex *processCanMessage(const std::vector<uint8_t> &msg, uint32_t c
         break;
     }
 
+#if defined(HA_CONTROLLER_WPLA)
+    // Raw 0x9000 on a scaled value = parameter switched off ("AUS" on the display),
+    // e.g. 0x01ae EINSATZGRENZE_HZG; without this it shows up as -2867.2.
+    // SetValueType() leaves the value empty (KElsterTable.cpp), so the text is set here.
+    if ((byte2 + (byte1 << 8)) == 0x9000 &&
+        (ei->Type == et_dec_val || ei->Type == et_cent_val || ei->Type == et_mil_val))
+    {
+        strcpy(charValue, "AUS");
+    }
+#endif
+
     // Per-frame log: DEBUG only (compiled out at the default INFO level)
     ESP_LOGD("processCanMessage()", "%s (0x%02x):\t%s:\t%s\t(idx=0x%04x, raw=0x%04x, %s)", cm.Name, (unsigned)can_id, ei->Name, charValue,
              (unsigned)((msg[2] == 0xfa) ? (msg[4] + (msg[3] << 8)) : msg[2]), (unsigned)(byte2 + (byte1 << 8)), ElsterTypeToName(ei->Type));

@@ -77,6 +77,13 @@ constexpr uint32_t HASH_WPVORLAUFIST = hash("WPVORLAUFIST");
 constexpr uint32_t HASH_RUECKLAUFISTTEMP = hash("RUECKLAUFISTTEMP");
 constexpr uint32_t HASH_VERDICHTER = hash("VERDICHTER");
 constexpr uint32_t HASH_PUMPENSTATUS = hash("PUMPENSTATUS");
+#if defined(HA_CONTROLLER_WPLA)
+constexpr uint32_t HASH_BETRIEBS_STATUS = hash("BETRIEBS_STATUS");
+constexpr uint32_t HASH_STATUS_WPLA = hash("STATUS_WPLA");
+constexpr uint32_t HASH_STARTS_VERDICHTER_H = hash("STARTS_VERDICHTER_H");
+constexpr uint32_t HASH_STARTS_VERDICHTER_L = hash("STARTS_VERDICHTER_L");
+constexpr uint32_t HASH_WP_STATUS_4EDA = hash("WAERMEPUMPEN_STATUS_WPLA");
+#endif
 constexpr uint32_t HASH_EINSTELL_SPEICHERSOLLTEMP = hash(HA_NAME_DHW_SET);
 constexpr uint32_t HASH_RAUMSOLLTEMP_I = hash("RAUMSOLLTEMP_I");
 constexpr uint32_t HASH_ZEITDAUER_LETZTE_ABTAUUNG = hash("ZEITDAUER_LETZTE_ABTAUUNG");
@@ -116,6 +123,10 @@ static bool isIgnoredOnWpl13e(const char* name) {
     return strncmp(name, "LZ_VERD_", 8) == 0 && (strstr(name, "VERD_1") || strstr(name, "KUEHL"));
 }
 
+#if defined(HA_CONTROLLER_WPLA)
+#include "status_bits.h"
+#endif
+
 void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string &value)
 {
     // Skip empty values
@@ -145,13 +156,27 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
         if (streak >= 3) {
             ESP_LOGD("BACKOFF", "%s_%s streak=%u", cm.Name, signalName, streak);
         }
+#if defined(HA_CONTROLLER_WPLA)
+        // WPL-A: -255 is never published, only counted for the back-off (as the running firmware)
+        return;
+#else
         if (discoveredSignals.find(key) == discoveredSignals.end()) return;
         // A counter must not drop to -255: HA reads a drop of a total_increasing sensor as a
         // meter reset and adds the next real value to its sum again. Keep the last state.
         if (strcmp(signalStateClass(ei), "total_increasing") == 0) return;
+#endif
     } else if (!invalidStreak.empty()) {
         invalidStreak.erase(key);
     }
+
+#if defined(HA_CONTROLLER_WPLA)
+    // Sentinels are not published: "AUS" = parameter off (published only for AUS-capable signals),
+    // "?"/"--"/"-32768" = undecodable.
+    if ((value == "AUS" && !isAusCapable(signalName)) || value == "?" || value == "--" || value == "-32768") {
+        ESP_LOGD("SENTINEL", "%s_%s = %s, not published", cm.Name, signalName, value.c_str());
+        return;
+    }
+#endif
 
     // Invert boolean logic for EVU_SPERRE_AKTIV signal
     // CAN: 1 = lock inactive (off), 0 = lock active (on)
@@ -165,14 +190,30 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
         }
     }
     
+#if defined(HA_CONTROLLER_WPLA)
+    // AUS-capable signals: publish the numeric value with a unit, or the text "AUS".
+    // ausValue lives at function scope because publishValue points into it.
+    std::string ausValue;
+    if (isAusCapable(signalName) && value != "AUS") {
+        ausValue = value + " °C";
+        publishValue = ausValue.c_str();
+    }
+#endif
+
+#if defined(HA_CONTROLLER_WPLA)
+    // Hidden signals (inputs of a calculated sensor) get neither discovery nor state
+    const bool hidden = isHiddenSignal(signalName);
+#else
+    const bool hidden = false;
+#endif
     // Check if discovery is needed: mark as discovered and publish discovery immediately
-    if (discoveredSignals.find(key) == discoveredSignals.end()) {
+    if (!hidden && discoveredSignals.find(key) == discoveredSignals.end()) {
         discoveredSignals.emplace(key, DiscoveredSignal{&cm, ei});
         publishMqttDiscovery(cm, ei);
     }
     
     // Publish state (on change / heartbeat)
-    publishMqttState(cm, ei, publishValue);
+    if (!hidden) publishMqttState(cm, ei, publishValue);
     
     // FE 7 assignment changed: the room temperature moves to the other circuit's climate
     if (signalHash == HASH_FERNBEDIENUNGSZUORDNUNG && isWpmw2Model() && strcmp(cm.Name, "MANAGER") == 0) {
@@ -342,6 +383,18 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
 
         case HASH_PUMPENSTATUS:
             if (strcmp(cm.Name, "KESSEL") == 0 && value != "-255") lastPumpenstatus = atoi(value.c_str());
+#if defined(HA_CONTROLLER_WPLA)
+            // WPL-A: bit field as text (A: any member, sentinels never reach here)
+            if (value != "-255" && value != "-32768") {
+                char* endPtr;
+                long intValue = strtol(value.c_str(), &endPtr, 10);
+                if (endPtr != value.c_str() && *endPtr == '\0' && intValue >= -32768 && intValue <= 32767) {
+                    publishPumpenstatus(intValue & 0xFFFF);  // et_default prints signed
+                } else {
+                    ESP_LOGW("CALC", "Invalid PUMPENSTATUS value: %s", value.c_str());
+                }
+            }
+#endif
             break;
 
         case HASH_VERDICHTER: {
@@ -350,12 +403,70 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
             if (endPtr != value.c_str() && *endPtr == '\0') {
                 lastVerdichterValue = floatValue;
                 // Compressor state will be calculated and published by scheduler
+#if defined(HA_CONTROLLER_WPLA)
+                // WPL-A: status word as text, only for plain integers 0..0xFFFF
+                if (floatValue >= 0.0f && floatValue <= 65535.0f && floatValue == (float)(long)floatValue) {
+                    publishVerdichterStatus((long)floatValue);
+                }
+#endif
             } else {
                 ESP_LOGW("CALC", "Failed to parse VERDICHTER value: %s", value.c_str());
             }
             break;
         }
         
+#if defined(HA_CONTROLLER_WPLA)
+        case HASH_BETRIEBS_STATUS:
+        case HASH_STATUS_WPLA: {
+            if (value == "-255" || value == "-32768") break;
+            char* endPtr;
+            long intValue = strtol(value.c_str(), &endPtr, 10);
+            if (endPtr != value.c_str() && *endPtr == '\0' && intValue >= 0 && intValue <= 0xFFFF) {
+                if (signalHash == HASH_BETRIEBS_STATUS) publishBetriebsstatus(intValue);
+                else publishStatusWpla(intValue);
+            } else {
+                ESP_LOGW("CALC", "Invalid %s value: %s", signalName, value.c_str());
+            }
+            break;
+        }
+
+        case HASH_WP_STATUS_4EDA: {
+            if (value == "-255") break;
+            char* endPtr;
+            long intValue = strtol(value.c_str(), &endPtr, 10);
+            if (endPtr != value.c_str() && *endPtr == '\0' && intValue >= -32768 && intValue <= 65535) {
+                publishWpStatus4eda(intValue & 0xFFFF);  // et_default prints signed
+            }
+            break;
+        }
+
+        case HASH_STARTS_VERDICHTER_H: {
+            char* endPtr;
+            long intValue = strtol(value.c_str(), &endPtr, 10);
+            if (endPtr != value.c_str() && *endPtr == '\0' && intValue >= 0) {
+                startsHigh = intValue;
+                startsHighValid = true;
+                publishCompressorStartsIfChanged();
+            } else {
+                ESP_LOGW("CALC", "Invalid STARTS_VERDICHTER_H value: %s", value.c_str());
+            }
+            break;
+        }
+
+        case HASH_STARTS_VERDICHTER_L: {
+            char* endPtr;
+            long intValue = strtol(value.c_str(), &endPtr, 10);
+            if (endPtr != value.c_str() && *endPtr == '\0' && intValue >= 0 && intValue <= 999) {
+                startsLow = intValue;
+                startsLowValid = true;
+                publishCompressorStartsIfChanged();
+            } else {
+                ESP_LOGW("CALC", "Invalid STARTS_VERDICHTER_L value: %s", value.c_str());
+            }
+            break;
+        }
+#endif
+
         // WPL-A 07: energy and COP come from energy_counters.h
 #if !defined(HA_CONTROLLER_WPLA)
         case HASH_EL_AUFNAHMELEISTUNG_HEIZ:

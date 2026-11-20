@@ -697,7 +697,12 @@ TEST_CASE("updateSensor: -255 creates no entity until a valid value arrives", "[
     // once discovered, -255 is still published (entity keeps its history)
     mqtt_client_instance().clear();
     updateSensor(mgr, ei, "-255");
+#if defined(HA_CONTROLLER_WPLA)
+    // WPL-A: -255 is never published, only counted for the back-off
+    CHECK(mqtt_client_instance().messages.empty());
+#else
     CHECK(mqttFindPayload("RUECKLAUFISTTEMP/state") == "-255");
+#endif
 }
 
 TEST_CASE("backoff: interval grows from the 3rd -255 and resets on a valid value", "[can]") {
@@ -759,7 +764,12 @@ TEST_CASE("processAndUpdate: response is published for the responding node", "[c
     resetDiscoveryState();
     // HEIZMODUL (0x500) answers PC (0x680, address 0xD0): type 2, value 8 -> 0.8
     processAndUpdate(0x500, {0xD2, 0x00, 0xFA, 0x07, 0xA8, 0x00, 0x08});
+#if defined(HA_CONTROLLER_WPLA)
+    // WPL-A: VERDICHTER is the raw status word, decimal (0x08 = idle)
+    CHECK(mqttFindPayload("HEIZMODUL/VERDICHTER/state") == "8");
+#else
     CHECK(mqttFindPayload("HEIZMODUL/VERDICHTER/state") == "0.8");
+#endif
 }
 
 TEST_CASE("processAndUpdate: short frame is ignored without crash", "[can]") {
@@ -3416,5 +3426,190 @@ TEST_CASE("wpla receive path: frames from unmapped senders are published under O
     // 0x0777 is not in CanMembers: lookupCanMember falls back to OTHER (CanId 0x000)
     processAndUpdate(0x0777, {0xD2, 0x00, 0xFA, 0x00, 0x0F, 0x00, 0xB4});
     CHECK(mqttFindPayload("heatingpump/OTHER/VORLAUFISTTEMP/state") == "18.0");
+}
+
+// ============================================================================
+// WPL-A calculated text sensors (status_wpla, wp_status_4eda, verdichter_status,
+// pumpenstatus, betriebsstatus, verdichter_starts, compressor_active)
+// ============================================================================
+
+TEST_CASE("wpla_status: status_wpla text from STATUS_WPLA bits", "[wpla_status]") {
+    resetDiscoveryState();
+    resetStateCache(); mqtt_client_instance().clear();
+    publishStatusWpla(0x0000);
+    CHECK(mqttFindPayload("status_wpla/state") == "-");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    publishStatusWpla(0x0001);
+    CHECK(mqttFindPayload("status_wpla/state") == "HKP1");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    publishStatusWpla(0x0051);
+    CHECK(mqttFindPayload("status_wpla/state") == "HKP1, WP Heizbetrieb, Verdichter");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    publishStatusWpla(0x0061);
+    CHECK(mqttFindPayload("status_wpla/state") == "HKP1, WP WW-Betrieb, Verdichter");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    publishStatusWpla(0x4000);
+    CHECK(mqttFindPayload("status_wpla/state") == "Netzausfall/Abschaltung");
+}
+
+TEST_CASE("wpla_status: wp_status_4eda text from MANAGER status bits", "[wpla_status]") {
+    resetDiscoveryState();
+    resetStateCache(); mqtt_client_instance().clear();
+    publishWpStatus4eda(0x0000);
+    CHECK(mqttFindPayload("wp_status_4eda/state") == "-");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    publishWpStatus4eda(0x0002);
+    CHECK(mqttFindPayload("wp_status_4eda/state") == "Bit 1");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    publishWpStatus4eda(0x0012);
+    CHECK(mqttFindPayload("wp_status_4eda/state") == "Bit 1, Netzversorgung Inverter");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    publishWpStatus4eda(0x0050);
+    CHECK(mqttFindPayload("wp_status_4eda/state") == "Netzversorgung Inverter, WW-Betrieb");
+}
+
+TEST_CASE("wpla_status: verdichter_status text from VERDICHTER bits", "[wpla_status]") {
+    resetDiscoveryState();
+    resetStateCache(); mqtt_client_instance().clear();
+    publishVerdichterStatus(0x0008);
+    CHECK(mqttFindPayload("verdichter_status/state") == "Idle");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    publishVerdichterStatus(0x0018);
+    CHECK(mqttFindPayload("verdichter_status/state") == "Verdichter läuft");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    publishVerdichterStatus(0x0088);
+    CHECK(mqttFindPayload("verdichter_status/state") == "NHZ Stufe 1");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    publishVerdichterStatus(0x0048);
+    CHECK(mqttFindPayload("verdichter_status/state") == "NHZ Stufe 2");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    publishVerdichterStatus(0x0118);
+    CHECK(mqttFindPayload("verdichter_status/state") == "Verdichter läuft, Abtauen");
+}
+
+TEST_CASE("wpla_status: pumpenstatus text from PUMPENSTATUS bits", "[wpla_status]") {
+    resetDiscoveryState();
+    resetStateCache(); mqtt_client_instance().clear();
+    publishPumpenstatus(0x0000);
+    CHECK(mqttFindPayload("pumpenstatus/state") == "-");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    publishPumpenstatus(0x0041);
+    CHECK(mqttFindPayload("pumpenstatus/state") == "Pufferladepumpe 1, WW-Ladepumpe");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    publishPumpenstatus(0x0010);
+    CHECK(mqttFindPayload("pumpenstatus/state") == "Heizkreispumpe 1");
+}
+
+TEST_CASE("wpla_status: betriebsstatus text from BETRIEBS_STATUS bits", "[wpla_status]") {
+    resetDiscoveryState();
+    resetStateCache(); mqtt_client_instance().clear();
+    publishBetriebsstatus(0x4041);
+    CHECK(mqttFindPayload("betriebsstatus/state") == "Warmwasser");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    publishBetriebsstatus(0x2040);
+    CHECK(mqttFindPayload("betriebsstatus/state") == "Zusatzheizung");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    publishBetriebsstatus(0x0041);
+    CHECK(mqttFindPayload("betriebsstatus/state") == "Heizen");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    publishBetriebsstatus(0x0040);
+    CHECK(mqttFindPayload("betriebsstatus/state") == "Bereit");
+}
+
+TEST_CASE("wpla_status: verdichter_starts = STARTS_H * 1000 + STARTS_L, hidden signals have no state", "[wpla_status]") {
+    resetDiscoveryState();
+    startsPublished = -1;
+    startsHighValid = false;
+    startsLowValid = false;
+    updateSensor(CanMembers[cm_heizmodul_wpl], GetElsterIndex("STARTS_VERDICHTER_H"), "7");
+    updateSensor(CanMembers[cm_heizmodul_wpl], GetElsterIndex("STARTS_VERDICHTER_L"), "387");
+    CHECK(mqttFindPayload("calculated/verdichter_starts/state") == "7387");
+    CHECK(!mqttTopicPublished("STARTS_VERDICHTER_H/state"));
+    CHECK(!mqttTopicPublished("STARTS_VERDICHTER_L/state"));
+}
+
+TEST_CASE("wpla_status: compressor_active follows VERDICHTER bit 4", "[wpla_status]") {
+    resetDiscoveryState();
+    updateSensor(CanMembers[cm_heizmodul], GetElsterIndex("VERDICHTER"), "8");
+    resetStateCache(); mqtt_client_instance().clear();
+    publishCompressorActive();
+    CHECK(mqttFindPayload("compressor_active/state") == "off");
+
+    updateSensor(CanMembers[cm_heizmodul], GetElsterIndex("VERDICHTER"), "24");
+    resetStateCache(); mqtt_client_instance().clear();
+    publishCompressorActive();
+    CHECK(mqttFindPayload("compressor_active/state") == "on");
+}
+
+// ============================================================================
+// WPL-A AUS handling (raw 0x9000), DHW setpoint names and DHW routes
+// ============================================================================
+
+// Frame layout: [type | receiver, 0x00, 0xFA, idx hi, idx lo, val hi, val lo]
+TEST_CASE("wpla_aus: raw 0x9000 on an AUS-capable signal publishes AUS", "[wpla_aus]") {
+    resetDiscoveryState();
+    // MISCHERMODUL_2 (0x601) answers PC (0x680): type 2, MINIMAL_TEMPERATUR_HK_1 0x4ea7, raw 0x9000
+    processAndUpdate(0x601, {0xD2, 0x00, 0xFA, 0x4E, 0xA7, 0x90, 0x00});
+    CHECK(mqttFindPayload("heatingpump/MISCHERMODUL_2/MINIMAL_TEMPERATUR_HK_1/state") == "AUS");
+}
+
+TEST_CASE("wpla_aus: valid value on an AUS-capable signal gets the unit", "[wpla_aus]") {
+    resetDiscoveryState();
+    // raw 0x00B4 = 180, et_dec_val -> "18.0" plus unit suffix
+    processAndUpdate(0x601, {0xD2, 0x00, 0xFA, 0x4E, 0xA7, 0x00, 0xB4});
+    CHECK(mqttFindPayload("heatingpump/MISCHERMODUL_2/MINIMAL_TEMPERATUR_HK_1/state") == "18.0 °C");
+}
+
+TEST_CASE("wpla_aus: raw 0x9000 on a plain dec signal publishes nothing", "[wpla_aus]") {
+    resetDiscoveryState();
+    // HEIZMODUL (0x500) answers PC: type 2, VORLAUFISTTEMP 0x000f, raw 0x9000 (not AUS-capable)
+    processAndUpdate(0x500, {0xD2, 0x00, 0xFA, 0x00, 0x0F, 0x90, 0x00});
+    CHECK_FALSE(mqttTopicPublished("heatingpump/HEIZMODUL/VORLAUFISTTEMP/state"));
+}
+
+TEST_CASE("wpla_aus: raw 0x8000 (no sensor) publishes nothing", "[wpla_aus]") {
+    resetDiscoveryState();
+    processAndUpdate(0x601, {0xD2, 0x00, 0xFA, 0x4E, 0xA7, 0x80, 0x00});
+    CHECK_FALSE(mqttTopicPublished("heatingpump/MISCHERMODUL_2/MINIMAL_TEMPERATUR_HK_1/state"));
+}
+
+TEST_CASE("wpla_aus: DHW setpoint signal names of the running firmware", "[wpla_aus]") {
+    const ElsterIndex* komfort = GetElsterIndex(static_cast<unsigned short>(0x0013));
+    const ElsterIndex* eco = GetElsterIndex(static_cast<unsigned short>(0x0a06));
+    REQUIRE(komfort != nullptr);
+    REQUIRE(eco != nullptr);
+    CHECK(std::strcmp(komfort->Name, "WW_KOMFORT_TEMPERATUR") == 0);
+    CHECK(std::strcmp(eco->Name, "WW_ECO_TEMPERATUR") == 0);
+    CHECK(std::strcmp(HA_NAME_DHW_SET, "WW_KOMFORT_TEMPERATUR") == 0);
+    CHECK(std::strcmp(HA_NAME_DHW_SET2, "WW_ECO_TEMPERATUR") == 0);
+}
+
+TEST_CASE("WPL-A DHW setpoints use KESSEL_CANB, other registers keep the fallback", "[routes]") {
+    for (uint16_t index : {0x0013, 0x0a06}) {
+        auto r = resolveSignalRoute(kProfileWpla7, index, cm_manager);
+        CHECK(r.writeMember == cm_kessel_canb);
+        CHECK(r.readMember == cm_kessel_canb);
+        CHECK(r.stateMember == cm_kessel_canb);
+    }
+    auto room = resolveSignalRoute(kProfileWpla7, 0x0005, cm_manager);
+    CHECK(room.writeMember == cm_manager);
+    auto prog = resolveSignalRoute(kProfileWpla7, 0x010e, cm_manager);
+    CHECK(prog.writeMember == cm_manager);
 }
 #endif

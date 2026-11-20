@@ -2137,7 +2137,12 @@ const ElsterIndex ElsterTable[] =
   // Kept as et_dec_val so compressor_active (> 2) keeps working.
   { "VERDICHTER"                                  , 0x07a8, et_dec_val      , false, true  },
 #else
+#if defined(HA_CONTROLLER_WPLA)
+  // WPL-A: type default as on the running firmware
+  { "VERDICHTER"                                  , 0x07a8, et_default      , false, true  },
+#else
   { "VERDICHTER"                                  , 0x07a8, et_dec_val      , false, true  },
+#endif
 #endif
 #ifdef HA_CONTROLLER_WPMW2
   // WPMW II: IWS: display INFO IWS VERDAMPFER (evaporator outlet), tenths of °C
@@ -4579,7 +4584,11 @@ const ElsterMeta ElsterMetaTable[] =
 #ifdef HA_CONTROLLER_WPMW2
   { 0x07a8, "VERDICHTER", LNAME_VERDICHTER, "sensor", NULL, NULL, "measurement", "mdi:pump", NULL, NULL },
 #else
+#if defined(HA_CONTROLLER_WPLA)
+  { 0x07a8, "VERDICHTER", "Verdichter Statuswort", "sensor", "", "", "", "mdi:engine", NULL, NULL },
+#else
   { 0x07a8, "VERDICHTER", LNAME_VERDICHTER, "sensor", "power", "W", "measurement", "mdi:pump", NULL, NULL },
+#endif
 #endif
 #ifdef HA_CONTROLLER_WPMW2
   { 0x07a9, "VERDAMPFERISTTEMP_KOMPENSIERT", LNAME_VERDAMPFERISTTEMP_KOMPENSIERT, "sensor", "temperature", "°C", "measurement", "mdi:thermometer", NULL, NULL },

@@ -282,6 +282,18 @@ inline const char* signalStateClass(const ElsterIndex* ei) {
     return stateClass;
 }
 
+#if defined(HA_CONTROLLER_WPLA)
+// Parameters that can be switched off on the display (raw 0x9000 = "AUS").
+// Published as text ("AUS" or "<value> °C") instead of a numeric sensor, so HA shows the off state.
+static bool isAusCapable(const char *name) {
+    static const char *const kAus[] = {"MINIMAL_TEMPERATUR_HK_1", "BIVALENZALTERNATIVTEMPERATUR_HZG",
+                                       "BIVALENZALTERNATIVTEMPERATUR_WW"};
+    for (const char *n : kAus)
+        if (strcmp(name, n) == 0) return true;
+    return false;
+}
+#endif
+
 // Publish MQTT Discovery config for a signal
 void publishMqttDiscovery(const CanMember &cm, const ElsterIndex *ei) {
     
@@ -320,6 +332,15 @@ void publishMqttDiscovery(const CanMember &cm, const ElsterIndex *ei) {
         }
     }
     
+#if defined(HA_CONTROLLER_WPLA)
+    // Text sensor for parameters that can be "AUS" (see isAusCapable)
+    if (isAusCapable(ei->Name)) {
+        deviceClass = "";
+        unit = "";
+        stateClass = "";
+    }
+#endif
+
     // Build discovery topic
     char discoveryTopic[256];
     snprintf(discoveryTopic, sizeof(discoveryTopic), 

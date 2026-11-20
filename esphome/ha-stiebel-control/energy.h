@@ -425,7 +425,7 @@ void publishCombinedEnergySensors() {
         lastHeizWh = heizWh; lastWwWh = wwWh; init = true;
 
         // Verdichter: 0.8 = steht, 2.4 = laeuft (Heizmodul)
-        bool running = (lastVerdichterValue > 1.5f);
+        bool running = verdichterRunning(lastVerdichterValue, 1.5f);
 
         // Betriebsstatus live (alle 30 s): laeuft/steht aus dem Verdichter,
         // Heizen/Warmwasser aus den Energie-Deltas der letzten Minuten.
@@ -449,8 +449,11 @@ void publishCombinedEnergySensors() {
                 ns = (strcmp(opState, "Warmwasser") == 0) ? "Warmwasser" : "Heizen";
             }
             opState = ns;
+#if !defined(HA_CONTROLLER_WPLA)
+            // WPL-A: betriebsstatus comes from BETRIEBS_STATUS 0x0176 (publishBetriebsstatus), not from the energy deltas
             publishCalculatedSensorDiscovery(calculatedSensors[CALC_IDX_BETRIEBSSTATUS], false);
             publishCalculatedState(HA_TOPIC_ROOT "/calculated/betriebsstatus/state", opState);
+#endif
             lastStatusMs = nowMs;
         }
 

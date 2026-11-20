@@ -305,4 +305,9 @@
 #define LNAME_EN_WAERME_2WE_HEIZ_TAG           "Wärme 2. WE Heizung Tag"
 #define LNAME_EN_WAERME_2WE_WW_TAG             "Wärme 2. WE Warmwasser Tag"
 #define LNAME_CALC_WP_RESTARTS                 "WP-Neustarts"
+#define LNAME_CALC_VERDICHTER_STARTS           "Verdichter Starts gesamt"
+#define LNAME_CALC_STATUS_WPLA                 "Status WPL-A"
+#define LNAME_CALC_PUMPENSTATUS                "Pumpenstatus"
+#define LNAME_CALC_VERDICHTER_STATUS           "Verdichter-Status"
+#define LNAME_CALC_WP_STATUS_4EDA              "WP-Status (0x4eda)"
 #endif

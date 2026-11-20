@@ -88,6 +88,8 @@ esphome:
     - energy_counters.h
     # wp_restart.h: heat pump restart counter (WPL-A 07 only)
     - wp_restart.h
+    # status_bits.h: WPL-A status bit texts, compressor starts (WPL-A 07 only)
+    - status_bits.h
     - writables.h
     - sg_ready_io.h
     - time_programs.h

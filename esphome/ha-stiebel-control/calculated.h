@@ -151,6 +151,21 @@ static const CalculatedSensorConfig calculatedSensors[] = {
     // WPL-A 07: heat pump restart counter (wp_restart.h)
     {"stiebel_calculated_wp_restarts", LNAME_CALC_WP_RESTARTS, HA_TOPIC_ROOT "/calculated/wp_restarts/state",
      "sensor", "", "", "total_increasing", "mdi:restart-alert", "", "", "", true},
+    // WPL-A 07 status sensors (decoded in status_bits.h)
+    {"stiebel_calculated_verdichter_starts", LNAME_CALC_VERDICHTER_STARTS, HA_TOPIC_ROOT "/calculated/verdichter_starts/state",
+     "sensor", "", "", "total_increasing", "mdi:counter", "", "", "", true},
+
+    {"stiebel_calculated_status_wpla", LNAME_CALC_STATUS_WPLA, HA_TOPIC_ROOT "/calculated/status_wpla/state",
+     "sensor", "", "", "", "mdi:list-status", "", "", "", true, false, nullptr, 900},
+
+    {"stiebel_calculated_pumpenstatus", LNAME_CALC_PUMPENSTATUS, HA_TOPIC_ROOT "/calculated/pumpenstatus/state",
+     "sensor", "", "", "", "mdi:pump", "", "", "", true, false, nullptr, 900},
+
+    {"stiebel_calculated_verdichter_status", LNAME_CALC_VERDICHTER_STATUS, HA_TOPIC_ROOT "/calculated/verdichter_status/state",
+     "sensor", "", "", "", "mdi:heat-pump-outline", "", "", "", true, false, nullptr, 900},
+
+    {"stiebel_calculated_wp_status_4eda", LNAME_CALC_WP_STATUS_4EDA, HA_TOPIC_ROOT "/calculated/wp_status_4eda/state",
+     "sensor", "", "", "", "mdi:list-status", "", "", "", true, false, nullptr, 900},
 #endif
 };
 
@@ -195,6 +210,11 @@ enum CalcIdx : size_t {
     CALC_IDX_COP_GESAMT,
 #if defined(HA_CONTROLLER_WPLA)
     CALC_IDX_WP_RESTARTS,
+    CALC_IDX_VERDICHTER_STARTS_TOTAL,
+    CALC_IDX_STATUS_WPLA,
+    CALC_IDX_PUMPENSTATUS,
+    CALC_IDX_VERDICHTER_STATUS,
+    CALC_IDX_WP_STATUS_4EDA,
 #endif
     CALC_IDX_COUNT
 };
@@ -230,6 +250,18 @@ static float lastVerdichterValue = NAN;
 // KESSEL PUMPENSTATUS; -1 = not received yet. Bit 0x4000 is the hot water charging pump (WPMW II).
 static int lastPumpenstatus = -1;
 inline bool isHotWaterCharging(int pumpenstatus) { return (pumpenstatus & 0x4000) != 0; }
+
+// Compressor on/off from the VERDICHTER value. WPL-A 07: raw status word, bit 4 = compressor running
+// (0x0008 idle, 0x0018 running). All other models: decimal value above `threshold`.
+inline bool verdichterRunning(float value, float threshold) {
+#if defined(HA_CONTROLLER_WPLA)
+    (void)threshold;
+    return !std::isnan(value) && (((int)value) & 0x10) != 0;
+#else
+    return !std::isnan(value) && value > threshold;
+#endif
+}
+
 // A utility lock cuts power to the WPMW II heat pump module, so VERDICHTER would keep its last
 // value. 0 = no frame yet.
 static uint32_t lastHeizmodulFrameMs = 0;
@@ -383,7 +415,7 @@ void publishDeltaTRunning()
     publishCalculatedSensorDiscovery(calculatedSensors[CALC_IDX_DELTA_T_RUNNING]);
     
     // Check if compressor is running (value > 2 or not NaN and not 0)
-    bool compressorRunning = (!std::isnan(lastVerdichterValue) && lastVerdichterValue > 2.0);
+    bool compressorRunning = verdichterRunning(lastVerdichterValue, 2.0f);
     
     if (!compressorRunning) {
         return; // Silently skip if compressor not running
@@ -469,7 +501,7 @@ void publishCompressorActive()
     }
     
     // Compressor is active if value > 2
-    bool isActive = (lastVerdichterValue > 2.0);
+    bool isActive = verdichterRunning(lastVerdichterValue, 2.0f);
     
     // Publish state to MQTT
     const char* state = isActive ? "on" : "off";

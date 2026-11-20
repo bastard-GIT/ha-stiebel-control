@@ -48,6 +48,12 @@ static std::string mmEntityRoot() {
     return r;
 }
 static const std::string kRoot = HA_TOPIC_ROOT;
+// WPL-A 07: the energy counters do not give the operating state (BETRIEBS_STATUS 0x0176)
+#if defined(HA_CONTROLLER_WPLA)
+static constexpr bool kWpla = true;
+#else
+static constexpr bool kWpla = false;
+#endif
 
 // ============================================================================
 // time_programs.h (WPMW II time programs, #82)
@@ -544,8 +550,11 @@ TEST_CASE("power and operating state from the EL_*_TAG_WH counters", "[calc][ene
     // energy.h: power = (Wh_new - Wh_old) / (t_new - t_old) * 3600 as a 5 minute mean (not on
     // the WPMW II); state every 30 s: compressor (0.8 stopped, 2.4 running), cooling, then
     // which of the two consumption counters rises. Falling counters (day change) add nothing.
+    // WPL-A 07: VERDICHTER is a status word (running = bit 0x10: 24 running, 8 stopped), and
+    // the state is not computed from the counters (BETRIEBS_STATUS 0x0176 instead): only the
+    // power values and "nothing published" for the state are checked there.
     mmResetEnergy();
-    lastVerdichterValue = 2.4f;
+    lastVerdichterValue = kWpla ? 24.0f : 2.4f;
     const bool wpmw2 = isWpmw2Model();
     const std::string st = kRoot + "/calculated/betriebsstatus/state";
     const std::string pw = kRoot + "/calculated/el_leistung_w/state";
@@ -567,10 +576,11 @@ TEST_CASE("power and operating state from the EL_*_TAG_WH counters", "[calc][ene
     step(t0 + 29999, 100, 50);
     CHECK(mmCount(st) == 0);   // not yet 30 s
     step(t0 + 30000, 140, 50);
-    if (!wpmw2) CHECK(mmPayload(st) == "Heizen");
+    if (!wpmw2 && !kWpla) CHECK(mmPayload(st) == "Heizen");
     CHECK(mmCount(pw) == 0);   // not yet 5 min
     step(t0 + 300000, 200, 75);
-    if (!wpmw2) CHECK(mmPayload(st) == "Heizen");
+    if (kWpla) CHECK(mmCount(st) == 0);   // WPL-A: no state from the counters
+    if (!wpmw2 && !kWpla) CHECK(mmPayload(st) == "Heizen");
     if (!wpmw2) {
         CHECK(mmPayload(ph) == "1200");    // 100 Wh in 300 s
         CHECK(mmPayload(pww) == "300");    // 25 Wh in 300 s
@@ -579,7 +589,7 @@ TEST_CASE("power and operating state from the EL_*_TAG_WH counters", "[calc][ene
         CHECK(mmCount(pw) == 0);
     }
     step(t0 + 330000, 200, 250);
-    if (!wpmw2) CHECK(mmPayload(st) == "Warmwasser");
+    if (!wpmw2 && !kWpla) CHECK(mmPayload(st) == "Warmwasser");
 
     if (!wpmw2) {
         step(t0 + 600000, 200, 250);
@@ -587,30 +597,30 @@ TEST_CASE("power and operating state from the EL_*_TAG_WH counters", "[calc][ene
         CHECK(mmPayload(pww) == "2100");   // 175 Wh in 300 s
         CHECK(mmPayload(pw) == "2100");
         step(t0 + 630000, 200, 250);       // nothing consumed: the last mode stays
-        CHECK(mmPayload(st) == "Warmwasser");
+        if (!kWpla) CHECK(mmPayload(st) == "Warmwasser");
         step(t0 + 660000, 10, 5);          // day change: the counters fall, nothing is added
-        CHECK(mmPayload(st) == "Warmwasser");
+        if (!kWpla) CHECK(mmPayload(st) == "Warmwasser");
         step(t0 + 900000, 70, 5);
-        CHECK(mmPayload(st) == "Heizen");
+        if (!kWpla) CHECK(mmPayload(st) == "Heizen");
         CHECK(mmPayload(ph) == "720");     // 60 Wh in 300 s
         CHECK(mmPayload(pww) == "0");
         CHECK(mmPayload(pw) == "720");
     }
-    lastVerdichterValue = 0.8f;            // compressor stopped
+    lastVerdichterValue = kWpla ? 8.0f : 0.8f;   // compressor stopped
     step(t0 + 930000, 100, 5);
-    CHECK(mmPayload(st) == "Aus");
+    if (!kWpla) CHECK(mmPayload(st) == "Aus");
     if (!wpmw2) {
         step(t0 + 1200000, 130, 5);
         CHECK(mmPayload(pw) == "0");       // no power while the compressor stands
         CHECK(mmPayload(ph) == "0");
     }
-    lastVerdichterValue = 2.4f;
+    lastVerdichterValue = kWpla ? 24.0f : 2.4f;
     copEnergyValues["KUEHLZUSTAND"] = 1.0f;
     step(t0 + 1230000, 160, 5);
-    CHECK(mmPayload(st) == "Kuehlen");
+    if (!kWpla) CHECK(mmPayload(st) == "Kuehlen");
     copEnergyValues["KUEHLZUSTAND"] = 0.0f;
     step(t0 + 1260000, 190, 5);
-    if (!wpmw2) CHECK(mmPayload(st) == "Heizen");
+    if (!wpmw2 && !kWpla) CHECK(mmPayload(st) == "Heizen");
     if (wpmw2) {   // WPMW II: the charge pump shows DHW at once (PUMPENSTATUS seen on a WPL13E)
         lastPumpenstatus = 28930;   // 0x7102 DHW charge
         step(t0 + 1290000, 220, 5);
@@ -627,8 +637,10 @@ TEST_CASE("operating state from the counters follows the last 5 minute window on
     // energy.h: "Heizen/Warmwasser aus den Energie-Deltas der letzten Minuten". Until the pump
     // status is known this also applies on the WPMW II, so its sums must restart with every
     // 5 minute window there too (no power is published on the WPMW II).
+    // WPL-A 07: the state is not computed from the counters (BETRIEBS_STATUS 0x0176 instead),
+    // so only "nothing published" is checked there.
     mmResetEnergy();
-    lastVerdichterValue = 2.4f;   // running
+    lastVerdichterValue = kWpla ? 24.0f : 2.4f;   // running
     lastPumpenstatus = -1;        // pump status not seen yet
     const std::string st = kRoot + "/calculated/betriebsstatus/state";
     const unsigned long t0 = 2100000000UL;
@@ -642,10 +654,11 @@ TEST_CASE("operating state from the counters follows the last 5 minute window on
     mqtt_client_instance().clear();
     resetStateCache();
     step(t0 + 30000, 100, 550);     // window 1: 500 Wh hot water
-    CHECK(mmPayload(st) == "Warmwasser");
+    if (!kWpla) CHECK(mmPayload(st) == "Warmwasser");
     step(t0 + 300000, 100, 550);    // window 1 ends
     step(t0 + 330000, 200, 550);    // window 2: 100 Wh heating, no hot water
-    CHECK(mmPayload(st) == "Heizen");
+    if (!kWpla) CHECK(mmPayload(st) == "Heizen");
+    if (kWpla) CHECK(mmCount(st) == 0);   // WPL-A: no state from the counters
     mmResetEnergy();
     fake_millis() = 0;
 }
