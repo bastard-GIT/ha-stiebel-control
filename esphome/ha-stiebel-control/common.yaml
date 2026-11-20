@@ -84,6 +84,8 @@ esphome:
     - request_manager.h
     - calculated.h
     - energy.h
+    # energy_counters.h: energy counters and COP for WPL-A 07 (used only with HA_CONTROLLER_WPLA)
+    - energy_counters.h
     - writables.h
     - sg_ready_io.h
     - time_programs.h
@@ -240,6 +242,14 @@ interval:
     then:
       - lambda: |-
           processSignalRequests();
+
+  # Energy counters and COP (energy_counters.h, WPL-A 07 only): sequential reads with own timeouts
+  - interval: 100ms
+    then:
+      - lambda: |-
+          #if defined(HA_CONTROLLER_WPLA)
+          energy::loop();
+          #endif
 
   # Fault list of the manager (20 entries, refreshed every 30 min)
   - interval: 1s

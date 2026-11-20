@@ -33,6 +33,20 @@
 #define SIGNAL_REQUEST_EVU {"EVU_SPERRE_AKTIV", FREQ_1MIN, cm_manager},
 #endif
 
+// Energy sum counters (MWh) on HEIZMODUL. Not used for WPL-A 07: energy_counters.h
+// reads its energy registers itself, so the expansion is empty there.
+#if defined(HA_CONTROLLER_WPLA)
+#define SIGNAL_REQUEST_ENERGY_SUM
+#else
+#define SIGNAL_REQUEST_ENERGY_SUM \
+    {"EL_AUFNAHMELEISTUNG_HEIZ_SUM_MWH", FREQ_10MIN, cm_heizmodul}, \
+    {"EL_AUFNAHMELEISTUNG_WW_SUM_MWH",   FREQ_10MIN, cm_heizmodul}, \
+    {"WAERMEERTRAG_WW_SUM_MWH",          FREQ_10MIN, cm_heizmodul}, \
+    {"WAERMEERTRAG_HEIZ_SUM_MWH",        FREQ_10MIN, cm_heizmodul}, \
+    {"WAERMEERTRAG_2WE_WW_SUM_MWH",      FREQ_10MIN, cm_heizmodul}, \
+    {"WAERMEERTRAG_2WE_HEIZ_SUM_MWH",    FREQ_10MIN, cm_heizmodul},
+#endif
+
 #define SIGNAL_REQUESTS_BASE \
     \
     /* -------------------------------------------------------------------- */ \
@@ -56,12 +70,7 @@
     /* -------------------------------------------------------------------- */ \
     /* ENERGY COUNTERS — required for COP calculations                      */ \
     /* -------------------------------------------------------------------- */ \
-    {"EL_AUFNAHMELEISTUNG_HEIZ_SUM_MWH", FREQ_10MIN, cm_heizmodul}, \
-    {"EL_AUFNAHMELEISTUNG_WW_SUM_MWH",   FREQ_10MIN, cm_heizmodul}, \
-    {"WAERMEERTRAG_WW_SUM_MWH",          FREQ_10MIN, cm_heizmodul}, \
-    {"WAERMEERTRAG_HEIZ_SUM_MWH",        FREQ_10MIN, cm_heizmodul}, \
-    {"WAERMEERTRAG_2WE_WW_SUM_MWH",      FREQ_10MIN, cm_heizmodul}, \
-    {"WAERMEERTRAG_2WE_HEIZ_SUM_MWH",    FREQ_10MIN, cm_heizmodul},
+    SIGNAL_REQUEST_ENERGY_SUM
 
 // Daily and total energy counters of the heat pump module (IWS), in kWh and Wh. Used by models
 // whose HEIZMODUL answers them (wpl9, wpl10ac, wpl13e/wpl18e); one definition for all (#101).

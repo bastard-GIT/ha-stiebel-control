@@ -485,5 +485,35 @@
 #define LNAME_PUMPENSTATUS_ROH                 "Pump status (bit field)"
 #undef  LNAME_EVU_FREIGABE
 #define LNAME_EVU_FREIGABE                     "Grid Enable"
+#undef  LNAME_COP_HEIZ_TAG
+#define LNAME_COP_HEIZ_TAG                    "COP Heating Today"
+#undef  LNAME_COP_WW_TAG
+#define LNAME_COP_WW_TAG                      "COP Hot Water Today"
+#undef  LNAME_COP_GESAMT_TAG
+#define LNAME_COP_GESAMT_TAG                  "COP Total Today"
+#undef  LNAME_EN_EL_HEIZ_SUM
+#define LNAME_EN_EL_HEIZ_SUM                  "Electricity Heating Total"
+#undef  LNAME_EN_EL_WW_SUM
+#define LNAME_EN_EL_WW_SUM                    "Electricity Hot Water Total"
+#undef  LNAME_EN_WAERME_HEIZ_SUM
+#define LNAME_EN_WAERME_HEIZ_SUM              "Heat Heating Total"
+#undef  LNAME_EN_WAERME_WW_SUM
+#define LNAME_EN_WAERME_WW_SUM                "Heat Hot Water Total"
+#undef  LNAME_EN_WAERME_2WE_HEIZ_SUM
+#define LNAME_EN_WAERME_2WE_HEIZ_SUM          "Heat Backup Heating Total"
+#undef  LNAME_EN_WAERME_2WE_WW_SUM
+#define LNAME_EN_WAERME_2WE_WW_SUM            "Heat Backup Hot Water Total"
+#undef  LNAME_EN_EL_HEIZ_TAG
+#define LNAME_EN_EL_HEIZ_TAG                  "Electricity Heating Today"
+#undef  LNAME_EN_EL_WW_TAG
+#define LNAME_EN_EL_WW_TAG                    "Electricity Hot Water Today"
+#undef  LNAME_EN_WAERME_HEIZ_TAG
+#define LNAME_EN_WAERME_HEIZ_TAG              "Heat Heating Today"
+#undef  LNAME_EN_WAERME_WW_TAG
+#define LNAME_EN_WAERME_WW_TAG                "Heat Hot Water Today"
+#undef  LNAME_EN_WAERME_2WE_HEIZ_TAG
+#define LNAME_EN_WAERME_2WE_HEIZ_TAG          "Heat Backup Heating Today"
+#undef  LNAME_EN_WAERME_2WE_WW_TAG
+#define LNAME_EN_WAERME_2WE_WW_TAG            "Heat Backup Hot Water Today"
 #endif
 #endif // HA_LANGUAGE_EN

@@ -356,6 +356,8 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
             break;
         }
         
+        // WPL-A 07: energy and COP come from energy_counters.h
+#if !defined(HA_CONTROLLER_WPLA)
         case HASH_EL_AUFNAHMELEISTUNG_HEIZ:
         case HASH_EL_AUFNAHMELEISTUNG_WW:
         case HASH_WAERMEERTRAG_2WE_WW:
@@ -378,12 +380,18 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
             storeCOPEnergyValueMember(cm.Name, signalName, value);
             updateCOPCalculations();
             break;
+#endif
         
         default:
             // Signal not monitored for calculated sensors - no action needed
             break;
     }
 }
+
+#if defined(HA_CONTROLLER_WPLA)
+// Energy counters and COP of the WPL-A 07 (own sequential reads, see energy_counters.h)
+#include "energy_counters.h"
+#endif
 
 void processAndUpdate(uint32_t can_id, const std::vector<uint8_t> &msg)
 {
@@ -393,6 +401,14 @@ void processAndUpdate(uint32_t can_id, const std::vector<uint8_t> &msg)
     // A read request carries no value: decoding it attributed a fake 0 to the
     // requesting node (e.g. the WPMW II polling the IWS -> "MANAGER VERDICHTER 0.0").
     if ((msg[0] & 0x0F) == 1) return;
+#if defined(HA_CONTROLLER_WPLA)
+    // Energy registers 0x091a-0x0931 are handled only by energy_counters.h
+    // (combined MWh+kWh values); no separate entities per register part.
+    if (energy::on_frame(can_id, msg))
+    {
+        return;
+    }
+#endif
     // Limit answers (switch byte 0xF8/0xF9) carry no current value and use the long layout,
     // so they must not go through the short-form decoding below (#79)
     if (handleLimitAnswer(can_id, msg)) return;

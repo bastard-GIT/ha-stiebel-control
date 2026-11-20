@@ -72,6 +72,7 @@ struct CalculatedSensorConfig {
     bool onDemand = false;
     // Discovery topic segment if it differs from uniqueId (kept for existing retained configs)
     const char* objectId = nullptr;
+    uint16_t expireAfterS = 0;   // expire_after in seconds, 0 = none
 };
 
 // WPMW II: the same signal is a different measuring point on the manager side (KESSEL,
@@ -216,6 +217,15 @@ void publishCalculatedSensorDiscovery(const CalculatedSensorConfig& config, bool
     // Add enabled_by_default if false (true is HA default, no need to emit)
     if (!config.enabledByDefault) {
         payload << ",\"enabled_by_default\":false";
+    }
+
+#if defined(HA_CONTROLLER_WPLA)
+    // Availability: unavailable when the ESP drops off MQTT (LWT on heatingpump/status)
+    payload << ",\"availability_topic\":\"" HA_TOPIC_ROOT "/status\"";
+#endif
+    // expire_after: unavailable if no state arrives in time (e.g. CAN reads stop while the ESP still runs)
+    if (config.expireAfterS > 0) {
+        payload << ",\"expire_after\":" << config.expireAfterS;
     }
 
     // Add device info
