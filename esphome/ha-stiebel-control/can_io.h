@@ -328,7 +328,9 @@ void writeConfiguredSignal(CanMemberType fallback, const char* name, const char*
     readSignal(&CanMembers[route.readMember], ei);
 }
 
-void updateTime(CanMember cm, const char *str_time)
+// Takes cm by reference: writeSignal/readSignal keep the pointer (scheduleReadback)
+// and the read-back fires seconds later, so it must point to the global CanMembers entry.
+void updateTime(const CanMember& cm, const char *str_time)
 {
     ESP_LOGI("WRITE UHRZEIT VIA BUTTON", "%s", str_time);
 
@@ -368,7 +370,9 @@ void updateTime(CanMember cm, const char *str_time)
     readSignal(&cm, "SEKUNDE");
 }
 
-void updateDate(CanMember cm, const char *str_date)
+// Takes cm by reference: writeSignal/readSignal keep the pointer (scheduleReadback)
+// and the read-back fires seconds later, so it must point to the global CanMembers entry.
+void updateDate(const CanMember& cm, const char *str_date)
 {
     ESP_LOGI("WRITE DATUM VIA BUTTON", "%s", str_date);
 

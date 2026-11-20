@@ -2313,6 +2313,27 @@ TEST_CASE("SG Ready IO: writes are queued and sent one at a time (#85)", "[sgrea
     fake_millis() = 0;
 }
 
+TEST_CASE("updateTime/updateDate: scheduled read-backs point to the global CanMembers entry", "[readback]") {
+    resetDiscoveryState();
+    pendingReadbackCount = 0;
+    fake_can().sent.clear();
+    fake_millis() = 5000;
+
+    updateTime(CanMembers[cm_manager], "12:34:56");
+    CHECK(pendingReadbackCount > 0);
+    for (size_t i = 0; i < pendingReadbackCount; i++)
+        CHECK(pendingReadbacks[i].cm == &CanMembers[cm_manager]);
+
+    pendingReadbackCount = 0;
+    updateDate(CanMembers[cm_manager], "2026-11-20");
+    CHECK(pendingReadbackCount > 0);
+    for (size_t i = 0; i < pendingReadbackCount; i++)
+        CHECK(pendingReadbacks[i].cm == &CanMembers[cm_manager]);
+
+    pendingReadbackCount = 0;
+    fake_millis() = 0;
+}
+
 TEST_CASE("paced writes: a newer value replaces a waiting write of the same signal", "[sgready]") {
     resetDiscoveryState();
     fake_can().sent.clear();
