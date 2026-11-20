@@ -287,7 +287,7 @@ inline const char* signalStateClass(const ElsterIndex* ei) {
 // Published as text ("AUS" or "<value> °C") instead of a numeric sensor, so HA shows the off state.
 static bool isAusCapable(const char *name) {
     static const char *const kAus[] = {"MINIMAL_TEMPERATUR_HK_1", "BIVALENZALTERNATIVTEMPERATUR_HZG",
-                                       "BIVALENZALTERNATIVTEMPERATUR_WW"};
+                                       "BIVALENZALTERNATIVTEMPERATUR_WW", "FESTWERT"};
     for (const char *n : kAus)
         if (strcmp(name, n) == 0) return true;
     return false;

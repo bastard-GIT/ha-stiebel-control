@@ -1562,7 +1562,12 @@ TEST_CASE("WPMW II: IWS values and parameters carry read-only metadata (#52)", "
         REQUIRE(std::string(ei->Name) == r.name);   // unknown names return INDEX_NOT_FOUND
         const ElsterMeta* meta = GetElsterMeta(ei);
         if (!isWpmw2Model()) {
+#if defined(HA_CONTROLLER_WPLA)
+            // WPL-A: 0x07a9 is et_dec_val (display 5.6 degC at raw 56), see wpla_meta tests
+            CHECK(ei->Type == (std::string(r.name) == "VERDAMPFERISTTEMP_KOMPENSIERT" ? (unsigned)et_dec_val : r.typeOther));
+#else
             CHECK(ei->Type == r.typeOther);
+#endif
 #if !defined(HA_CONTROLLER_WPLA)
             CHECK(meta == nullptr);   // the WPL-A build carries metadata rows of its own for some of these
 #endif
@@ -3598,6 +3603,87 @@ TEST_CASE("wpla_aus: DHW setpoint signal names of the running firmware", "[wpla_
     CHECK(std::strcmp(eco->Name, "WW_ECO_TEMPERATUR") == 0);
     CHECK(std::strcmp(HA_NAME_DHW_SET, "WW_KOMFORT_TEMPERATUR") == 0);
     CHECK(std::strcmp(HA_NAME_DHW_SET2, "WW_ECO_TEMPERATUR") == 0);
+}
+
+// WPL-A display values of 2026-11-20 (scan of the running display): pressures, compressor speeds,
+// evaporator temperature, last defrost duration, FESTWERT (AUS-capable, text sensor on KESSEL).
+TEST_CASE("wpla_meta: ANZEIGE_HOCHDRUCK and ANZEIGE_NIEDERDRUCK state and pressure discovery", "[wpla_meta]") {
+    resetDiscoveryState();
+    processAndUpdate(0x500, {0xD2, 0x00, 0xFA, 0x07, 0xA6, 0x08, 0x76});  // raw 2166 -> 21.66
+    CHECK(mqttFindPayload("heatingpump/HEIZMODUL/ANZEIGE_HOCHDRUCK/state") == "21.66");
+    std::string hd = mqttFindPayload("stiebel_heizmodul_anzeige_hochdruck/config");
+    REQUIRE_FALSE(hd.empty());
+    CHECK(hd.find("\"device_class\":\"pressure\"") != std::string::npos);
+    CHECK(hd.find("\"unit_of_measurement\":\"bar\"") != std::string::npos);
+    CHECK(hd.find("\"state_class\":\"measurement\"") != std::string::npos);
+
+    processAndUpdate(0x500, {0xD2, 0x00, 0xFA, 0x07, 0xA7, 0x02, 0x39});  // raw 569 -> 5.69
+    CHECK(mqttFindPayload("heatingpump/HEIZMODUL/ANZEIGE_NIEDERDRUCK/state") == "5.69");
+    std::string nd = mqttFindPayload("stiebel_heizmodul_anzeige_niederdruck/config");
+    REQUIRE_FALSE(nd.empty());
+    CHECK(nd.find("\"device_class\":\"pressure\"") != std::string::npos);
+    CHECK(nd.find("\"unit_of_measurement\":\"bar\"") != std::string::npos);
+    CHECK(nd.find("\"state_class\":\"measurement\"") != std::string::npos);
+}
+
+TEST_CASE("wpla_meta: ISTDREHZAHL_VERDICHTER state and Hz discovery", "[wpla_meta]") {
+    resetDiscoveryState();
+    processAndUpdate(0x500, {0xD2, 0x00, 0xFA, 0x06, 0xEB, 0x00, 0x2B});  // raw 43
+    CHECK(mqttFindPayload("heatingpump/HEIZMODUL/ISTDREHZAHL_VERDICHTER/state") == "43");
+    std::string disc = mqttFindPayload("stiebel_heizmodul_istdrehzahl_verdichter/config");
+    REQUIRE_FALSE(disc.empty());
+    CHECK(disc.find("\"unit_of_measurement\":\"Hz\"") != std::string::npos);
+    CHECK(disc.find("\"state_class\":\"measurement\"") != std::string::npos);
+}
+
+TEST_CASE("wpla_meta: 0x06ec compressor speed discovery has unit Hz", "[wpla_meta]") {
+    resetDiscoveryState();
+    // Value not given in the scan notes; the unit check does not depend on it, raw 43 used as placeholder.
+    processAndUpdate(0x500, {0xD2, 0x00, 0xFA, 0x06, 0xEC, 0x00, 0x2B});
+    std::string disc = mqttFindPayload("stiebel_heizmodul_solldrehzahl_verdichter/config");
+    REQUIRE_FALSE(disc.empty());
+    CHECK(disc.find("\"unit_of_measurement\":\"Hz\"") != std::string::npos);
+    CHECK(disc.find("\"state_class\":\"measurement\"") != std::string::npos);
+}
+
+TEST_CASE("wpla_meta: VERDAMPFERISTTEMP_KOMPENSIERT raw 56 -> 5.6 with temperature discovery", "[wpla_meta]") {
+    resetDiscoveryState();
+    processAndUpdate(0x500, {0xD2, 0x00, 0xFA, 0x07, 0xA9, 0x00, 0x38});
+    CHECK(mqttFindPayload("heatingpump/HEIZMODUL/VERDAMPFERISTTEMP_KOMPENSIERT/state") == "5.6");
+    std::string disc = mqttFindPayload("stiebel_heizmodul_verdampferisttemp_kompensiert/config");
+    REQUIRE_FALSE(disc.empty());
+    CHECK(disc.find("\"device_class\":\"temperature\"") != std::string::npos);
+    CHECK(disc.find("\"unit_of_measurement\":\"°C\"") != std::string::npos);
+    CHECK(disc.find("\"state_class\":\"measurement\"") != std::string::npos);
+}
+
+TEST_CASE("wpla_meta: ZEITDAUER_LETZTE_ABTAUUNG discovery has unit min, not s", "[wpla_meta]") {
+    resetDiscoveryState();
+    processAndUpdate(0x500, {0xD2, 0x00, 0xFA, 0x08, 0x07, 0x00, 0x01});  // raw 1 = 1 min
+    std::string disc = mqttFindPayload("stiebel_heizmodul_zeitdauer_letzte_abtauung/config");
+    REQUIRE_FALSE(disc.empty());
+    CHECK(disc.find("\"device_class\":\"duration\"") != std::string::npos);
+    CHECK(disc.find("\"unit_of_measurement\":\"min\"") != std::string::npos);
+    CHECK(disc.find("\"unit_of_measurement\":\"s\"") == std::string::npos);
+}
+
+TEST_CASE("wpla_meta: FESTWERT on KESSEL is AUS text sensor without device_class or unit", "[wpla_meta]") {
+    resetDiscoveryState();
+    processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x01, 0xC0, 0x90, 0x00});  // raw 0x9000 = AUS
+    CHECK(mqttFindPayload("heatingpump/KESSEL/FESTWERT/state") == "AUS");
+    std::string disc = mqttFindPayload("stiebel_kessel_festwert/config");
+    REQUIRE_FALSE(disc.empty());
+    CHECK(disc.find("\"device_class\"") == std::string::npos);
+    CHECK(disc.find("\"unit_of_measurement\"") == std::string::npos);
+    CHECK(disc.find("\"state_class\"") == std::string::npos);
+
+    resetDiscoveryState();
+    processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x01, 0xC0, 0x00, 0xB4});  // raw 180 -> 18.0 °C
+    CHECK(mqttFindPayload("heatingpump/KESSEL/FESTWERT/state") == "18.0 °C");
+
+    resetDiscoveryState();
+    processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x01, 0xC0, 0x80, 0x00});  // raw 0x8000 = no sensor
+    CHECK_FALSE(mqttTopicPublished("heatingpump/KESSEL/FESTWERT/state"));
 }
 
 TEST_CASE("WPL-A DHW setpoints use KESSEL_CANB, other registers keep the fallback", "[routes]") {

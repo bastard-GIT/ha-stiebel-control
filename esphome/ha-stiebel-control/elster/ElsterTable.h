@@ -513,7 +513,11 @@ const ElsterIndex ElsterTable[] =
   // Zirkulationspumpe: 0x0080
   { "SOLARDIFFERENZ"                              , 0x01b8, et_dec_val      , false, false },
   // Regelung / Festwertregelung
+#if defined(HA_CONTROLLER_WPLA)
+  { "FESTWERT"                                    , 0x01c0, et_dec_val      , false, false },
+#else
   { "FESTWERT"                                    , 0x01c0, et_little_endian, false, false },
+#endif
   { "UNTERE_GRENZE_MINKESSELTEMP"                 , 0x018b, 0               , false, false },
   { "SERVICE_MINUTEN"                             , 0x018c, 0               , false, false },
   { "KONFIG_KONTAKT_OHNE_SPF"                     , 0x018d, 0               , false, false },
@@ -1909,8 +1913,16 @@ const ElsterIndex ElsterTable[] =
   { "TEST_OBJEKT_167"                             , 0x06e8, 0               , false, false },
   { "TEST_OBJEKT_168"                             , 0x06e9, 0               , false, false },
   { "TEST_OBJEKT_169"                             , 0x06ea, 0               , false, false },
+#if defined(HA_CONTROLLER_WPLA)
+  { "ISTDREHZAHL_VERDICHTER"                      , 0x06eb, 0               , false, true  },
+#else
   { "ISTDREHZAHL_VERDICHTER"                      , 0x06eb, 0               , false, false },
+#endif
+#if defined(HA_CONTROLLER_WPLA)
+  { "SOLLDREHZAHL_VERDICHTER"                     , 0x06ec, 0               , false, true  },
+#else
   { "SOLLDREHZAHL_VERDICHTER"                     , 0x06ec, 0               , false, false },
+#endif
   { "TEST_OBJEKT_172"                             , 0x06ed, 0               , false, false },
   { "TEST_OBJEKT_173"                             , 0x06ee, 0               , false, false },
   { "TEST_OBJEKT_174"                             , 0x06ef, 0               , false, false },
@@ -2116,7 +2128,7 @@ const ElsterIndex ElsterTable[] =
   { "ANZEIGE_HOCHDRUCK"                           , 0x07a6, et_cent_val     , false, true  },
 #else
 #if defined(HA_CONTROLLER_WPLA)
-  { "ANZEIGE_HOCHDRUCK"                           , 0x07a6, et_cent_val     , false, false },
+  { "ANZEIGE_HOCHDRUCK"                           , 0x07a6, et_cent_val     , false, true  },
 #else
   { "ANZEIGE_HOCHDRUCK"                           , 0x07a6, et_dec_val      , false, false },
 #endif
@@ -2126,7 +2138,7 @@ const ElsterIndex ElsterTable[] =
   { "ANZEIGE_NIEDERDRUCK"                         , 0x07a7, et_cent_val     , false, true  },
 #else
 #if defined(HA_CONTROLLER_WPLA)
-  { "ANZEIGE_NIEDERDRUCK"                         , 0x07a7, et_cent_val     , false, false },
+  { "ANZEIGE_NIEDERDRUCK"                         , 0x07a7, et_cent_val     , false, true  },
 #else
   { "ANZEIGE_NIEDERDRUCK"                         , 0x07a7, et_dec_val      , false, false },
 #endif
@@ -2148,7 +2160,12 @@ const ElsterIndex ElsterTable[] =
   // WPMW II: IWS: display INFO IWS VERDAMPFER (evaporator outlet), tenths of °C
   { "VERDAMPFERISTTEMP_KOMPENSIERT"               , 0x07a9, et_dec_val      , false, true  },
 #else
+#if defined(HA_CONTROLLER_WPLA)
+  // WPL-A: display 5.6 °C at raw 54..56, probably 0.1 °C, not measured at the same time
+  { "VERDAMPFERISTTEMP_KOMPENSIERT"               , 0x07a9, et_dec_val      , false, true  },
+#else
   { "VERDAMPFERISTTEMP_KOMPENSIERT"               , 0x07a9, 0               , false, false },
+#endif
 #endif
   { "TAU_PENDEL_ERKENNUNGSZEIT"                   , 0x07aa, 0               , false, false },
   { "VERZOEGERUNG_PENDELERKENNUNG"                , 0x07ab, 0               , false, false },
@@ -4567,6 +4584,10 @@ const ElsterMeta ElsterMetaTable[] =
   { 0x070b, "LEISTUNG_WARMWASSERPUMPE", "Leistung Warmwasserpumpe", "sensor", "", "%", "measurement", "mdi:water-percent", NULL, NULL },
   { 0x070c, "LEISTUNG_SOLEPUMPE", "Leistung Solepumpe", "sensor", "", "%", "measurement", "mdi:water-percent", NULL, NULL },
   { 0x070e, "EINPHASIGER_BETRIEB", "Einphasiger Betrieb", "binary_sensor", "", "", "", "mdi:flash", "on", "off" },
+#if defined(HA_CONTROLLER_WPLA)
+  { 0x06eb, "ISTDREHZAHL_VERDICHTER", "Istdrehzahl Verdichter", "sensor", "", "Hz", "measurement", "mdi:speedometer", NULL, NULL },
+  { 0x06ec, "SOLLDREHZAHL_VERDICHTER", "Solldrehzahl Verdichter", "sensor", "", "Hz", "measurement", "mdi:speedometer", NULL, NULL },
+#endif
   { 0x071d, "VERDICHTER_STARTS", "Verdichter Starts", "sensor", "", "", "total_increasing", "mdi:counter", NULL, NULL },
 #ifdef HA_CONTROLLER_WPMW2
   { 0x07a3, "REKUPERATORISTTEMP", LNAME_REKUPERATORISTTEMP, "sensor", "temperature", "°C", "measurement", "mdi:thermometer", NULL, NULL },
@@ -4580,11 +4601,11 @@ const ElsterMeta ElsterMetaTable[] =
   { 0x07a5, "MESSSTROM_NIEDERDRUCK", LNAME_MESSSTROM_NIEDERDRUCK, "sensor", "current", "mA", "measurement", "mdi:current-dc", NULL, NULL },
 #else
 #endif
-#ifdef HA_CONTROLLER_WPMW2
+#if defined(HA_CONTROLLER_WPMW2) || defined(HA_CONTROLLER_WPLA)
   { 0x07a6, "ANZEIGE_HOCHDRUCK", LNAME_ANZEIGE_HOCHDRUCK, "sensor", "pressure", "bar", "measurement", "mdi:gauge", NULL, NULL },
 #else
 #endif
-#ifdef HA_CONTROLLER_WPMW2
+#if defined(HA_CONTROLLER_WPMW2) || defined(HA_CONTROLLER_WPLA)
   { 0x07a7, "ANZEIGE_NIEDERDRUCK", LNAME_ANZEIGE_NIEDERDRUCK, "sensor", "pressure", "bar", "measurement", "mdi:gauge", NULL, NULL },
 #else
 #endif
@@ -4597,7 +4618,7 @@ const ElsterMeta ElsterMetaTable[] =
   { 0x07a8, "VERDICHTER", LNAME_VERDICHTER, "sensor", "power", "W", "measurement", "mdi:pump", NULL, NULL },
 #endif
 #endif
-#ifdef HA_CONTROLLER_WPMW2
+#if defined(HA_CONTROLLER_WPMW2) || defined(HA_CONTROLLER_WPLA)
   { 0x07a9, "VERDAMPFERISTTEMP_KOMPENSIERT", LNAME_VERDAMPFERISTTEMP_KOMPENSIERT, "sensor", "temperature", "°C", "measurement", "mdi:thermometer", NULL, NULL },
 #else
 #endif
@@ -4627,7 +4648,12 @@ const ElsterMeta ElsterMetaTable[] =
   { 0x0805, "LZ_DHC12", "Laufzeit Nacherwärmung Stufe 1+2", "sensor", "duration", "h", "total_increasing", "mdi:timer", NULL, NULL },
 #endif
   { 0x0806, "STARTS_ABTAUUNG", "Abtauungen gesamt", "sensor", "", "", "total_increasing", "mdi:snowflake-melt", NULL, NULL },
+#if defined(HA_CONTROLLER_WPLA)
+  // WPL-A: display 1 min at raw 1
+  { 0x0807, "ZEITDAUER_LETZTE_ABTAUUNG", "Dauer letzte Abtauung", "sensor", "duration", "min", "measurement", "mdi:timer-snowflake", NULL, NULL },
+#else
   { 0x0807, "ZEITDAUER_LETZTE_ABTAUUNG", "Dauer letzte Abtauung", "sensor", "duration", "s", "measurement", "mdi:timer-snowflake", NULL, NULL },
+#endif
 #ifdef HA_CONTROLLER_WPMW2
   { 0x0822, "VORLAUFISTTEMP_WP_IWS", LNAME_VORLAUFISTTEMP_WP_IWS, "sensor", "temperature", "°C", "measurement", "mdi:thermometer", NULL, NULL },
 #else
