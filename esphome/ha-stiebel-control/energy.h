@@ -299,7 +299,7 @@ static float energyTagFolded[4] = {0.0f, 0.0f, 0.0f, 0.0f};   // in SUM bereits 
 static bool  energyTagValid[4]  = {false, false, false, false};
 
 // Member mit den Energiezaehlern: WPL17 0x514, WPMW II 0x500.
-inline const char* energyMemberName() { return isWpmw2Model() ? "HEIZMODUL" : "HEIZMODUL_WPL"; }
+inline const char* energyMemberName() { return isWpmw2Model() ? "HEIZMODUL" : HA_NAME_HEIZMODUL_WPL; }
 
 // slot: 0=EL Heizung, 1=EL Warmwasser, 2=Waerme Heizung, 3=Waerme Warmwasser
 inline bool wplBaseTotal(int slot, const char* sumMwh, const char* sumKwh,

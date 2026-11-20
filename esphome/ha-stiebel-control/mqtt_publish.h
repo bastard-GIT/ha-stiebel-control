@@ -85,7 +85,7 @@ static int stateDeadbandTenths = STATE_DEADBAND_TENTHS;   // variable for the te
 // True if `value` of a measured temperature is too close to the last published one
 inline bool withinDeadband(const char* signal, const char* published, const char* value) {
     static const char* const kDeadbandSignals[] = {
-        "AUSSENTEMP", "SPEICHERISTTEMP", "RUECKLAUFISTTEMP", "VORLAUFISTTEMP", "WPVORLAUFIST"};
+        "AUSSENTEMP", HA_NAME_DHW_ACTUAL, "RUECKLAUFISTTEMP", "VORLAUFISTTEMP", "WPVORLAUFIST"};
     if (stateDeadbandTenths <= 0 || !signal || !published[0]) return false;
     bool listed = false;
     for (const char* name : kDeadbandSignals) {

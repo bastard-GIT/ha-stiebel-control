@@ -56,6 +56,16 @@
   #define HA_ELSTER_WPL_FAMILY
 #endif
 
+// Names of the DHW comfort/eco setpoints 0x0013/0x0a06. WPL-A keeps the names of the
+// running firmware (MQTT topics, unique_ids); all other models keep the original names.
+#if defined(HA_CONTROLLER_WPLA)
+#define HA_NAME_DHW_SET  "WW_KOMFORT_TEMPERATUR"
+#define HA_NAME_DHW_SET2 "WW_ECO_TEMPERATUR"
+#else
+#define HA_NAME_DHW_SET  "EINSTELL_SPEICHERSOLLTEMP"
+#define HA_NAME_DHW_SET2 "EINSTELL_SPEICHERSOLLTEMP2"
+#endif
+
 #ifdef __cplusplus
 
 // ---------------------------------------------------------------------------

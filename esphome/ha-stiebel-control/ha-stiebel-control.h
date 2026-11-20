@@ -77,7 +77,7 @@ constexpr uint32_t HASH_WPVORLAUFIST = hash("WPVORLAUFIST");
 constexpr uint32_t HASH_RUECKLAUFISTTEMP = hash("RUECKLAUFISTTEMP");
 constexpr uint32_t HASH_VERDICHTER = hash("VERDICHTER");
 constexpr uint32_t HASH_PUMPENSTATUS = hash("PUMPENSTATUS");
-constexpr uint32_t HASH_EINSTELL_SPEICHERSOLLTEMP = hash("EINSTELL_SPEICHERSOLLTEMP");
+constexpr uint32_t HASH_EINSTELL_SPEICHERSOLLTEMP = hash(HA_NAME_DHW_SET);
 constexpr uint32_t HASH_RAUMSOLLTEMP_I = hash("RAUMSOLLTEMP_I");
 constexpr uint32_t HASH_ZEITDAUER_LETZTE_ABTAUUNG = hash("ZEITDAUER_LETZTE_ABTAUUNG");
 constexpr uint32_t HASH_FEHLERMELDUNG = hash("FEHLERMELDUNG");
@@ -335,7 +335,7 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
             char* endPtr;
             const float v = strtof(value.c_str(), &endPtr);
             if (endPtr == value.c_str() || *endPtr != '\0' || v < -50.0f) break;
-            if (strcmp(signalName, "EINSTELL_SPEICHERSOLLTEMP") == 0) lastSgDhwSetpoint = v;
+            if (strcmp(signalName, HA_NAME_DHW_SET) == 0) lastSgDhwSetpoint = v;
             else if (strcmp(signalName, "RAUMSOLLTEMP_I") == 0) lastSgRoomSetpoint = v;
             break;
         }

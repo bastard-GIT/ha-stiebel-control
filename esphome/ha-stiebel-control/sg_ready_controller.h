@@ -201,7 +201,7 @@ private:
     // While a boost is active the originals stay (the read values are boosted then).
     void captureOriginals(bool boostRoom) {
         if (!state_.active || state_.originalDhwTemp == 0.0f) {
-            state_.originalDhwTemp = baseline("EINSTELL_SPEICHERSOLLTEMP", DEFAULT_DHW_TEMP, 20.0f, MAX_DHW_TEMP);
+            state_.originalDhwTemp = baseline(HA_NAME_DHW_SET, DEFAULT_DHW_TEMP, 20.0f, MAX_DHW_TEMP);
         }
         if (boostRoom && (!state_.active || state_.originalRoomTemp == 0.0f)) {
             state_.originalRoomTemp = baseline("RAUMSOLLTEMP_I", DEFAULT_ROOM_TEMP, 10.0f, MAX_ROOM_TEMP);
@@ -224,7 +224,7 @@ private:
         if (state_.active && state_.originalDhwTemp > 0.0f) {
             char buf[16];
             snprintf(buf, sizeof(buf), "%.1f", state_.originalDhwTemp);
-            io_.writeCanSignal("EINSTELL_SPEICHERSOLLTEMP", buf);
+            io_.writeCanSignal(HA_NAME_DHW_SET, buf);
             state_.originalDhwTemp = 0.0f;
         }
     }
@@ -272,7 +272,7 @@ private:
             if (boosted > MAX_DHW_TEMP) boosted = MAX_DHW_TEMP;
             char buf[16];
             snprintf(buf, sizeof(buf), "%.1f", boosted);
-            io_.writeCanSignal("EINSTELL_SPEICHERSOLLTEMP", buf);
+            io_.writeCanSignal(HA_NAME_DHW_SET, buf);
         }
 
         boostRoom(config_.roomBoostState3);
@@ -290,7 +290,7 @@ private:
             if (boosted > MAX_DHW_TEMP) boosted = MAX_DHW_TEMP;
             char buf[16];
             snprintf(buf, sizeof(buf), "%.1f", boosted);
-            io_.writeCanSignal("EINSTELL_SPEICHERSOLLTEMP", buf);
+            io_.writeCanSignal(HA_NAME_DHW_SET, buf);
         }
 
         boostRoom(config_.roomBoostState4);

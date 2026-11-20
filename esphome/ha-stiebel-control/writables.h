@@ -55,11 +55,11 @@ static const WritableNumberConfig writableNumbers[] = {
     // ============================================================
 
     // Primary storage target temperature (WW-Solltemperatur)
-    {"EINSTELL_SPEICHERSOLLTEMP", LNAME_NUM_SPEICHERSOLLTEMP,
+    {HA_NAME_DHW_SET, LNAME_NUM_SPEICHERSOLLTEMP,
      cm_manager, 20.0, 60.0, 1.0, "°C", "mdi:thermometer-high", "temperature"},
 
     // Secondary storage target temperature (comfort/eco modes)
-    {"EINSTELL_SPEICHERSOLLTEMP2", LNAME_NUM_SPEICHERSOLLTEMP2,
+    {HA_NAME_DHW_SET2, LNAME_NUM_SPEICHERSOLLTEMP2,
      cm_manager, 20.0, 60.0, 1.0, "°C", "mdi:thermometer-low", "temperature"},
 
     // SG Ready boost temperatures (not real CAN signals, handled internally)
@@ -469,16 +469,16 @@ void publishClimateDiscoveries() {
     }
 
     // Hot water: tank actual temperature + DHW setpoint
-    if (const WritableNumberConfig* dhw = findWritableNumber("EINSTELL_SPEICHERSOLLTEMP")) {
+    if (const WritableNumberConfig* dhw = findWritableNumber(HA_NAME_DHW_SET)) {
         const CanMember* cm = getWritableNumberMember(*dhw);
         std::ostringstream p;
         p << "{\"name\":\"" << LNAME_CLIMATE_WARMWASSER << "\",\"unique_id\":\"stiebel_climate_warmwasser\","
           << defaultEntityIdJson("climate", "stiebel_climate_warmwasser")
           << "\"modes\":[\"heat\"],\"temperature_unit\":\"C\"," << CLIMATE_MODE_STATE_JSON
           << "\"min_temp\":" << writableNumberMin(writableNumberIndex(*dhw)) << ",\"max_temp\":" << writableNumberMax(writableNumberIndex(*dhw)) << ",\"temp_step\":" << dhw->step << ","
-          << "\"temperature_command_topic\":\"" HA_TOPIC_ROOT "/" << cm->Name << "/EINSTELL_SPEICHERSOLLTEMP/set\","
-          << "\"temperature_state_topic\":\"" HA_TOPIC_ROOT "/" << cm->Name << "/EINSTELL_SPEICHERSOLLTEMP/state\","
-          << "\"current_temperature_topic\":\"" HA_TOPIC_ROOT "/" << (dhwActualOnCanb ? "KESSEL_CANB" : "KESSEL") << "/SPEICHERISTTEMP/state\","
+          << "\"temperature_command_topic\":\"" HA_TOPIC_ROOT "/" << cm->Name << "/" HA_NAME_DHW_SET "/set\","
+          << "\"temperature_state_topic\":\"" HA_TOPIC_ROOT "/" << cm->Name << "/" HA_NAME_DHW_SET "/state\","
+          << "\"current_temperature_topic\":\"" HA_TOPIC_ROOT "/" << (dhwActualOnCanb ? HA_NAME_KESSEL_CANB : "KESSEL") << "/" HA_NAME_DHW_ACTUAL "/state\","
           << "\"availability_topic\":\"" HA_TOPIC_ROOT "/status\",\"icon\":\"mdi:water-boiler\"," << device << "}";
         std::string s = p.str();
         mqttPublish("homeassistant/climate/" HA_TOPIC_ROOT "/stiebel_climate_warmwasser/config", s.c_str(), s.length());
@@ -591,7 +591,7 @@ static void numberLimitsFinish(size_t i, bool haveMin, float devMin, bool haveMa
     numberLimitsActive = -1;
     ESP_LOGI("LIMITS", "%s: device range %g..%g, static %g..%g, using %g..%g", c.signalName, rawLo, rawHi, c.min, c.max, lo, hi);
     publishWritableNumberDiscovery(c, true);
-    if (strcmp(c.signalName, "RAUMSOLLTEMP_I") == 0 || strcmp(c.signalName, "EINSTELL_SPEICHERSOLLTEMP") == 0)
+    if (strcmp(c.signalName, "RAUMSOLLTEMP_I") == 0 || strcmp(c.signalName, HA_NAME_DHW_SET) == 0)
         publishClimateDiscoveries();
 }
 

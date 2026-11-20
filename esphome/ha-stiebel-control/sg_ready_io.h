@@ -57,7 +57,7 @@ public:
     }
 
     bool currentSetpoint(const char* signalName, float& value) override {
-        const float v = strcmp(signalName, "EINSTELL_SPEICHERSOLLTEMP") == 0 ? lastSgDhwSetpoint
+        const float v = strcmp(signalName, HA_NAME_DHW_SET) == 0 ? lastSgDhwSetpoint
                       : strcmp(signalName, "RAUMSOLLTEMP_I") == 0 ? lastSgRoomSetpoint : NAN;
         if (std::isnan(v)) return false;
         value = v;

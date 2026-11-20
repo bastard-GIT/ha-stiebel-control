@@ -58,10 +58,17 @@
 #define LNAME_SPEICHERISTTEMP                  "Storage Actual Temperature"
 #undef  LNAME_VORLAUFISTTEMP
 #define LNAME_VORLAUFISTTEMP                   "Flow Actual Temperature"
+#if defined(HA_CONTROLLER_WPLA)
+#undef  LNAME_EINSTELL_SPEICHERSOLLTEMP
+#define LNAME_EINSTELL_SPEICHERSOLLTEMP        "DHW Comfort Temperature"
+#undef  LNAME_EINSTELL_SPEICHERSOLLTEMP2
+#define LNAME_EINSTELL_SPEICHERSOLLTEMP2       "DHW Eco Temperature"
+#else
 #undef  LNAME_EINSTELL_SPEICHERSOLLTEMP
 #define LNAME_EINSTELL_SPEICHERSOLLTEMP        "DHW Target Temperature Setting"
 #undef  LNAME_EINSTELL_SPEICHERSOLLTEMP2
 #define LNAME_EINSTELL_SPEICHERSOLLTEMP2       "DHW Target Temperature 2 Setting"
+#endif
 #undef  LNAME_VERDAMPFERTEMP
 #define LNAME_VERDAMPFERTEMP                   "Evaporator Temperature"
 #undef  LNAME_RUECKLAUFISTTEMP
@@ -324,10 +331,17 @@
 // ============================================================================
 // Writable number friendly names
 // ============================================================================
+#if defined(HA_CONTROLLER_WPLA)
+#undef  LNAME_NUM_SPEICHERSOLLTEMP
+#define LNAME_NUM_SPEICHERSOLLTEMP             "DHW Comfort Temperature Setting"
+#undef  LNAME_NUM_SPEICHERSOLLTEMP2
+#define LNAME_NUM_SPEICHERSOLLTEMP2            "DHW Eco Temperature Setting"
+#else
 #undef  LNAME_NUM_SPEICHERSOLLTEMP
 #define LNAME_NUM_SPEICHERSOLLTEMP             "DHW Target Temperature Setting"
 #undef  LNAME_NUM_SPEICHERSOLLTEMP2
 #define LNAME_NUM_SPEICHERSOLLTEMP2            "DHW Target Temperature 2 Setting"
+#endif
 #undef  LNAME_NUM_SG_READY_BOOST3
 #define LNAME_NUM_SG_READY_BOOST3              "SG Ready Boost State 3"
 #undef  LNAME_NUM_SG_READY_BOOST4
@@ -462,4 +476,10 @@
 #define LNAME_CLIMATE_HEIZUNG_HK2              "Heating HC2"
 #undef  LNAME_CLIMATE_WARMWASSER
 #define LNAME_CLIMATE_WARMWASSER               "Hot Water"
+#if defined(HA_CONTROLLER_WPLA)
+#undef  LNAME_WW_SOLLTEMPERATUR
+#define LNAME_WW_SOLLTEMPERATUR                "DHW Target Temperature"
+#undef  LNAME_WW_ISTTEMPERATUR
+#define LNAME_WW_ISTTEMPERATUR                 "DHW Actual Temperature"
+#endif
 #endif // HA_LANGUAGE_EN

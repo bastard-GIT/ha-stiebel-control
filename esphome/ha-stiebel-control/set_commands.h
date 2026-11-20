@@ -38,8 +38,8 @@ inline bool memberFromName(const std::string& name, CanMemberType& out) {
 inline bool numberAcceptsMember(const WritableNumberConfig& c, CanMemberType member) {
     if (getWritableNumberMember(c) == &CanMembers[member] || c.member == member) return true;
     return member == cm_kessel && kModel.canBDhwRoutes &&
-           (strcmp(c.signalName, "EINSTELL_SPEICHERSOLLTEMP") == 0 ||
-            strcmp(c.signalName, "EINSTELL_SPEICHERSOLLTEMP2") == 0);
+           (strcmp(c.signalName, HA_NAME_DHW_SET) == 0 ||
+            strcmp(c.signalName, HA_NAME_DHW_SET2) == 0);
 }
 
 inline bool handleNumberCommand(const WritableNumberConfig& c, CanMemberType member, const std::string& payload) {
