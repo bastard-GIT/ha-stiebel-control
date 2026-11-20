@@ -83,6 +83,8 @@ constexpr uint32_t HASH_STATUS_WPLA = hash("STATUS_WPLA");
 constexpr uint32_t HASH_STARTS_VERDICHTER_H = hash("STARTS_VERDICHTER_H");
 constexpr uint32_t HASH_STARTS_VERDICHTER_L = hash("STARTS_VERDICHTER_L");
 constexpr uint32_t HASH_WP_STATUS_4EDA = hash("WAERMEPUMPEN_STATUS_WPLA");
+constexpr uint32_t HASH_WW_SOLLTEMPERATUR = hash("WW_SOLLTEMPERATUR");
+constexpr uint32_t HASH_WW_LEG_SOLLTEMPERATUR = hash("WW_LEG_SOLLTEMPERATUR");
 #endif
 constexpr uint32_t HASH_EINSTELL_SPEICHERSOLLTEMP = hash(HA_NAME_DHW_SET);
 constexpr uint32_t HASH_RAUMSOLLTEMP_I = hash("RAUMSOLLTEMP_I");
@@ -466,6 +468,21 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
                 publishCompressorStartsIfChanged();
             } else {
                 ESP_LOGW("CALC", "Invalid STARTS_VERDICHTER_L value: %s", value.c_str());
+            }
+            break;
+        }
+
+        // WPL-A 07: anti-legionella run (status_bits.h, noteWwSoll)
+        case HASH_WW_SOLLTEMPERATUR:
+        case HASH_WW_LEG_SOLLTEMPERATUR: {
+            if (value == "-255" || value == "-32768") break;
+            char* endPtr;
+            const float v = strtof(value.c_str(), &endPtr);
+            if (endPtr == value.c_str() || *endPtr != '\0') break;
+            if (signalHash == HASH_WW_SOLLTEMPERATUR) {
+                if (strcmp(cm.Name, CanMembers[cm_kessel_canb].Name) == 0) noteWwSoll(v);
+            } else if (strcmp(cm.Name, "KESSEL") == 0) {
+                noteWwLegSoll(v);
             }
             break;
         }

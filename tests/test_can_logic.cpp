@@ -3718,6 +3718,59 @@ TEST_CASE("wpla_abtau: ZEITDAUER_LETZTE_ABTAUUNG no longer sets abtauung_laeuft 
     CHECK_FALSE(mqttTopicPublished("abtauung_laeuft/state"));
 }
 
+// Anti-legionella run active. Source: run 2026-11-20 14:43:54-15:35:07, WW_SOLLTEMPERATUR 52.0 -> 60.0 -> 52.0.
+// Frames: WW_SOLLTEMPERATUR 0x0003 from KESSEL_CANB 0x201, WW_LEG_SOLLTEMPERATUR 0x4ef9 from KESSEL 0x180.
+// Values in tenths of a degree: 500 = 0x01F4, 520 = 0x0208, 600 = 0x0258.
+static void resetAntilegionellenState() {
+    lastWwSoll = NAN;
+    lastWwLegSoll = NAN;
+}
+
+TEST_CASE("wpla_leg: only WW_SOLLTEMPERATUR known publishes nothing, then the legionella setpoint gives off", "[wpla_leg]") {
+    resetDiscoveryState();
+    resetAntilegionellenState();
+    processAndUpdate(0x201, {0xD2, 0x00, 0xFA, 0x00, 0x03, 0x02, 0x08});  // WW_SOLLTEMPERATUR 52.0
+    CHECK_FALSE(mqttTopicPublished("antilegionellen_aktiv/state"));
+
+    processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x4E, 0xF9, 0x02, 0x58});  // WW_LEG_SOLLTEMPERATUR 60.0
+    CHECK(mqttFindPayload("antilegionellen_aktiv/state") == "off");
+}
+
+TEST_CASE("wpla_leg: WW_SOLLTEMPERATUR at the legionella setpoint is on", "[wpla_leg]") {
+    resetDiscoveryState();
+    resetAntilegionellenState();
+    processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x4E, 0xF9, 0x02, 0x58});  // WW_LEG_SOLLTEMPERATUR 60.0
+    processAndUpdate(0x201, {0xD2, 0x00, 0xFA, 0x00, 0x03, 0x02, 0x58});  // WW_SOLLTEMPERATUR 60.0
+    CHECK(mqttFindPayload("antilegionellen_aktiv/state") == "on");
+}
+
+TEST_CASE("wpla_leg: WW_SOLLTEMPERATUR 52.0 below the legionella setpoint 60.0 is off", "[wpla_leg]") {
+    resetDiscoveryState();
+    resetAntilegionellenState();
+    processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x4E, 0xF9, 0x02, 0x58});  // WW_LEG_SOLLTEMPERATUR 60.0
+    processAndUpdate(0x201, {0xD2, 0x00, 0xFA, 0x00, 0x03, 0x02, 0x08});  // WW_SOLLTEMPERATUR 52.0
+    CHECK(mqttFindPayload("antilegionellen_aktiv/state") == "off");
+}
+
+TEST_CASE("wpla_leg: only WW_LEG_SOLLTEMPERATUR known publishes nothing", "[wpla_leg]") {
+    resetDiscoveryState();
+    resetAntilegionellenState();
+    processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x4E, 0xF9, 0x02, 0x58});  // WW_LEG_SOLLTEMPERATUR 60.0
+    CHECK_FALSE(mqttTopicPublished("antilegionellen_aktiv/state"));
+}
+
+TEST_CASE("wpla_leg: a lower legionella setpoint switches the state to on", "[wpla_leg]") {
+    resetDiscoveryState();
+    resetAntilegionellenState();
+    processAndUpdate(0x201, {0xD2, 0x00, 0xFA, 0x00, 0x03, 0x02, 0x08});  // WW_SOLLTEMPERATUR 52.0
+    processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x4E, 0xF9, 0x02, 0x58});  // WW_LEG_SOLLTEMPERATUR 60.0
+    CHECK(mqttFindPayload("antilegionellen_aktiv/state") == "off");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x4E, 0xF9, 0x01, 0xF4});  // WW_LEG_SOLLTEMPERATUR 50.0
+    CHECK(mqttFindPayload("antilegionellen_aktiv/state") == "on");
+}
+
 TEST_CASE("WPL-A DHW setpoints use KESSEL_CANB, other registers keep the fallback", "[routes]") {
     for (uint16_t index : {0x0013, 0x0a06}) {
         auto r = resolveSignalRoute(kProfileWpla7, index, cm_manager);

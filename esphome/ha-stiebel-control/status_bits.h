@@ -156,6 +156,30 @@ void publishWpStatus4eda(long raw) {
     publishCalculatedState(cfg.stateTopic, text.c_str());
 }
 
+// Anti-legionella run active (WPL-A 07). Source: run 2026-11-20 14:43:54-15:35:07, WW_SOLLTEMPERATUR
+// 52.0 -> 60.0 -> 52.0 while WW_LEG_SOLLTEMPERATUR is 60.0. "on" when the effective DHW setpoint
+// is at or above the legionella setpoint. The two values come from different members and polls
+// (30 s and 10 min), so each is kept and the state is published once both are known.
+static float lastWwSoll = NAN;      // WW_SOLLTEMPERATUR, KESSEL_CANB (0x201), 0x0003
+static float lastWwLegSoll = NAN;   // WW_LEG_SOLLTEMPERATUR, KESSEL (0x180), 0x4ef9
+
+void publishAntilegionellenAktiv() {
+    if (std::isnan(lastWwSoll) || std::isnan(lastWwLegSoll)) return;
+    const CalculatedSensorConfig &cfg = calculatedSensors[CALC_IDX_ANTILEGIONELLEN_AKTIV];
+    publishCalculatedSensorDiscovery(cfg, false);
+    publishCalculatedState(cfg.stateTopic, lastWwSoll >= lastWwLegSoll ? "on" : "off");
+}
+
+void noteWwSoll(float v) {
+    lastWwSoll = v;
+    publishAntilegionellenAktiv();
+}
+
+void noteWwLegSoll(float v) {
+    lastWwLegSoll = v;
+    publishAntilegionellenAktiv();
+}
+
 void publishCompressorStartsIfChanged() {
     // Publish only when BOTH words were refreshed since the last publish. H and L are polled
     // in the same cycle; waiting for both avoids a mixed pair at the 999 -> 0 carry

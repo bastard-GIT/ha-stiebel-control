@@ -166,6 +166,10 @@ static const CalculatedSensorConfig calculatedSensors[] = {
 
     {"stiebel_calculated_wp_status_4eda", LNAME_CALC_WP_STATUS_4EDA, HA_TOPIC_ROOT "/calculated/wp_status_4eda/state",
      "sensor", "", "", "", "mdi:list-status", "", "", "", true, false, nullptr, 900},
+
+    // Anti-legionella run active, from WW_SOLLTEMPERATUR >= WW_LEG_SOLLTEMPERATUR (status_bits.h)
+    {"stiebel_calculated_antilegionellen_aktiv", LNAME_CALC_ANTILEGIONELLEN_AKTIV, HA_TOPIC_ROOT "/calculated/antilegionellen_aktiv/state",
+     "binary_sensor", "", "", "", "mdi:bacteria-outline", "on", "off", "", true},
 #endif
 };
 
@@ -215,6 +219,7 @@ enum CalcIdx : size_t {
     CALC_IDX_PUMPENSTATUS,
     CALC_IDX_VERDICHTER_STATUS,
     CALC_IDX_WP_STATUS_4EDA,
+    CALC_IDX_ANTILEGIONELLEN_AKTIV,
 #endif
     CALC_IDX_COUNT
 };

@@ -527,5 +527,7 @@
 #define LNAME_CALC_VERDICHTER_STATUS           "Compressor status"
 #undef  LNAME_CALC_WP_STATUS_4EDA
 #define LNAME_CALC_WP_STATUS_4EDA              "HP status (0x4eda)"
+#undef  LNAME_CALC_ANTILEGIONELLEN_AKTIV
+#define LNAME_CALC_ANTILEGIONELLEN_AKTIV       "Anti-legionella run active"
 #endif
 #endif // HA_LANGUAGE_EN
