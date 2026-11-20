@@ -14,6 +14,21 @@
 #include "../esphome/ha-stiebel-control/ha-stiebel-control.h"
 #include "../esphome/ha-stiebel-control/lang_en.h"
 
+#include <cctype>
+
+// Elster name of the 0x0003 setpoint: WW_SOLLTEMPERATUR on WPL-A 07, otherwise
+// SPEICHERSOLLTEMP. No HA_NAME_* macro exists for it. tstLower() gives the unique_id form.
+#if defined(HA_CONTROLLER_WPLA)
+#define TST_NAME_SOLL "WW_SOLLTEMPERATUR"
+#else
+#define TST_NAME_SOLL "SPEICHERSOLLTEMP"
+#endif
+static std::string tstLower(const char* s) {
+    std::string r(s);
+    for (char& c : r) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    return r;
+}
+
 // ============================================================================
 // generate_read_id / generate_write_id
 // ============================================================================
@@ -502,10 +517,10 @@ TEST_CASE("publishMqttState: skips empty value", "[mqtt]") {
 TEST_CASE("publishMqttState: topic uses CAN member name", "[mqtt]") {
     resetDiscoveryState();
     const CanMember& kessel = CanMembers[cm_kessel];
-    const ElsterIndex* ei = GetElsterIndex("SPEICHERISTTEMP");
+    const ElsterIndex* ei = GetElsterIndex(HA_NAME_DHW_ACTUAL);
     REQUIRE(ei != nullptr);
     publishMqttState(kessel, ei, "52.0");
-    REQUIRE(mqttTopicPublished("heatingpump/KESSEL/SPEICHERISTTEMP/state"));
+    REQUIRE(mqttTopicPublished("heatingpump/KESSEL/" HA_NAME_DHW_ACTUAL "/state"));
 }
 
 // ============================================================================
@@ -1600,7 +1615,7 @@ TEST_CASE("writableNumbers: WPMW II parameters are only offered on wpl13e and tt
     }
     // The heating curve is also writable on wpl17 (KESSEL_CANB).
     CHECK(writableNumberApplies("HEIZKURVE") == (verified || model == "wpl17"));
-    CHECK(writableNumberApplies("EINSTELL_SPEICHERSOLLTEMP"));
+    CHECK(writableNumberApplies(HA_NAME_DHW_SET));
 }
 
 TEST_CASE("writableNumbers: 0xfdb0/0xfdb1 resolve to the names used in the state topics", "[writable]") {
@@ -1632,7 +1647,7 @@ TEST_CASE("i18n: all writableNumbers friendlyNames are non-empty", "[i18n]") {
 
 TEST_CASE("i18n: named ElsterTable signals have non-empty friendlyName via LNAME macro", "[i18n]") {
     static const char* named[] = {
-        "AUSSENTEMP", "SPEICHERISTTEMP", "RUECKLAUFISTTEMP", "VERDICHTER",
+        "AUSSENTEMP", HA_NAME_DHW_ACTUAL, "RUECKLAUFISTTEMP", "VERDICHTER",
         "LZ_VERD_1_HEIZBETRIEB", "LZ_VERD_2_KUEHLBETRIEB", "ABTAUUNGAKTIV",
         "EVU_SPERRE_AKTIV", "HEIZKURVE", "WW_ECO", "WW_HYSTERSE", "GEBAEUDEART",
         "PROGRAMMSCHALTER", "SOMMERBETRIEB", "WP_STATUS",
@@ -1703,14 +1718,14 @@ TEST_CASE("climate: heating and hot water discoveries reuse the number /set topi
     CHECK(heat.find(std::string("\"preset_modes\":[\"") + LNAME_OPT_NOTBETRIEB + "\",\"" + LNAME_OPT_BEREITSCHAFT +
                     "\",\"" + LNAME_OPT_AUTOMATIK + "\",\"" + LNAME_OPT_TAGBETRIEB + "\",\"" +
                     LNAME_OPT_ABSENKBETRIEB + "\",\"" + LNAME_OPT_WARMWASSER + "\"]") != std::string::npos);
-    CHECK(dhw.find("EINSTELL_SPEICHERSOLLTEMP/set") != std::string::npos);
+    CHECK(dhw.find(HA_NAME_DHW_SET "/set") != std::string::npos);
     const bool wpl17 = std::strcmp(HA_DEVICE_MODEL_STR, "wpl17") == 0;
     const bool canbSetpoint = wpl17 || std::strcmp(HA_DEVICE_MODEL_STR, "wpl9") == 0 ||
                               std::strcmp(HA_DEVICE_MODEL_STR, "wpla7") == 0;
     const std::string current = std::string("heatingpump/") +
-        ((wpl17 || std::strcmp(HA_DEVICE_MODEL_STR, "wpla7") == 0) ? "KESSEL_CANB" : "KESSEL") + "/SPEICHERISTTEMP/state";
+        ((wpl17 || std::strcmp(HA_DEVICE_MODEL_STR, "wpla7") == 0) ? HA_NAME_KESSEL_CANB : "KESSEL") + "/" HA_NAME_DHW_ACTUAL "/state";
     const std::string command = std::string("heatingpump/") +
-        (canbSetpoint ? "KESSEL_CANB" : "MANAGER") + "/EINSTELL_SPEICHERSOLLTEMP/set";
+        (canbSetpoint ? HA_NAME_KESSEL_CANB : "MANAGER") + "/" HA_NAME_DHW_SET "/set";
     CHECK(dhw.find(current) != std::string::npos);
     CHECK(dhw.find(command) != std::string::npos);
 }
@@ -1861,8 +1876,8 @@ TEST_CASE("republishAllDiscoveries: keeps every discovered signal and re-sends i
     resetDiscoveryState();
     // Multi-word names: the old filter took the fragment after the last '_' of the
     // lowercase uid ("temp"), found no table row and dropped the signal.
-    updateSensor(CanMembers[cm_kessel], GetElsterIndex("SPEICHERSOLLTEMP"), "50.0");
-    updateSensor(CanMembers[cm_manager], GetElsterIndex("EINSTELL_SPEICHERSOLLTEMP"), "48.0");
+    updateSensor(CanMembers[cm_kessel], GetElsterIndex(TST_NAME_SOLL), "50.0");
+    updateSensor(CanMembers[cm_manager], GetElsterIndex(HA_NAME_DHW_SET), "48.0");
     updateSensor(CanMembers[cm_manager], GetElsterIndex("HYSTERESEZEIT"), "2.0");
     REQUIRE(discoveredSignals.size() == 3);
 
@@ -1877,8 +1892,8 @@ TEST_CASE("republishAllDiscoveries: keeps every discovered signal and re-sends i
     CHECK(steps > 1);
     CHECK(maxPerStep <= 4);   // DISCOVERY_REPUBLISH_BATCH items, climate item = 2 configs
 
-    CHECK(mqttTopicPublished("homeassistant/sensor/heatingpump/stiebel_kessel_speichersolltemp/config"));
-    CHECK(mqttTopicPublished("homeassistant/sensor/heatingpump/stiebel_manager_einstell_speichersolltemp/config"));
+    CHECK(mqttTopicPublished("homeassistant/sensor/heatingpump/stiebel_kessel_" + tstLower(TST_NAME_SOLL) + "/config"));
+    CHECK(mqttTopicPublished("homeassistant/sensor/heatingpump/stiebel_manager_" + tstLower(HA_NAME_DHW_SET) + "/config"));
     CHECK(mqttTopicPublished("homeassistant/sensor/heatingpump/stiebel_manager_hysteresezeit/config"));
     CHECK(mqttTopicPublished("homeassistant/select/heatingpump/"));
     CHECK(mqttTopicPublished("homeassistant/number/heatingpump/"));
@@ -1891,7 +1906,7 @@ TEST_CASE("republishAllDiscoveries: keeps every discovered signal and re-sends i
 
 TEST_CASE("republishAllDiscoveries: restart instead of duplicate queue, waits for MQTT", "[mqtt][discovery]") {
     resetDiscoveryState();
-    updateSensor(CanMembers[cm_kessel], GetElsterIndex("SPEICHERSOLLTEMP"), "50.0");
+    updateSensor(CanMembers[cm_kessel], GetElsterIndex(TST_NAME_SOLL), "50.0");
     mqtt_client_instance().clear();
 
     mqtt_client_instance().connected = false;
@@ -1907,7 +1922,7 @@ TEST_CASE("republishAllDiscoveries: restart instead of duplicate queue, waits fo
     drainDiscoveryRepublish(steps, maxPerStep);
     size_t raw = 0;
     for (const auto& m : mqtt_client_instance().messages)
-        if (m.topic.find("stiebel_kessel_speichersolltemp/config") != std::string::npos) raw++;
+        if (m.topic.find("stiebel_kessel_" + tstLower(TST_NAME_SOLL) + "/config") != std::string::npos) raw++;
     CHECK(raw == 1);
 
     // Idle step publishes nothing
@@ -1930,8 +1945,8 @@ static size_t countTopic(const std::string& topic) {
 TEST_CASE("state cache: unchanged raw value is suppressed, a change is published", "[mqtt][state]") {
     resetDiscoveryState();
     const CanMember& kessel = CanMembers[cm_kessel];
-    const ElsterIndex* ei = GetElsterIndex("SPEICHERISTTEMP");
-    const std::string topic = "heatingpump/KESSEL/SPEICHERISTTEMP/state";
+    const ElsterIndex* ei = GetElsterIndex(HA_NAME_DHW_ACTUAL);
+    const std::string topic = "heatingpump/KESSEL/" HA_NAME_DHW_ACTUAL "/state";
     publishMqttState(kessel, ei, "48.0");
     CHECK(countTopic(topic) == 1);
     fake_millis() = 30000;
@@ -1944,14 +1959,14 @@ TEST_CASE("state cache: unchanged raw value is suppressed, a change is published
     CHECK(mqtt_client_instance().messages.back().payload == "48.5");
     // same signal on another member is its own topic
     publishMqttState(CanMembers[cm_manager], ei, "48.5");
-    CHECK(countTopic("heatingpump/MANAGER/SPEICHERISTTEMP/state") == 1);
+    CHECK(countTopic("heatingpump/MANAGER/" HA_NAME_DHW_ACTUAL "/state") == 1);
 }
 
 TEST_CASE("state cache: heartbeat re-sends an unchanged value after STATE_HEARTBEAT_MS", "[mqtt][state]") {
     resetDiscoveryState();
     const CanMember& kessel = CanMembers[cm_kessel];
-    const ElsterIndex* ei = GetElsterIndex("SPEICHERISTTEMP");
-    const std::string topic = "heatingpump/KESSEL/SPEICHERISTTEMP/state";
+    const ElsterIndex* ei = GetElsterIndex(HA_NAME_DHW_ACTUAL);
+    const std::string topic = "heatingpump/KESSEL/" HA_NAME_DHW_ACTUAL "/state";
     fake_millis() = 1000;
     publishMqttState(kessel, ei, "48.0");
     fake_millis() = 1000 + STATE_HEARTBEAT_MS - 1;
@@ -1970,8 +1985,8 @@ TEST_CASE("state cache: deadband holds back small changes of measured temperatur
     resetDiscoveryState();
     stateDeadbandTenths = 3;
     const CanMember& kessel = CanMembers[cm_kessel];
-    const ElsterIndex* ei = GetElsterIndex("SPEICHERISTTEMP");
-    const std::string topic = "heatingpump/KESSEL/SPEICHERISTTEMP/state";
+    const ElsterIndex* ei = GetElsterIndex(HA_NAME_DHW_ACTUAL);
+    const std::string topic = "heatingpump/KESSEL/" HA_NAME_DHW_ACTUAL "/state";
     fake_millis() = 1000;
     publishMqttState(kessel, ei, "48.0");
     publishMqttState(kessel, ei, "48.2");
@@ -1994,18 +2009,18 @@ TEST_CASE("state cache: deadband holds back small changes of measured temperatur
 TEST_CASE("state cache: deadband does not apply to other signals or when off", "[mqtt][state]") {
     resetDiscoveryState();
     const CanMember& kessel = CanMembers[cm_kessel];
-    const ElsterIndex* temp = GetElsterIndex("SPEICHERISTTEMP");
+    const ElsterIndex* temp = GetElsterIndex(HA_NAME_DHW_ACTUAL);
     publishMqttState(kessel, temp, "48.0");
     publishMqttState(kessel, temp, "48.1");
-    CHECK(countTopic("heatingpump/KESSEL/SPEICHERISTTEMP/state") == 2);   // off by default
+    CHECK(countTopic("heatingpump/KESSEL/" HA_NAME_DHW_ACTUAL "/state") == 2);   // off by default
     stateDeadbandTenths = 3;
-    const ElsterIndex* soll = GetElsterIndex("SPEICHERSOLLTEMP");
+    const ElsterIndex* soll = GetElsterIndex(TST_NAME_SOLL);
     publishMqttState(kessel, soll, "48.0");
     publishMqttState(kessel, soll, "48.1");
-    CHECK(countTopic("heatingpump/KESSEL/SPEICHERSOLLTEMP/state") == 2);
+    CHECK(countTopic("heatingpump/KESSEL/" TST_NAME_SOLL "/state") == 2);
     publishMqttState(kessel, temp, "-255");   // leaves the cached number
     publishMqttState(kessel, temp, "48.1");
-    CHECK(countTopic("heatingpump/KESSEL/SPEICHERISTTEMP/state") == 4);
+    CHECK(countTopic("heatingpump/KESSEL/" HA_NAME_DHW_ACTUAL "/state") == 4);
     stateDeadbandTenths = 0;
 }
 
@@ -2026,14 +2041,14 @@ TEST_CASE("state cache: calculated sensors are deduplicated too", "[mqtt][state]
 TEST_CASE("state cache: values while disconnected stay pending and go out on reconnect", "[mqtt][state]") {
     resetDiscoveryState();
     const CanMember& kessel = CanMembers[cm_kessel];
-    publishMqttState(kessel, GetElsterIndex("SPEICHERISTTEMP"), "48.0");
+    publishMqttState(kessel, GetElsterIndex(HA_NAME_DHW_ACTUAL), "48.0");
     publishCalculatedState("heatingpump/calculated/date/state", "2026-10-30");
     mqtt_client_instance().connected = false;
-    publishMqttState(kessel, GetElsterIndex("SPEICHERISTTEMP"), "49.0");   // changed while offline
+    publishMqttState(kessel, GetElsterIndex(HA_NAME_DHW_ACTUAL), "49.0");   // changed while offline
     for (int i = 0; i < 5; i++) {
         char v[8];
         snprintf(v, sizeof(v), "%d.0", 20 + i);
-        publishMqttState(kessel, GetElsterIndex(i % 2 ? "AUSSENTEMP" : "SPEICHERSOLLTEMP"), v);
+        publishMqttState(kessel, GetElsterIndex(i % 2 ? "AUSSENTEMP" : TST_NAME_SOLL), v);
     }
     CHECK(mqttPublishFailures == 0);   // not even attempted while offline
     mqtt_client_instance().clear();
@@ -2054,40 +2069,40 @@ TEST_CASE("state cache: values while disconnected stay pending and go out on rec
     CHECK(!stateRepublishActive);
     CHECK(maxPerStep <= (size_t)STATE_REPUBLISH_BATCH);
     CHECK(mqtt_client_instance().messages.size() == stateCache.size());
-    CHECK(countTopic("heatingpump/KESSEL/SPEICHERISTTEMP/state") == 1);
-    CHECK(mqttFindPayload("KESSEL/SPEICHERISTTEMP/state") == "49.0");      // newest value
+    CHECK(countTopic("heatingpump/KESSEL/" HA_NAME_DHW_ACTUAL "/state") == 1);
+    CHECK(mqttFindPayload("KESSEL/" HA_NAME_DHW_ACTUAL "/state") == "49.0");      // newest value
     CHECK(mqttFindPayload("calculated/date/state") == "2026-10-30");
     CHECK(mqttFindPayload("KESSEL/AUSSENTEMP/state") == "23.0");
 
     // republished values count as sent: no duplicate on the next identical value
     mqtt_client_instance().clear();
-    publishMqttState(kessel, GetElsterIndex("SPEICHERISTTEMP"), "49.0");
+    publishMqttState(kessel, GetElsterIndex(HA_NAME_DHW_ACTUAL), "49.0");
     CHECK(mqtt_client_instance().messages.empty());
 }
 
 TEST_CASE("state cache: republish waits for the discovery republish", "[mqtt][state]") {
     resetDiscoveryState();
-    updateSensor(CanMembers[cm_kessel], GetElsterIndex("SPEICHERSOLLTEMP"), "50.0");
+    updateSensor(CanMembers[cm_kessel], GetElsterIndex(TST_NAME_SOLL), "50.0");
     mqtt_client_instance().clear();
     republishAllDiscoveries();
     republishAllStates();
     stateRepublishStep();
-    CHECK(countTopic("heatingpump/KESSEL/SPEICHERSOLLTEMP/state") == 0);
+    CHECK(countTopic("heatingpump/KESSEL/" TST_NAME_SOLL "/state") == 0);
     while (discoveryRepublishActive()) discoveryRepublishStep();
     stateRepublishStep();
-    CHECK(countTopic("heatingpump/KESSEL/SPEICHERSOLLTEMP/state") == 1);
+    CHECK(countTopic("heatingpump/KESSEL/" TST_NAME_SOLL "/state") == 1);
 }
 
 TEST_CASE("state cache: a write forces the next read-back to be published", "[mqtt][state]") {
     resetDiscoveryState();
     const CanMember* mgr = &CanMembers[cm_manager];
-    const ElsterIndex* ei = GetElsterIndex("EINSTELL_SPEICHERSOLLTEMP");
+    const ElsterIndex* ei = GetElsterIndex(HA_NAME_DHW_SET);
     publishMqttState(*mgr, ei, "48.0");
     publishMqttState(*mgr, ei, "48.0");
-    CHECK(countTopic("heatingpump/MANAGER/EINSTELL_SPEICHERSOLLTEMP/state") == 1);
-    writeSignal(mgr, "EINSTELL_SPEICHERSOLLTEMP", "50.0");
+    CHECK(countTopic("heatingpump/MANAGER/" HA_NAME_DHW_SET "/state") == 1);
+    writeSignal(mgr, HA_NAME_DHW_SET, "50.0");
     publishMqttState(*mgr, ei, "48.0");   // device kept the old value: HA still gets the echo
-    CHECK(countTopic("heatingpump/MANAGER/EINSTELL_SPEICHERSOLLTEMP/state") == 2);
+    CHECK(countTopic("heatingpump/MANAGER/" HA_NAME_DHW_SET "/state") == 2);
 }
 
 TEST_CASE("mqttPublish: refused publishes are counted and published as diagnostic", "[mqtt][state]") {
@@ -2169,10 +2184,10 @@ TEST_CASE("request manager: table resolved once, unknown/blacklisted skipped", "
     REQUIRE(resolvedRequests.size() == 4);
     CHECK(resolvedRequests[0].ei == GetElsterIndex("AUSSENTEMP"));
     CHECK(resolvedRequests[0].key[0] == signalKey(CanMembers[cm_kessel], "AUSSENTEMP"));
-    CHECK(resolvedRequests[1].ei == GetElsterIndex("SPEICHERISTTEMP"));
-    CHECK(resolvedRequests[1].key[0] == signalKey(CanMembers[cm_kessel], "SPEICHERISTTEMP"));
-    CHECK(resolvedRequests[1].key[1] == signalKey(CanMembers[cm_manager], "SPEICHERISTTEMP"));
-    CHECK(resolvedRequests[1].key[2] == signalKey(CanMembers[cm_heizmodul], "SPEICHERISTTEMP"));
+    CHECK(resolvedRequests[1].ei == GetElsterIndex(HA_NAME_DHW_ACTUAL));
+    CHECK(resolvedRequests[1].key[0] == signalKey(CanMembers[cm_kessel], HA_NAME_DHW_ACTUAL));
+    CHECK(resolvedRequests[1].key[1] == signalKey(CanMembers[cm_manager], HA_NAME_DHW_ACTUAL));
+    CHECK(resolvedRequests[1].key[2] == signalKey(CanMembers[cm_heizmodul], HA_NAME_DHW_ACTUAL));
     CHECK(resolvedRequests[2].ei == nullptr);
     CHECK(resolvedRequests[3].ei == nullptr);
 
@@ -2219,7 +2234,7 @@ TEST_CASE("SG Ready IO: writes are queued and sent one at a time (#85)", "[sgrea
     fake_can().sent.clear();
     fake_millis() = 5000;
     sgReadyIO.writeCanSignal("PROGRAMMSCHALTER", LNAME_OPT_AUTOMATIK);
-    sgReadyIO.writeCanSignal("EINSTELL_SPEICHERSOLLTEMP", "55.0");
+    sgReadyIO.writeCanSignal(HA_NAME_DHW_SET, "55.0");
     CHECK(fake_can().sent.empty());                // nothing on the bus before the step
     REQUIRE(pacedWriteCount == 2);
 
@@ -2242,7 +2257,7 @@ TEST_CASE("SG Ready IO: writes are queued and sent one at a time (#85)", "[sgrea
     CHECK(pacedWrites[0].tries == 1);
 
     // no matching read-back: sent once more, then given up
-    updateSensor(CanMembers[cm_manager], GetElsterIndex("EINSTELL_SPEICHERSOLLTEMP"), "48.0");
+    updateSensor(CanMembers[cm_manager], GetElsterIndex(HA_NAME_DHW_SET), "48.0");
     fake_millis() += PACED_WRITE_VERIFY_MS;
     pacedWriteStep();
     CHECK(fake_can().sent.size() == 3);
@@ -2267,7 +2282,7 @@ TEST_CASE("paced writes: a newer value replaces a waiting write of the same sign
 }
 
 TEST_CASE("paced writes: values compare as encoded on the bus", "[sgready]") {
-    const ElsterIndex* dhw = GetElsterIndex("EINSTELL_SPEICHERSOLLTEMP");
+    const ElsterIndex* dhw = GetElsterIndex(HA_NAME_DHW_SET);
     CHECK(pacedValueMatches(dhw, "53.0", "53.0"));
     CHECK(pacedValueMatches(dhw, "53", "53.0"));
     CHECK_FALSE(pacedValueMatches(dhw, "53.0", "48.0"));
@@ -2286,16 +2301,16 @@ TEST_CASE("SG Ready boost baseline is the setpoint read from the manager (#85)",
     if (std::strcmp(HA_DEVICE_MODEL_STR, "wpl9") == 0 || std::strcmp(HA_DEVICE_MODEL_STR, "wpla7") == 0) return;
     applySgReadyState(2);                          // no boost active from an earlier test
     pacedWriteCount = 0;
-    updateSensor(CanMembers[cm_manager], GetElsterIndex("EINSTELL_SPEICHERSOLLTEMP"), "50.0");
+    updateSensor(CanMembers[cm_manager], GetElsterIndex(HA_NAME_DHW_SET), "50.0");
     updateSensor(CanMembers[cm_manager], GetElsterIndex("RAUMSOLLTEMP_I"), "21.0");
-    updateSensor(CanMembers[cm_kessel], GetElsterIndex("EINSTELL_SPEICHERSOLLTEMP"), "40.0");  // other member
+    updateSensor(CanMembers[cm_kessel], GetElsterIndex(HA_NAME_DHW_SET), "40.0");  // other member
     CHECK(lastSgDhwSetpoint == Approx(50.0f));
     CHECK(lastSgRoomSetpoint == Approx(21.0f));
     applySgReadyState(3);
     bool dhw = false, room = false;
     for (size_t i = 0; i < pacedWriteCount; i++) {
         const std::string n = pacedWrites[i].ei->Name, v = pacedWrites[i].value;
-        if (n == "EINSTELL_SPEICHERSOLLTEMP") dhw = (v == "55.0");
+        if (n == HA_NAME_DHW_SET) dhw = (v == "55.0");
         if (n == "RAUMSOLLTEMP_I") room = (v == "22.0");
     }
     CHECK(dhw);
@@ -2305,7 +2320,7 @@ TEST_CASE("SG Ready boost baseline is the setpoint read from the manager (#85)",
     bool dhwBack = false, roomBack = false;
     for (size_t i = 0; i < pacedWriteCount; i++) {
         const std::string n = pacedWrites[i].ei->Name, v = pacedWrites[i].value;
-        if (n == "EINSTELL_SPEICHERSOLLTEMP") dhwBack = (v == "50.0");
+        if (n == HA_NAME_DHW_SET) dhwBack = (v == "50.0");
         if (n == "RAUMSOLLTEMP_I") roomBack = (v == "21.0");
     }
     CHECK(dhwBack);
@@ -2334,7 +2349,7 @@ TEST_CASE("discovery: one device block, COP from calculatedSensors, named rows (
     CHECK(dev == "\"device\":{\"identifiers\":[\"stiebel_KESSEL\"],\"name\":\"Kessel\","
                  "\"via_device\":\"" HA_MAIN_DEVICE_ID "\",\"manufacturer\":\"Stiebel Eltron\"}");
     resetDiscoveryState();
-    publishMqttDiscovery(CanMembers[cm_kessel], GetElsterIndex("SPEICHERISTTEMP"));
+    publishMqttDiscovery(CanMembers[cm_kessel], GetElsterIndex(HA_NAME_DHW_ACTUAL));
     CHECK(mqttFindPayload("homeassistant/").find(dev) != std::string::npos);
     copDiscoveryPublished = false;
     resetDiscoveryState();
@@ -2346,8 +2361,8 @@ TEST_CASE("discovery: language-independent default_entity_id in every payload (#
     CHECK(defaultEntityIdJson("number", "stiebel_MANAGER_HEIZKURVE_set") ==
           "\"default_entity_id\":\"number.heatingpump_manager_heizkurve_set\",");
     resetDiscoveryState();
-    publishMqttDiscovery(CanMembers[cm_kessel], GetElsterIndex("SPEICHERISTTEMP"));
-    CHECK(mqttFindPayload("homeassistant/").find("\"default_entity_id\":\"sensor.heatingpump_kessel_speicheristtemp\"") != std::string::npos);
+    publishMqttDiscovery(CanMembers[cm_kessel], GetElsterIndex(HA_NAME_DHW_ACTUAL));
+    CHECK(mqttFindPayload("homeassistant/").find(std::string("\"default_entity_id\":\"sensor.heatingpump_kessel_") + tstLower(HA_NAME_DHW_ACTUAL) + "\"") != std::string::npos);
     resetDiscoveryState();
     publishCalculatedSensorDiscovery(calculatedSensors[CALC_IDX_COMPRESSOR_ACTIVE], true);
     CHECK(mqttFindPayload("homeassistant/").find("binary_sensor.heatingpump_calculated_compressor_active") != std::string::npos);
@@ -2381,7 +2396,7 @@ TEST_CASE("handleSetCommand: one dispatcher for numbers, selects and programs (#
     CHECK(fake_can().sent.empty() == !kModel.wpmw2WritesVerified);
     // WPL9: former KESSEL topic of the DHW setpoint still works, elsewhere it does not
     fake_can().sent.clear();
-    CHECK(handleSetCommand("heatingpump/KESSEL/EINSTELL_SPEICHERSOLLTEMP/set", "48") == kModel.canBDhwRoutes);
+    CHECK(handleSetCommand("heatingpump/KESSEL/" HA_NAME_DHW_SET "/set", "48") == kModel.canBDhwRoutes);
     // SG Ready values live on the ESP
     CHECK(handleSetCommand("heatingpump/MANAGER/SG_READY_BOOST_STATE3/set", "6.5"));
     CHECK(sgReadyController.boostState3() == Approx(6.5f));
@@ -2616,7 +2631,7 @@ TEST_CASE("DHW program: three periods form one text per day, commands write chan
 TEST_CASE("MQTT connect: own republishing waits until the connect burst has drained", "[mqtt][state]") {
     resetDiscoveryState();
     fake_millis() = 10000;
-    publishMqttState(CanMembers[cm_kessel], GetElsterIndex("SPEICHERISTTEMP"), "48.0");
+    publishMqttState(CanMembers[cm_kessel], GetElsterIndex(HA_NAME_DHW_ACTUAL), "48.0");
     mqtt_client_instance().clear();
     noteMqttConnected();
     republishAllStates();
@@ -2627,7 +2642,7 @@ TEST_CASE("MQTT connect: own republishing waits until the connect burst has drai
     fake_millis() = 10000 + MQTT_CONNECT_SETTLE_MS;
     stateRepublishStep();
     sgReadyPublishStep();
-    CHECK(mqttTopicPublished("heatingpump/KESSEL/SPEICHERISTTEMP/state"));
+    CHECK(mqttTopicPublished("heatingpump/KESSEL/" HA_NAME_DHW_ACTUAL "/state"));
     CHECK(mqttTopicPublished("heatingpump/MANAGER/SG_READY_ROOM_BOOST_STATE3/state"));
     CHECK_FALSE(sgReadyPublishPending);
     fake_millis() = 0;

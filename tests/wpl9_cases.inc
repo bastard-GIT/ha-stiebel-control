@@ -37,12 +37,12 @@ TEST_CASE("configured DHW commands send short and extended register frames", "[r
     const uint8_t writeFirst = (wpl9 || wpl17 || wpla7) ? 0x40 : 0x90;
     const uint8_t writeSecond = (wpl9 || wpl17 || wpla7) ? 0x01 : 0x00;
     fake_can().sent.clear();
-    writeConfiguredSignal(cm_manager, "EINSTELL_SPEICHERSOLLTEMP", "49");
+    writeConfiguredSignal(cm_manager, HA_NAME_DHW_SET, "49");
     REQUIRE(fake_can().sent.size() == 2);
     CHECK(fake_can().sent[0] == std::vector<uint8_t>{writeFirst, writeSecond, 0x13, 0x01, 0xea, 0, 0});
     CHECK(fake_can().sent[1] == std::vector<uint8_t>{static_cast<uint8_t>(writeFirst + 1), writeSecond, 0x13, 0, 0, 0, 0});
     fake_can().sent.clear();
-    writeConfiguredSignal(cm_manager, "EINSTELL_SPEICHERSOLLTEMP2", "49");
+    writeConfiguredSignal(cm_manager, HA_NAME_DHW_SET2, "49");
     REQUIRE(fake_can().sent.size() == 2);
     CHECK(fake_can().sent[0] == std::vector<uint8_t>{writeFirst, writeSecond, 0xfa, 0x0a, 0x06, 0x01, 0xea});
     const uint8_t readFirst = static_cast<uint8_t>(writeFirst + 1);
@@ -56,7 +56,7 @@ TEST_CASE("WPL9 discovery uses subscribed CAN-B command and state topics", "[rou
         resetDiscoveryState();
         publishWritableNumberDiscovery(writableNumbers[i], true);
         std::string payload = mqttFindPayload("homeassistant/number/heatingpump/");
-        const std::string base = std::string("heatingpump/KESSEL_CANB/") + writableNumbers[i].signalName;
+        const std::string base = std::string("heatingpump/" HA_NAME_KESSEL_CANB "/") + writableNumbers[i].signalName;
         CHECK(payload.find("\"command_topic\":\"" + base + "/set\"") != std::string::npos);
         CHECK(payload.find("\"state_topic\":\"" + base + "/state\"") != std::string::npos);
     }
@@ -70,7 +70,7 @@ TEST_CASE("WPL9 SG Ready adapter shares DHW destinations and keeps room writes",
     pacedSentBefore = false;
     fake_millis() = 1000;
     fake_can().sent.clear();
-    adapter.writeCanSignal("EINSTELL_SPEICHERSOLLTEMP", "49");
+    adapter.writeCanSignal(HA_NAME_DHW_SET, "49");
     CHECK(fake_can().sent.empty());       // queued (#85)
     pacedWriteStep();
     REQUIRE(fake_can().sent.size() == 1);

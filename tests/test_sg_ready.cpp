@@ -91,7 +91,7 @@ struct FakeIO : ISgReadyIO {
     float dhwSetpoint = NAN;
     float roomSetpoint = NAN;
     bool currentSetpoint(const char* signal, float& value) override {
-        const float v = std::string(signal) == "EINSTELL_SPEICHERSOLLTEMP" ? dhwSetpoint
+        const float v = std::string(signal) == HA_NAME_DHW_SET ? dhwSetpoint
                       : std::string(signal) == "RAUMSOLLTEMP_I" ? roomSetpoint : NAN;
         if (v != v) return false;
         value = v;
@@ -143,7 +143,7 @@ TEST_CASE("state 1 (EVU Lock): sets Bereitschaft, does not restore if not active
     CHECK(ctrl.isActive() == true);
     CHECK(io.hadCan("PROGRAMMSCHALTER", "Bereitschaft"));
     // No restore calls because sgReadyActive was false and originalDhw/Room are 0
-    CHECK(io.countCan("EINSTELL_SPEICHERSOLLTEMP") == 0);
+    CHECK(io.countCan(HA_NAME_DHW_SET) == 0);
     CHECK(io.countCan("RAUMSOLLTEMP_I") == 0);
     CHECK(io.hadMqtt("1 - EVU Sperre"));
 }
@@ -170,7 +170,7 @@ TEST_CASE("state 3 (Recommended): boosts DHW and room temp", "[sg_ready]") {
     CHECK(ctrl.isActive() == true);
     CHECK(io.hadCan("PROGRAMMSCHALTER", SG_READY_NORMAL_MODE));
     // DHW: 48.0 + 5.0 = 53.0
-    CHECK(io.lastCan("EINSTELL_SPEICHERSOLLTEMP") == "53.0");
+    CHECK(io.lastCan(HA_NAME_DHW_SET) == "53.0");
     // Room: 20.0 + 1.0 = 21.0
     CHECK(io.lastCan("RAUMSOLLTEMP_I") == "21.0");
     CHECK(io.hadMqtt("3 - Empfohlen"));
@@ -186,7 +186,7 @@ TEST_CASE("state 4 (Forced): boosts DHW and room temp more", "[sg_ready]") {
     CHECK(ctrl.isActive() == true);
     CHECK(io.hadCan("PROGRAMMSCHALTER", SG_READY_NORMAL_MODE));
     // DHW: 48.0 + 8.0 = 56.0
-    CHECK(io.lastCan("EINSTELL_SPEICHERSOLLTEMP") == "56.0");
+    CHECK(io.lastCan(HA_NAME_DHW_SET) == "56.0");
     // Room: 20.0 + 2.0 = 22.0
     CHECK(io.lastCan("RAUMSOLLTEMP_I") == "22.0");
     CHECK(io.hadMqtt("4 - Zwang"));
@@ -199,7 +199,7 @@ TEST_CASE("DHW boost is capped at 60°C", "[sg_ready]") {
 
     ctrl.applyState(SgReadyController::STATE_FORCED);
 
-    CHECK(io.lastCan("EINSTELL_SPEICHERSOLLTEMP") == "60.0");
+    CHECK(io.lastCan(HA_NAME_DHW_SET) == "60.0");
 }
 
 TEST_CASE("room boost is capped at 25°C", "[sg_ready]") {
@@ -230,7 +230,7 @@ TEST_CASE("state 3 → state 2: restores original DHW and room temps", "[sg_read
     ctrl.applyState(SgReadyController::STATE_NORMAL);
 
     // Should restore DHW to 48.0
-    CHECK(io.lastCan("EINSTELL_SPEICHERSOLLTEMP") == "48.0");
+    CHECK(io.lastCan(HA_NAME_DHW_SET) == "48.0");
     // Should restore room to 20.0
     CHECK(io.lastCan("RAUMSOLLTEMP_I") == "20.0");
     CHECK(io.hadCan("PROGRAMMSCHALTER", SG_READY_NORMAL_MODE));
@@ -334,7 +334,7 @@ TEST_CASE("state 3 with zero boost: skips DHW write", "[sg_ready]") {
 
     ctrl.applyState(SgReadyController::STATE_RECOMMENDED);
 
-    CHECK(io.countCan("EINSTELL_SPEICHERSOLLTEMP") == 0);
+    CHECK(io.countCan(HA_NAME_DHW_SET) == 0);
     CHECK(io.hadCan("PROGRAMMSCHALTER", SG_READY_NORMAL_MODE));  // mode still set
 }
 
@@ -384,7 +384,7 @@ TEST_CASE("room boost 0 leaves the room setpoint alone, also on the way back", "
     ctrl.setRoomBoostState3(0.0f);
     ctrl.applyState(SgReadyController::STATE_RECOMMENDED);
     CHECK_FALSE(io.hadCan("RAUMSOLLTEMP_I"));
-    CHECK(io.hadCan("EINSTELL_SPEICHERSOLLTEMP"));   // DHW boost still works
+    CHECK(io.hadCan(HA_NAME_DHW_SET));   // DHW boost still works
     ctrl.applyState(SgReadyController::STATE_NORMAL);
     CHECK_FALSE(io.hadCan("RAUMSOLLTEMP_I"));
 }
@@ -420,14 +420,14 @@ TEST_CASE("boost baseline: setpoints read from the heat pump, restored afterward
     io.roomSetpoint = 21.0f;
     SgReadyController c(io);
     c.applyState(3);
-    CHECK(io.lastCan("EINSTELL_SPEICHERSOLLTEMP") == "55.0");
+    CHECK(io.lastCan(HA_NAME_DHW_SET) == "55.0");
     CHECK(io.lastCan("RAUMSOLLTEMP_I") == "22.0");
     io.dhwSetpoint = 55.0f;          // the boosted value is read back meanwhile
     io.roomSetpoint = 22.0f;
     c.applyState(4);                 // originals stay while a boost is active
-    CHECK(io.lastCan("EINSTELL_SPEICHERSOLLTEMP") == "58.0");
+    CHECK(io.lastCan(HA_NAME_DHW_SET) == "58.0");
     c.applyState(2);
-    CHECK(io.lastCan("EINSTELL_SPEICHERSOLLTEMP") == "50.0");
+    CHECK(io.lastCan(HA_NAME_DHW_SET) == "50.0");
     CHECK(io.lastCan("RAUMSOLLTEMP_I") == "21.0");
 }
 
@@ -436,7 +436,7 @@ TEST_CASE("boost baseline: implausible or missing reads fall back to the constan
     io.dhwSetpoint = -255.0f;
     SgReadyController c(io);
     c.applyState(3);
-    CHECK(io.lastCan("EINSTELL_SPEICHERSOLLTEMP") == "53.0");   // 48 + 5
+    CHECK(io.lastCan(HA_NAME_DHW_SET) == "53.0");   // 48 + 5
     CHECK(io.lastCan("RAUMSOLLTEMP_I") == "21.0");              // 20 + 1
 }
 
