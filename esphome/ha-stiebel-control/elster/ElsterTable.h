@@ -4787,7 +4787,7 @@ static const ErrorIndex ErrorList[] =
   { 0x1fcd, "INV FEHLERGRENZE"}
 };
 
-#ifdef HA_CONTROLLER_WPM3
+#if defined(HA_CONTROLLER_WPM3) || defined(HA_CONTROLLER_WPLA)
 // WPL 10 AC + WPM3 operating mode names
 const ErrorIndex BetriebsartList[] =
 {
