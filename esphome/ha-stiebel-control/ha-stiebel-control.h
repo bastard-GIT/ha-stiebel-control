@@ -409,6 +409,15 @@ void processAndUpdate(uint32_t can_id, const std::vector<uint8_t> &msg)
         return;
     }
 
+    // FES (0x100) is a CAN member only for the WPL-A 07. For all other models its
+    // frames are still dropped as before (it used to fall back to OTHER above).
+#if !defined(HA_CONTROLLER_WPLA)
+    if (cm->CanId == 0x100)
+    {
+        return;
+    }
+#endif
+
     if (handleScanFrame(*cm, ei, msg, value)) return;
     if (handleFaultListFrame(*cm, msg)) return;
 

@@ -4262,6 +4262,14 @@ const ElsterIndex ElsterTable[] =
   { "STILLSTANDSZEIT"                             , 0x4f2e, 0               , false, false },
 #endif
   { "MINIMALE_ABTAUZEIT"                          , 0x4f2f, 0               , false, false },
+#if defined(HA_CONTROLLER_WPLA)
+  // WPL-A: FES date/time registers, only decoded when the display sends them
+  { "JAHR_FES"                                    , 0x4f30, et_default      , false, false },
+  { "MONAT_FES"                                   , 0x4f31, et_default      , false, false },
+  { "TAG_FES"                                     , 0x4f32, et_default      , false, false },
+  { "MINUTE_FES"                                  , 0x4f33, et_default      , false, false },
+  { "STUNDE_FES"                                  , 0x4f34, et_default      , false, false },
+#endif
   { "MAXIMALER_STROM"                             , 0x4f3f, et_dec_val      , false, false },
   { "VORLAUFISTTEMP_NHZ"                          , 0x4f40, et_dec_val      , false, false },
   { "VORLAUFISTTEMP_WP"                           , 0x4f41, et_dec_val      , false, false },
