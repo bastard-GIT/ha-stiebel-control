@@ -392,3 +392,17 @@ TEST_CASE("TranslateString: leading spaces are skipped", "[kelster]") {
     const char* s = "   42";
     CHECK(TranslateString(s, et_default) == 42);
 }
+
+// Antilegionellenprogramm (Menue Programme): index 0x4f29, KESSEL = weekdays mask, MANAGER = start time
+// in quarter hours. Values read on a WPL-A 07 against the display on 2026-11-20, see docs/can-map.md.
+#if defined(HA_CONTROLLER_WPLA)
+TEST_CASE("ANTILEGIONELLEN_PROGRAMM_4F29 is the WPL-A row of index 0x4f29", "[kelster]") {
+    const ElsterIndex* byName = GetElsterIndex("ANTILEGIONELLEN_PROGRAMM_4F29");
+    CHECK(byName->Index == 0x4f29);
+    CHECK(byName->Type == 0);   // raw number: the meaning depends on the member
+    CHECK(std::string(GetElsterIndex(static_cast<unsigned short>(0x4f29))->Name) == "ANTILEGIONELLEN_PROGRAMM_4F29");
+    const ElsterMeta* meta = GetElsterMeta(byName);
+    REQUIRE(meta != nullptr);
+    CHECK(std::string(meta->Name) == "ANTILEGIONELLEN_PROGRAMM_4F29");
+}
+#endif

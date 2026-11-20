@@ -4264,6 +4264,13 @@ const ElsterIndex ElsterTable[] =
   { "ANTILEGIONELLENBEHANDLUNG"                   , 0x4f28, 0               , false, false },
 #endif
 #if defined(HA_CONTROLLER_WPLA)
+  // Antilegionellenprogramm (Menue Programme), same index with different meaning per member:
+  // KESSEL 0x4f29 = weekdays bit mask (Mon 1, Tue 2, Wed 4, Thu 8, Fri 16, Sat 32, Sun 64),
+  // MANAGER 0x4f29 = start time in quarter hours since 00:00 (14:45 = 59).
+  // Checked on the display of a WPL-A 07, 2026-11-20 (docs/can-map.md).
+  { "ANTILEGIONELLEN_PROGRAMM_4F29"               , 0x4f29, 0               , false, true  },
+#endif
+#if defined(HA_CONTROLLER_WPLA)
   { "STEIGUNG_HEIZKURVE"                          , 0x4f2b, et_cent_val      , false, true  },
 #else
   { "STEIGUNG_HEIZKURVE"                          , 0x4f2b, et_dec_val      , false, false },
@@ -4726,6 +4733,7 @@ const ElsterMeta ElsterMetaTable[] =
   { 0x4f24, "WARMWASSERBETRIEB", "Warmwasserbetrieb (roh)", "sensor", "", "", "", "mdi:water-boiler", NULL, NULL },
   { 0x4f25, "WARMWASSERHYSTERESE", "Warmwasserhysterese", "sensor", "", "K", "", "mdi:water-thermometer", NULL, NULL },
   { 0x4f28, "ANTILEGIONELLENBEHANDLUNG", "Antilegionellenbehandlung", "binary_sensor", "", "", "", "mdi:bacteria-outline", "on", "off" },
+  { 0x4f29, "ANTILEGIONELLEN_PROGRAMM_4F29", "Antilegionellen Programm (roh)", "sensor", "", "", "", "mdi:bacteria-outline", NULL, NULL },
   { 0x4f2b, "STEIGUNG_HEIZKURVE", "HK1 Steigung Heizkurve", "sensor", "", "", "", "mdi:chart-line", NULL, NULL },
   { 0x4f2e, "STILLSTANDSZEIT", "Stillstandszeit", "sensor", "duration", "min", "", "mdi:timer-pause-outline", NULL, NULL },
   { 0x4f4d, "ZEITINTERVALL", "Zeitintervall", "sensor", "", "", "measurement", "mdi:timer-outline", NULL, NULL },
