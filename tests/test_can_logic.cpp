@@ -3745,11 +3745,21 @@ TEST_CASE("wpla_abtau: ZEITDAUER_LETZTE_ABTAUUNG no longer sets abtauung_laeuft 
 static void resetAntilegionellenState() {
     lastWwSoll = NAN;
     lastWwLegSoll = NAN;
+    lastWwKomfort = NAN;
+    lastWwEco = NAN;
 }
+
+// WW_KOMFORT_TEMPERATUR 0x0013 and WW_ECO_TEMPERATUR 0x0a06 from KESSEL_CANB 0x201 (tenths of a degree).
+static void feedKomfortEco(uint8_t kHi, uint8_t kLo, uint8_t eHi, uint8_t eLo) {
+    processAndUpdate(0x201, {0xD2, 0x00, 0xFA, 0x00, 0x13, kHi, kLo});
+    processAndUpdate(0x201, {0xD2, 0x00, 0xFA, 0x0A, 0x06, eHi, eLo});
+}
+static void feedKomfortEco52() { feedKomfortEco(0x02, 0x08, 0x02, 0x08); }
 
 TEST_CASE("wpla_leg: only WW_SOLLTEMPERATUR known publishes nothing, then the legionella setpoint gives off", "[wpla_leg]") {
     resetDiscoveryState();
     resetAntilegionellenState();
+    feedKomfortEco52();
     processAndUpdate(0x201, {0xD2, 0x00, 0xFA, 0x00, 0x03, 0x02, 0x08});  // WW_SOLLTEMPERATUR 52.0
     CHECK_FALSE(mqttTopicPublished("antilegionellen_aktiv/state"));
 
@@ -3760,6 +3770,7 @@ TEST_CASE("wpla_leg: only WW_SOLLTEMPERATUR known publishes nothing, then the le
 TEST_CASE("wpla_leg: WW_SOLLTEMPERATUR at the legionella setpoint is on", "[wpla_leg]") {
     resetDiscoveryState();
     resetAntilegionellenState();
+    feedKomfortEco52();
     processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x4E, 0xF9, 0x02, 0x58});  // WW_LEG_SOLLTEMPERATUR 60.0
     processAndUpdate(0x201, {0xD2, 0x00, 0xFA, 0x00, 0x03, 0x02, 0x58});  // WW_SOLLTEMPERATUR 60.0
     CHECK(mqttFindPayload("antilegionellen_aktiv/state") == "on");
@@ -3768,6 +3779,7 @@ TEST_CASE("wpla_leg: WW_SOLLTEMPERATUR at the legionella setpoint is on", "[wpla
 TEST_CASE("wpla_leg: WW_SOLLTEMPERATUR 52.0 below the legionella setpoint 60.0 is off", "[wpla_leg]") {
     resetDiscoveryState();
     resetAntilegionellenState();
+    feedKomfortEco52();
     processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x4E, 0xF9, 0x02, 0x58});  // WW_LEG_SOLLTEMPERATUR 60.0
     processAndUpdate(0x201, {0xD2, 0x00, 0xFA, 0x00, 0x03, 0x02, 0x08});  // WW_SOLLTEMPERATUR 52.0
     CHECK(mqttFindPayload("antilegionellen_aktiv/state") == "off");
@@ -3776,6 +3788,7 @@ TEST_CASE("wpla_leg: WW_SOLLTEMPERATUR 52.0 below the legionella setpoint 60.0 i
 TEST_CASE("wpla_leg: only WW_LEG_SOLLTEMPERATUR known publishes nothing", "[wpla_leg]") {
     resetDiscoveryState();
     resetAntilegionellenState();
+    feedKomfortEco52();
     processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x4E, 0xF9, 0x02, 0x58});  // WW_LEG_SOLLTEMPERATUR 60.0
     CHECK_FALSE(mqttTopicPublished("antilegionellen_aktiv/state"));
 }
@@ -3783,12 +3796,43 @@ TEST_CASE("wpla_leg: only WW_LEG_SOLLTEMPERATUR known publishes nothing", "[wpla
 TEST_CASE("wpla_leg: a lower legionella setpoint switches the state to on", "[wpla_leg]") {
     resetDiscoveryState();
     resetAntilegionellenState();
+    feedKomfortEco(0x01, 0xC2, 0x01, 0xC2);  // comfort 45.0, eco 45.0, below both legionella setpoints used here
     processAndUpdate(0x201, {0xD2, 0x00, 0xFA, 0x00, 0x03, 0x02, 0x08});  // WW_SOLLTEMPERATUR 52.0
     processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x4E, 0xF9, 0x02, 0x58});  // WW_LEG_SOLLTEMPERATUR 60.0
     CHECK(mqttFindPayload("antilegionellen_aktiv/state") == "off");
 
     resetStateCache(); mqtt_client_instance().clear();
     processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x4E, 0xF9, 0x01, 0xF4});  // WW_LEG_SOLLTEMPERATUR 50.0
+    CHECK(mqttFindPayload("antilegionellen_aktiv/state") == "on");
+}
+
+TEST_CASE("wpla_leg: comfort setpoint at the legionella setpoint is off even when WW_SOLLTEMPERATUR is 60.0", "[wpla_leg]") {
+    resetDiscoveryState();
+    resetAntilegionellenState();
+    feedKomfortEco(0x02, 0x58, 0x02, 0x08);  // comfort 60.0, eco 52.0
+    processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x4E, 0xF9, 0x02, 0x58});  // WW_LEG_SOLLTEMPERATUR 60.0
+    processAndUpdate(0x201, {0xD2, 0x00, 0xFA, 0x00, 0x03, 0x02, 0x58});  // WW_SOLLTEMPERATUR 60.0
+    CHECK(mqttFindPayload("antilegionellen_aktiv/state") == "off");
+}
+
+TEST_CASE("wpla_leg: eco setpoint at the legionella setpoint is off even when WW_SOLLTEMPERATUR is 60.0", "[wpla_leg]") {
+    resetDiscoveryState();
+    resetAntilegionellenState();
+    feedKomfortEco(0x02, 0x08, 0x02, 0x58);  // comfort 52.0, eco 60.0
+    processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x4E, 0xF9, 0x02, 0x58});
+    processAndUpdate(0x201, {0xD2, 0x00, 0xFA, 0x00, 0x03, 0x02, 0x58});
+    CHECK(mqttFindPayload("antilegionellen_aktiv/state") == "off");
+}
+
+TEST_CASE("wpla_leg: nothing is published until comfort and eco are known", "[wpla_leg]") {
+    resetDiscoveryState();
+    resetAntilegionellenState();
+    processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x4E, 0xF9, 0x02, 0x58});
+    processAndUpdate(0x201, {0xD2, 0x00, 0xFA, 0x00, 0x03, 0x02, 0x58});
+    CHECK_FALSE(mqttTopicPublished("antilegionellen_aktiv/state"));
+    processAndUpdate(0x201, {0xD2, 0x00, 0xFA, 0x00, 0x13, 0x02, 0x08});
+    CHECK_FALSE(mqttTopicPublished("antilegionellen_aktiv/state"));
+    processAndUpdate(0x201, {0xD2, 0x00, 0xFA, 0x0A, 0x06, 0x02, 0x08});
     CHECK(mqttFindPayload("antilegionellen_aktiv/state") == "on");
 }
 

@@ -162,12 +162,27 @@ void publishWpStatus4eda(long raw) {
 // (30 s and 10 min), so each is kept and the state is published once both are known.
 static float lastWwSoll = NAN;      // WW_SOLLTEMPERATUR, KESSEL_CANB (0x201), 0x0003
 static float lastWwLegSoll = NAN;   // WW_LEG_SOLLTEMPERATUR, KESSEL (0x180), 0x4ef9
+static float lastWwKomfort = NAN;   // WW_KOMFORT_TEMPERATUR, KESSEL_CANB (0x201), 0x0013
+static float lastWwEco = NAN;       // WW_ECO_TEMPERATUR, KESSEL_CANB (0x201), 0x0a06
 
 void publishAntilegionellenAktiv() {
-    if (std::isnan(lastWwSoll) || std::isnan(lastWwLegSoll)) return;
+    if (std::isnan(lastWwSoll) || std::isnan(lastWwLegSoll) ||
+        std::isnan(lastWwKomfort) || std::isnan(lastWwEco)) return;
     const CalculatedSensorConfig &cfg = calculatedSensors[CALC_IDX_ANTILEGIONELLEN_AKTIV];
     publishCalculatedSensorDiscovery(cfg, false);
-    publishCalculatedState(cfg.stateTopic, lastWwSoll >= lastWwLegSoll ? "on" : "off");
+    // A comfort or eco setpoint at or above the legionella setpoint is a manual choice, not a run.
+    const bool manualHigh = lastWwKomfort >= lastWwLegSoll || lastWwEco >= lastWwLegSoll;
+    publishCalculatedState(cfg.stateTopic, (lastWwSoll >= lastWwLegSoll && !manualHigh) ? "on" : "off");
+}
+
+void noteWwKomfort(float v) {
+    lastWwKomfort = v;
+    publishAntilegionellenAktiv();
+}
+
+void noteWwEco(float v) {
+    lastWwEco = v;
+    publishAntilegionellenAktiv();
 }
 
 void noteWwSoll(float v) {

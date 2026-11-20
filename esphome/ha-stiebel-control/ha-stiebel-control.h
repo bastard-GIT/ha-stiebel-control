@@ -85,6 +85,7 @@ constexpr uint32_t HASH_STARTS_VERDICHTER_L = hash("STARTS_VERDICHTER_L");
 constexpr uint32_t HASH_WP_STATUS_4EDA = hash("WAERMEPUMPEN_STATUS_WPLA");
 constexpr uint32_t HASH_WW_SOLLTEMPERATUR = hash("WW_SOLLTEMPERATUR");
 constexpr uint32_t HASH_WW_LEG_SOLLTEMPERATUR = hash("WW_LEG_SOLLTEMPERATUR");
+constexpr uint32_t HASH_WW_ECO_TEMPERATUR = hash("WW_ECO_TEMPERATUR");
 constexpr uint32_t HASH_ANTILEGIONELLEN_PROGRAMM_4F29 = hash("ANTILEGIONELLEN_PROGRAMM_4F29");
 #endif
 constexpr uint32_t HASH_EINSTELL_SPEICHERSOLLTEMP = hash(HA_NAME_DHW_SET);
@@ -383,8 +384,12 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
             char* endPtr;
             const float v = strtof(value.c_str(), &endPtr);
             if (endPtr == value.c_str() || *endPtr != '\0' || v < -50.0f) break;
-            if (strcmp(signalName, HA_NAME_DHW_SET) == 0) lastSgDhwSetpoint = v;
-            else if (strcmp(signalName, "RAUMSOLLTEMP_I") == 0) lastSgRoomSetpoint = v;
+            if (strcmp(signalName, HA_NAME_DHW_SET) == 0) {
+                lastSgDhwSetpoint = v;
+#if defined(HA_CONTROLLER_WPLA)
+                noteWwKomfort(v);  // route check above: frame is from KESSEL_CANB (0x201)
+#endif
+            } else if (strcmp(signalName, "RAUMSOLLTEMP_I") == 0) lastSgRoomSetpoint = v;
             break;
         }
 
@@ -475,15 +480,17 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
 
         // WPL-A 07: anti-legionella run (status_bits.h, noteWwSoll)
         case HASH_WW_SOLLTEMPERATUR:
+        case HASH_WW_ECO_TEMPERATUR:
         case HASH_WW_LEG_SOLLTEMPERATUR: {
             if (value == "-255" || value == "-32768") break;
             char* endPtr;
             const float v = strtof(value.c_str(), &endPtr);
             if (endPtr == value.c_str() || *endPtr != '\0') break;
-            if (signalHash == HASH_WW_SOLLTEMPERATUR) {
-                if (strcmp(cm.Name, CanMembers[cm_kessel_canb].Name) == 0) noteWwSoll(v);
-            } else if (strcmp(cm.Name, "KESSEL") == 0) {
-                noteWwLegSoll(v);
+            if (signalHash == HASH_WW_LEG_SOLLTEMPERATUR) {
+                if (strcmp(cm.Name, "KESSEL") == 0) noteWwLegSoll(v);
+            } else if (strcmp(cm.Name, CanMembers[cm_kessel_canb].Name) == 0) {
+                if (signalHash == HASH_WW_SOLLTEMPERATUR) noteWwSoll(v);
+                else noteWwEco(v);
             }
             break;
         }
