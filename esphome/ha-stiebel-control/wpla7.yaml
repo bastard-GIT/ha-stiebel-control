@@ -1,23 +1,19 @@
 #
 #  WPL-A Heat Pump — Model Package (Air-Source, WPM3)
 #
-#  Verified on a WPL-A 07 230 Premium: built-in CAN at 50 kbps on the WPM3 bus.
-#  Members used: KESSEL (0x180), KESSEL_CANB (0x201, DHW), MANAGER (0x480),
-#  HEIZMODUL (0x500), HEIZMODUL_WPL (0x514, compressor/inverter/energy) and
-#  MISCHERMODUL_2 (0x601, heating circuit 1). See signal_requests_wpla7.h.
+#  Selects the WPL-A signal request table (SIGNAL_REQUESTS_BASE + WPL-A-specific
+#  signals). All universal sensors live in common.yaml.
 #
-#  Usage in heatingpump.yaml:
+#  IMPORTANT: WPL-A needs can_bit_rate: 50kbps in heatingpump.yaml substitutions
+#  (the project default is 20kbps). See signal_requests_wpla7.h header comment.
 #
-#    substitutions:
-#      device_model: "wpla7"
-#      can_bit_rate: 50kbps
-#    packages:
-#      sensors: !include ha-stiebel-control/wpla7.yaml
+#  VERIFIED ON REAL HARDWARE (WPL-A 07 230 Premium, built-in CAN at 50 kbit/s).
+#  See the signal_requests_wpla7.h header for the member layout.
+#
+#  To add a new model, create signal_requests_yourmodel.h and a thin yourmodel.yaml
+#  following this pattern. See CONTRIBUTING.md for full instructions.
 #
 
 esphome:
   includes:
     - signal_requests_wpla7.h
-
-# The MQTT set topics of this model (e.g. SPEICHER/WW_KOMFORT_TEMPERATUR/set) are handled by
-# handleSetCommand() in ha-stiebel-control.h from writableNumbers[]; no model handlers here.

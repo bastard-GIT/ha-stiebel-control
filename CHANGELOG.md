@@ -7,20 +7,27 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [Sem
 
 ## [Unreleased]
 
-### Added
+### Upgrade notes
 
-- Writable numbers take their range from the heat pump (#79). The firmware reads each number's
-  limits once with the Elster switch bytes `0xF8` (minimum) and `0xF9` (maximum), starting about a
-  minute after the request manager and at least 2 s apart, and then publishes the number and
-  climate discovery again with that range (same entity). `0x8000` on one side keeps that side from
-  `writableNumbers[]`; `0x8000` on both sides, no answer after one retry, or minimum ≥ maximum keep
-  the whole range from `writableNumbers[]`. Once the device range is known, numeric writes of these
-  numbers are clamped to it, also those from automations or plain MQTT; with the static range
-  writes are not changed (as before). Limit answers never reach the sensor path, and read and
-  write requests for the indices 0xF7–0xFA always use the long form, because in the short form
-  that byte is the switch byte.
+- WPL13E/WPL18E/TTL 33: some existing sensors get new display names; entity IDs stay. `STILLSTANDZEIT`
+  now has the unit min, so HA asks once to update the unit of its statistics (Developer tools →
+  Statistics).
+
 ### Fixed
 
+- Raw energy counters decoded as plain integers (`*_TAG_WH`, `*_SUM_KWH`, `WAERMEERTRAG_RUECKGE_*`,
+  solar yields; 24 signals with metadata) had no `state_class` in their discovery although their
+  metadata says `total_increasing`/`measurement`, so Home Assistant kept no long-term statistics
+  for them. They now carry it, and HA starts recording statistics for them after the update.
+- A `total_increasing` signal (energy counters, runtime hours) that answers "not available"
+  (`0x8000`) now keeps its last state instead of publishing `-255`: HA reads a drop as a new
+  meter cycle and would add the next real value to the statistics sum again.
+- WPMW II: until `PUMPENSTATUS` is known, the operating state compared the energy counter sums
+  since boot instead of the last 5 minutes, because the 5-minute window never restarted there.
+- Diagnostic scan firmware (`tools/heatingpump_scan.yaml`): it no longer keeps its own copy of the
+  firmware header list, which had to be updated with every new module; the headers come from
+  `common.yaml` like in every other config. CI now compiles the scan config in the layout
+  `tools/README.md` describes (#122).
 - Climate entities (heating, HK2, hot water) showed the mode "off" in Home Assistant (thermostat
   card "Aus"), because they announce no mode state. The mode now follows the availability of the
   ESP: `heat` while it is online, `off` while it is offline.
@@ -33,13 +40,30 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [Sem
   thousand indices: `GetElsterIndex()` cached every index that is not in the table in a hash map,
   which grew until a rehash failed (`exception/panic`, seen on a WPL13E at 0x601 0x0000-0x0fff).
   Index lookups now use a table sorted once at startup (binary search, fixed size) and cache nothing.
+- WPL13E/WPL18E/TTL 33 (WPMW II): `FEHLERMELDUNG` takes the fault number from the high byte, so a
+  high-pressure stop shows `HD-SENSOR-MAX` instead of `ERR 7424` (#52). The fault list is
+  unchanged.
 
 ### Added
 
-- WPMW II (WPL13E, WPL18E, TTL 33): room actual temperature per heating circuit as sensors
-  "Raum-Ist HK1" / "Raum-Ist HK2". The manager does not answer `RAUMISTTEMP`, its virtual members
-  0x601 (HC1) and 0x602 (HC2) do (found by a bus scan; 0x601 matched the display "Raum ist"). The
-  heating climate shows the HC1 value as current temperature.
+- New model `wpla7` (WPL-A 07, WPM3, 1 heating circuit, CAN 50 kbps): `wpla7.yaml`, the signal
+  request table `signal_requests_wpla7.h`, and the CI compile target `ci_heatingpump_wpla7.yaml`.
+  Verified on a WPL-A 07 230 Premium. Model profile flag `dhwActualOnKesselCanb` for the DHW actual
+  temperature on `KESSEL_CANB`.
+- WPL13E/WPL18E/TTL 33 (WPMW II): names, units and scaling for IWS values and parameters checked on a
+  WPL 18 E display: evaporator outlet, compressor inlet and vapour injection temperature, the pressure
+  sensor currents, condenser outlet (`FROSTTEMP`), fan output, controller and mixer dynamics,
+  compressor off time and its countdown (`STILLSTANDZEIT_0`, in s), the current room setpoint, and
+  names for eight further registers (#52). Most of them are not polled by default. Read-only; no new
+  writes.
+- WPMW II (WPL13E, WPL18E, TTL 33): room actual temperature of the remote control FE 7 as sensor
+  "Raum-Ist Fernbedienung", and the circuit it is assigned to (parameter 22 "AUSWAHL FE",
+  `FERNBEDIENUNGSZUORDNUNG`). The manager does not answer `RAUMISTTEMP`; its virtual members mirror
+  the one FE sensor (a WPL13E's 0x601, 0x602, 0x301 and 0x302 all followed a heated FE). The room
+  temperature is the current temperature of the climate of the assigned circuit only.
+- WPMW II: effective room setpoint of the FE circuit as sensor "Raumsoll wirksam Fernbedienung"
+  (`VERSTELLTE_RAUMSOLLTEMP` on 0x602): day or night setpoint plus the FE knob (±5 K). It shows
+  the FE mode switch too (moon = night setpoint without correction).
 - WPL13E/TTL 33: climate entity "Heizung HK2" for heating circuit 2 (day room setpoint on 0x602,
   current temperature from 0x602), so both circuits can use a thermostat card. The operating mode
   stays on the heating climate.
@@ -51,9 +75,32 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [Sem
   and written to `HEIZPROG_1_<day>` on `MISCHERMODUL_3` (0x602). In `Automatik` an empty program keeps
   the circuit on its night setpoint. TTL 33 now also polls the second and third period of both
   heating programs, so the circuit 1 and 2 program texts appear there.
+- Writable numbers take their range from the heat pump (#79). The firmware reads each number's
+  limits once with the Elster switch bytes `0xF8` (minimum) and `0xF9` (maximum), starting about a
+  minute after the request manager and at least 2 s apart, and then publishes the number and
+  climate discovery again with that range (same entity). The effective range is the overlap of the
+  device range and the default range from `writableNumbers[]`: lower bound = max(device, default),
+  upper bound = min(device, default). The defaults are deliberate limits (e.g. standstill time
+  >= 20 min), so the device range can only narrow them (e.g. heating curve 0.0 -> 0.2), never widen
+  them. An empty overlap uses the default range. The raw device range is written to the log.
+  `0x8000` on one side keeps that side at the default; `0x8000` on both sides, a range with
+  minimum >= maximum, or an empty overlap keeps the default range for good. No answer after one
+  retry: the default range applies for now, and the request is repeated after 1 hour until an
+  answer comes; on success, discovery is sent again with the same unique_id. Clamping applies per
+  row (name and member): heating circuit 2 (`MISCHERMODUL_3`) has its own limits, separate from
+  heating circuit 1. Once the device range is known, numeric writes of these numbers are clamped to
+  the effective range, also those from automations or plain MQTT; without a known device range
+  writes are not changed (as before). Limit answers never reach the sensor path, and read and
+  write requests for the indices 0xF7–0xFA always use the long form, because in the short form
+  that byte is the switch byte.
 
 ### Changed
 
+- Firmware code split into modules (#109): `ha-stiebel-control.h` keeps only the CAN entry points;
+  MQTT publishing, CAN I/O, discovery, calculated sensors, energy/COP, writables, SG Ready glue,
+  time programs, set commands, bus scan, fault list and republish each have their own header (see
+  `docs/ARCHITECTURE.md`). No change in behavior. Custom configs that list the firmware headers
+  in `esphome: includes:` instead of using `common.yaml` must add the new headers.
 - `dashboards/heatingpump_standard.yaml` follows one design language: every color has one meaning on
   every view (heating orange, hot water blue, electricity grey, flow red, return indigo, setpoints light
   grey, outdoor blue-grey, room pink/purple, compressor deep purple, COP green), the same names for the
@@ -95,6 +142,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [Sem
   tests of each model now compile its real signal table and operating mode names (#94).
 - Energy counter request rows are defined once (`SIGNAL_REQUESTS_ENERGY_IWS`), and the wpl18e smoke
   manifest refers to wpl13e (`same_as`) instead of copying it (#101).
+- Firmware builds without compiler warnings (#120), and one runtime DJB2 hash, `elsterNameHash()`,
+  replaces the duplicate `hash_runtime()` (#121).
 - Development: mutation testing of the C++ logic with Mull (`make mutate` for changed lines,
   `make mutate-all`, weekly non-blocking CI workflow), a Claude Code Stop hook that runs the fast
   local checks, and design-first test rules in `CLAUDE.md`.
@@ -121,18 +170,6 @@ programs active, which are now writable from Home Assistant.
 
 ### Added
 
-- New model `wpla` (WPL-A 07, WPM3, CAN 50 kbps): `wpla.yaml`, `signal_requests_wpla.h`, CI
-  compile target `ci_heatingpump_wpla.yaml`. Verified on a WPL-A 07 230 Premium. DHW setpoints
-  are written to `KESSEL_CANB` (0x201), the room setpoint entities of circuits 2 and 3 are not
-  offered (one heating circuit). The WPM3 rows of `ElsterTable.h` and the WPM3 operating mode
-  names now also apply to `wpla`.
-- `ElsterTable.h`: new indices 0x4f91 SPREIZUNG, 0x4f98/0x4f99 MINIMALE/MAXIMALE_PUMPLEISTUNG,
-  0x4f9f UNTERKUEHLUNG_EXVENTIL_EIN, 0x4fa0 BETRIEBSART_KAELTEKREISREGLER. Types and HA metadata
-  for EXV and controller values (0x033d, 0x07ca, 0x07f6–0x07f9) and 0x4f28
-  ANTILEGIONELLENBEHANDLUNG. Placeholder names replaced: 0x02e2 WP_WASSERVOLUMENSTROM (was
-  WE_KONFIGURATION), 0x0a36 FROSTSCHUTZTEMPERATUR, 0x0a37 VERFLUESSIGERTEMP_WPLA, 0x0a39
-  OELSUMPFTEMP (were EINGANG14/15/17; names from jojo18222's WPL-A fork). No other model polls
-  these indices.
 - WPMW II: DHW time program as one text entity per day (`W_WASSERPROG_1_<day>` with up to three
   periods, e.g. `06:30-09:00,11:00-17:00`), read on WPL13E, WPL18E and TTL 33, writable on WPL13E
   and TTL 33. Input is checked (15-minute steps, start before end, no overlap) before anything is
@@ -200,34 +237,6 @@ programs active, which are now writable from Home Assistant.
   value was written over CAN on a TTL 33 and checked on the WPMW II display (by SolderAndSyntax).
 - `ttl33` table polls `SCHALTWERKDYNAMIKZEIT` (display "Reglerdynamik"), so its writable entity no
   longer stays unknown.
-
-### WPL-A 07 / Mk1 (fork branch)
-
-Entries below apply to the WPL-A 07 and the Mk1 firmware on this branch. Entries marked
-"WPL-A only" do not change other models.
-
-- Added: `LICENSE` (GPL-3.0) and a README note on AI assistance for the WPL-A 07 branches.
-- Added: Mk1 boot info sensors `stiebel_mk1_*` (last restart, restart reason, runtime before
-  restart, restart count, firmware version and build) via `boot_info.h`, crash trace via
-  `crash_trace.h`, timestamps via `unix_time.h`.
-- Added: substitutions `device_name`, `friendly_name`, `fw_version`, `ntp_server` and
-  `api_reboot_timeout` in `common.yaml`. OTA component has the id `ota_esphome`. The MQTT log
-  topic follows `device_name`.
-- Added: example config `esphome/heatingpump_wpla07_mk1.yaml` (WPL-A 07, Waveshare ESP32-S3-POE-ETH,
-  W5500 Ethernet, MQTT only). WPL-A only.
-- Added: hooks for the `stiebel-debug` package (`STIEBEL_DEBUG_RX` / `STIEBEL_DEBUG_TX`) and
-  member FES (0x100). Mk1 branch.
-- Added: WPL-A calculated sensors with status texts and heat-pump restart detection
-  (`wp_restarts`). WPL-A only.
-- Added: WPL-A energy counters and COP via `energy_counters.h`. WPL-A only.
-- Added: WPL-A DHW setpoints are writable (`WW_KOMFORT_TEMPERATUR` / `WW_ECO_TEMPERATUR` on
-  SPEICHER, 0x201). WPL-A only.
-- Changed: WPL-A members renamed to WPUMPE (0x514) and SPEICHER (0x201). WPL-A only.
-- Changed: WPL-A table and request list as on the running WPL-A 07 firmware. WPL-A only.
-- Changed: OFF and sentinel values are handled for WPL-A signals. WPL-A only.
-- Changed: receive path has a type filter and the OTHER member. WPL-A only.
-- Fixed: WPL-A sub-address mask 0x7F for member 0x514 (second byte of the CAN ID). WPL-A only.
-- Fixed: round-robin start index for WPL-A requests. WPL-A only.
 
 ## [2.6.0] — 2026-11-06
 

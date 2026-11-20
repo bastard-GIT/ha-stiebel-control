@@ -1,7 +1,7 @@
 /*
  * can_members.h — bus members and the request row type, without ESPHome dependencies (#95).
  *
- * Shared by ha-stiebel-control.h, the model request tables and the native test stubs, so the
+ * Shared by the firmware modules, the model request tables and the native test stubs, so the
  * tests use the real SignalRequest layout instead of a copy.
  */
 
@@ -9,21 +9,6 @@
 #define CAN_MEMBERS_H
 
 #include <cstdint>
-#include "model_profile.h"   // HA_CONTROLLER_WPLA (pure preprocessor and constexpr, no ESPHome)
-
-// MQTT/HA names of the two CAN-B members at 0x514 and 0x201. For the WPL-A 07 they are
-// published as WPUMPE and SPEICHER: keeps MQTT topics and HA entities of the running
-// WPL-A 07 firmware. All other models keep the upstream names.
-// HA_NAME_DHW_ACTUAL: MQTT name of the DHW actual temperature, WW_ISTTEMPERATUR on WPL-A 07
-#if defined(HA_CONTROLLER_WPLA)
-#define HA_NAME_HEIZMODUL_WPL "WPUMPE"
-#define HA_NAME_KESSEL_CANB "SPEICHER"
-#define HA_NAME_DHW_ACTUAL "WW_ISTTEMPERATUR"
-#else
-#define HA_NAME_HEIZMODUL_WPL "HEIZMODUL_WPL"
-#define HA_NAME_KESSEL_CANB "KESSEL_CANB"
-#define HA_NAME_DHW_ACTUAL "SPEICHERISTTEMP"
-#endif
 
 // ============================================================================
 // CAN BUS MEMBER DEFINITIONS
@@ -57,10 +42,9 @@ static const CanMember CanMembers[] =
         {"DCF_MODUL", 0x780},
         // WPL17 (CAN-B, X1.2, 50 kbps) model-specific members. The WPL17 has two
         // buses (CAN-A 20 kbps / CAN-B 50 kbps); these addresses live on CAN-B.
-        {HA_NAME_HEIZMODUL_WPL, 0x514},  // WPL17 Heizmodul (fine daily energy counters)
-        {HA_NAME_KESSEL_CANB, 0x201},    // WPL17 DHW / room / heating-curve registers
+        {"HEIZMODUL_WPL", 0x514},  // WPL17 Heizmodul (fine daily energy counters)
+        {"KESSEL_CANB", 0x201},    // WPL17 DHW / room / heating-curve registers
         {"MISCHERMODUL_2", 0x601}, // WPL17 exposes the heating program here
-        {"FES", 0x100},  // WPL-A: date/time + several counters/params respond here, not MANAGER
         {"OTHER", 0x000}};
 
 typedef enum
@@ -86,7 +70,6 @@ typedef enum
     cm_heizmodul_wpl,
     cm_kessel_canb,
     cm_mischermodul_2,
-    cm_fes,
     cm_other
 } CanMemberType;
 

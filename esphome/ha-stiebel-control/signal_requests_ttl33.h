@@ -21,8 +21,8 @@
  *   here, while circuit 2 is set to 26.0 °C); circuit 2 lives on 0x602.
  * - VORLAUFISTTEMP/VORLAUFSOLLTEMP on KESSEL are the mixer flow of circuit 2 (same values as on
  *   0x601/0x602 when read at the same moment; matches the display "Mischer-Ist").
- * - FEHLERMELDUNG on MANAGER and KESSEL is a constant 69 here as well (see the WPL13E table);
- *   only the heat pump module is requested.
+ * - FEHLERMELDUNG on MANAGER and KESSEL is a constant 69 = 0x0045 here as well, "no fault"
+ *   (see the WPL13E table); only the heat pump module is requested.
  * - Summer mode: display parameter 8 (16.0 °C here) is SW_AUSSENTEMP (0x01bf).
  *   SOMMERBETRIEB_TEMP (0xfdb5) reads 10 °C on this unit; its meaning is unclear.
  * - Left out: unconnected sensors (-40.0: SAMMLERISTTEMP, WPVORLAUFIST on KESSEL),
@@ -83,11 +83,13 @@ extern const SignalRequest signalRequests[] = {
     // ========================================================================
     // Heating circuit 2, mixer circuit (MISCHERMODUL_3, 0x602)
     // ========================================================================
-    // Room actual temperature as the controller sees it, per heating circuit: the manager's
-    // virtual members 0x601 (HC1) and 0x602 (HC2) answer RAUMISTTEMP, the manager itself does
-    // not. Scanned on a WPL13E: 0x601 21.7 = display "Raum ist" 21.7.
-    {"RAUMISTTEMP",                 FREQ_1MIN,  cm_mischermodul_2},
+    // Remote control FE 7: room actual temperature (the manager itself does not answer it, its
+    // virtual members mirror the one FE sensor) and the circuit it is assigned to (parameter 22)
     {"RAUMISTTEMP",                 FREQ_1MIN,  cm_mischermodul_3},
+    // Effective room setpoint of the FE circuit: day/night setpoint plus the FE knob (+-5 K);
+    // the FE mode switch shows here too (moon = night setpoint without correction)
+    {"VERSTELLTE_RAUMSOLLTEMP",     FREQ_1MIN,  cm_mischermodul_3},
+    {"FERNBEDIENUNGSZUORDNUNG",     FREQ_10MIN, cm_manager},
     {"RAUMSOLLTEMP_I",             FREQ_10MIN, cm_mischermodul_3},
     {"RAUMSOLLTEMP_NACHT",         FREQ_10MIN, cm_mischermodul_3},
     {"HEIZKURVE",                  FREQ_10MIN, cm_mischermodul_3},

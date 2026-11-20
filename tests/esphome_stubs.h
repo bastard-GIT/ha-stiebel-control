@@ -1,8 +1,7 @@
 /*
- * Minimal stubs that satisfy the preprocessor symbols used inside
- * #if !defined(HA_DUMMY_BUILD) in ha-stiebel-control.h, so that
- * pure-logic functions (generate_read_id, processCanMessage, hash, …)
- * can be compiled and tested on the host.
+ * Minimal stubs for the ESPHome API used by ha-stiebel-control.h and its module headers
+ * (id(), millis(), ESP_LOGx, preferences, …), so that the firmware logic
+ * (generate_read_id, processCanMessage, hash, …) can be compiled and tested on the host.
  *
  * Only the symbols actually referenced by the tested functions are defined.
  * Nothing here emulates real ESPHome behaviour.
@@ -18,7 +17,6 @@
 #ifndef HA_DEVICE_MODEL
 #define HA_DEVICE_MODEL test_model
 #endif
-#include "model_profile.h"   // HA_CONTROLLER_WPLA for the WPL-A stubs below
 
 
 // ── Logging ──────────────────────────────────────────────────────────────────
@@ -71,22 +69,6 @@ struct FakeMqttClient {
 inline FakeMqttClient& mqtt_client_instance() { static FakeMqttClient c; return c; }
 #define mqtt_client mqtt_client_instance()
 
-#if defined(HA_CONTROLLER_WPLA)
-// ── SNTP time stub (energy_counters.h, WPL-A 07) ─────────────────────────────
-// Invalid time by default, so energy_counters.h uses its fallback without a clock.
-struct ESPTime {
-    int hour = 0, minute = 0, second = 0, day_of_year = 0;
-    bool valid = false;
-    bool is_valid() const { return valid; }
-};
-struct FakeTimeSource {
-    ESPTime t;
-    ESPTime now() const { return t; }
-};
-inline FakeTimeSource& sntp_time_instance() { static FakeTimeSource s; return s; }
-#define sntp_time sntp_time_instance()
-#endif
-
 // ── NVS / Preferences stub ───────────────────────────────────────────────────
 // ESPPreferenceObject is only needed by EspHomeSgReadyIO which we don't test here.
 // Defined as a no-op struct so the header compiles.
@@ -111,7 +93,7 @@ struct FakeSensor {
     void publish_state(float v) { last_state = v; }
 };
 // Named sensor globals referenced from common.yaml lambdas — not used in our tests
-// but needed so the header compiles when included alongside HA_DUMMY_BUILD.
+// but needed so the firmware headers compile on the host.
 inline FakeSensor& sg_ready_boost_state3_sensor_instance() { static FakeSensor s; return s; }
 inline FakeSensor& sg_ready_boost_state4_sensor_instance() { static FakeSensor s; return s; }
 struct FakeTextSensor {

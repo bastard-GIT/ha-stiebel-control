@@ -58,17 +58,10 @@
 #define LNAME_SPEICHERISTTEMP                  "Storage Actual Temperature"
 #undef  LNAME_VORLAUFISTTEMP
 #define LNAME_VORLAUFISTTEMP                   "Flow Actual Temperature"
-#if defined(HA_CONTROLLER_WPLA)
-#undef  LNAME_EINSTELL_SPEICHERSOLLTEMP
-#define LNAME_EINSTELL_SPEICHERSOLLTEMP        "DHW Comfort Temperature"
-#undef  LNAME_EINSTELL_SPEICHERSOLLTEMP2
-#define LNAME_EINSTELL_SPEICHERSOLLTEMP2       "DHW Eco Temperature"
-#else
 #undef  LNAME_EINSTELL_SPEICHERSOLLTEMP
 #define LNAME_EINSTELL_SPEICHERSOLLTEMP        "DHW Target Temperature Setting"
 #undef  LNAME_EINSTELL_SPEICHERSOLLTEMP2
 #define LNAME_EINSTELL_SPEICHERSOLLTEMP2       "DHW Target Temperature 2 Setting"
-#endif
 #undef  LNAME_VERDAMPFERTEMP
 #define LNAME_VERDAMPFERTEMP                   "Evaporator Temperature"
 #undef  LNAME_RUECKLAUFISTTEMP
@@ -208,6 +201,50 @@
 #undef  LNAME_BETRIEBSART_WP
 #define LNAME_BETRIEBSART_WP                   "Heat Pump Operating Mode"
 
+// WPMW II: IWS values and parameters (#52)
+#undef  LNAME_HYSTERESEZEIT
+#define LNAME_HYSTERESEZEIT                    "Hot Water Hysteresis"
+#undef  LNAME_TN
+#define LNAME_TN                               "Mixer Dynamics"
+#undef  LNAME_VERSTELLTE_RAUMSOLLTEMP
+#define LNAME_VERSTELLTE_RAUMSOLLTEMP          "Current Room Setpoint"
+#undef  LNAME_MAX_HYSTERESE
+#define LNAME_MAX_HYSTERESE                    "Maximum Hysteresis"
+#undef  LNAME_HZK_PUMPE
+#define LNAME_HZK_PUMPE                        "Heating Circuit Pump"
+#undef  LNAME_KESSELSTATUS
+#define LNAME_KESSELSTATUS                     "Heat Pump Demand"
+#undef  LNAME_BETRIEBS_STATUS
+#define LNAME_BETRIEBS_STATUS                  "Controller Operating Status"
+#undef  LNAME_STILLSTANDZEIT_0
+#define LNAME_STILLSTANDZEIT_0                 "Compressor Off Time Remaining"
+#undef  LNAME_PUMPENSTATUS
+#define LNAME_PUMPENSTATUS                     "Pump Status"
+#undef  LNAME_PUFFERSOLL
+#define LNAME_PUFFERSOLL                       "Buffer Target Temperature"
+#undef  LNAME_LEISTUNGSREDUZIERUNG_KUEHLEN
+#define LNAME_LEISTUNGSREDUZIERUNG_KUEHLEN     "Vapour Injection Temperature"
+#undef  LNAME_SCHALTFKT_QUELLE_IWS
+#define LNAME_SCHALTFKT_QUELLE_IWS             "Source Switching Function IWS"
+#undef  LNAME_REKUPERATORISTTEMP
+#define LNAME_REKUPERATORISTTEMP               "Compressor Inlet Temperature"
+#undef  LNAME_MESSSTROM_HOCHDRUCK
+#define LNAME_MESSSTROM_HOCHDRUCK              "High Pressure Sensor Current"
+#undef  LNAME_MESSSTROM_NIEDERDRUCK
+#define LNAME_MESSSTROM_NIEDERDRUCK            "Low Pressure Sensor Current"
+#undef  LNAME_VERDAMPFERISTTEMP_KOMPENSIERT
+#define LNAME_VERDAMPFERISTTEMP_KOMPENSIERT    "Evaporator Outlet Temperature"
+#undef  LNAME_VORLAUFISTTEMP_WP_IWS
+#define LNAME_VORLAUFISTTEMP_WP_IWS            "Condenser Outlet Temperature"
+#undef  LNAME_LUEFTERDREHZAHL
+#define LNAME_LUEFTERDREHZAHL                  "Fan Output"
+#undef  LNAME_SCHALTWERKDYNAMIKZEIT
+#define LNAME_SCHALTWERKDYNAMIKZEIT            "Controller Dynamics"
+#undef  LNAME_STILLSTANDZEIT
+#define LNAME_STILLSTANDZEIT                   "Compressor Off Time"
+#undef  LNAME_ZWEITER_WE_STATUS
+#define LNAME_ZWEITER_WE_STATUS                "Second Heat Generator Status"
+
 // ============================================================================
 // Calculated sensor names
 // ============================================================================
@@ -241,18 +278,6 @@
 #define LNAME_CALC_EL_LEISTUNG_W               "Current Electrical Power"
 #undef  LNAME_CALC_BETRIEBSSTATUS
 #define LNAME_CALC_BETRIEBSSTATUS              "Operating State"
-#undef  LNAME_CALC_VERDICHTER_STARTS
-#define LNAME_CALC_VERDICHTER_STARTS           "Compressor starts total"
-#undef  LNAME_CALC_STATUS_WPLA
-#define LNAME_CALC_STATUS_WPLA                 "WPL-A status"
-#undef  LNAME_CALC_PUMPENSTATUS
-#define LNAME_CALC_PUMPENSTATUS                "Pump status"
-#undef  LNAME_CALC_VERDICHTER_STATUS
-#define LNAME_CALC_VERDICHTER_STATUS           "Compressor status"
-#undef  LNAME_CALC_WP_STATUS_4EDA
-#define LNAME_CALC_WP_STATUS_4EDA              "HP status (0x4eda)"
-#undef  LNAME_CALC_WP_RESTARTS
-#define LNAME_CALC_WP_RESTARTS                 "HP restarts"
 #undef  LNAME_CALC_ENERGIE_HEIZ_TAG_KWH
 #define LNAME_CALC_ENERGIE_HEIZ_TAG_KWH        "Heating Energy Today"
 #undef  LNAME_CALC_ENERGIE_WW_TAG_KWH
@@ -299,17 +324,10 @@
 // ============================================================================
 // Writable number friendly names
 // ============================================================================
-#if defined(HA_CONTROLLER_WPLA)
-#undef  LNAME_NUM_SPEICHERSOLLTEMP
-#define LNAME_NUM_SPEICHERSOLLTEMP             "DHW Comfort Temperature Setting"
-#undef  LNAME_NUM_SPEICHERSOLLTEMP2
-#define LNAME_NUM_SPEICHERSOLLTEMP2            "DHW Eco Temperature Setting"
-#else
 #undef  LNAME_NUM_SPEICHERSOLLTEMP
 #define LNAME_NUM_SPEICHERSOLLTEMP             "DHW Target Temperature Setting"
 #undef  LNAME_NUM_SPEICHERSOLLTEMP2
 #define LNAME_NUM_SPEICHERSOLLTEMP2            "DHW Target Temperature 2 Setting"
-#endif
 #undef  LNAME_NUM_SG_READY_BOOST3
 #define LNAME_NUM_SG_READY_BOOST3              "SG Ready Boost State 3"
 #undef  LNAME_NUM_SG_READY_BOOST4
@@ -358,10 +376,12 @@
 #define LNAME_HK2_RAUMSOLL_NACHT               "Room Setpoint HC2 Night"
 #undef  LNAME_HK2_HEIZKURVE
 #define LNAME_HK2_HEIZKURVE                    "Heating Curve HC2"
-#undef  LNAME_HK1_RAUMIST
-#define LNAME_HK1_RAUMIST                       "Room Temperature HC1"
-#undef  LNAME_HK2_RAUMIST
-#define LNAME_HK2_RAUMIST                       "Room Temperature HC2"
+#undef  LNAME_RAUMIST_FE
+#define LNAME_RAUMIST_FE                        "Room Temperature Remote Control"
+#undef  LNAME_RAUMSOLL_WIRKSAM_FE
+#define LNAME_RAUMSOLL_WIRKSAM_FE               "Effective Room Setpoint Remote Control"
+#undef  LNAME_FE_ZUORDNUNG
+#define LNAME_FE_ZUORDNUNG                      "Remote Control Heating Circuit"
 #undef  LNAME_WWPROG_MO
 #define LNAME_WWPROG_MO                        "DHW Program Monday"
 #undef  LNAME_WWPROG_DI
@@ -436,48 +456,10 @@
 #define LNAME_COP_HEIZ                         "COP Heating"
 #undef  LNAME_COP_GESAMT
 #define LNAME_COP_GESAMT                       "COP Total"
-#undef  LNAME_COP_HEIZ_TAG
-#define LNAME_COP_HEIZ_TAG                    "COP Heating Today"
-#undef  LNAME_COP_WW_TAG
-#define LNAME_COP_WW_TAG                      "COP Hot Water Today"
-#undef  LNAME_COP_GESAMT_TAG
-#define LNAME_COP_GESAMT_TAG                  "COP Total Today"
-#undef  LNAME_EN_EL_HEIZ_SUM
-#define LNAME_EN_EL_HEIZ_SUM                  "Electricity Heating Total"
-#undef  LNAME_EN_EL_WW_SUM
-#define LNAME_EN_EL_WW_SUM                    "Electricity Hot Water Total"
-#undef  LNAME_EN_WAERME_HEIZ_SUM
-#define LNAME_EN_WAERME_HEIZ_SUM              "Heat Heating Total"
-#undef  LNAME_EN_WAERME_WW_SUM
-#define LNAME_EN_WAERME_WW_SUM                "Heat Hot Water Total"
-#undef  LNAME_EN_WAERME_2WE_HEIZ_SUM
-#define LNAME_EN_WAERME_2WE_HEIZ_SUM          "Heat Backup Heating Total"
-#undef  LNAME_EN_WAERME_2WE_WW_SUM
-#define LNAME_EN_WAERME_2WE_WW_SUM            "Heat Backup Hot Water Total"
-#undef  LNAME_EN_EL_HEIZ_TAG
-#define LNAME_EN_EL_HEIZ_TAG                  "Electricity Heating Today"
-#undef  LNAME_EN_EL_WW_TAG
-#define LNAME_EN_EL_WW_TAG                    "Electricity Hot Water Today"
-#undef  LNAME_EN_WAERME_HEIZ_TAG
-#define LNAME_EN_WAERME_HEIZ_TAG              "Heat Heating Today"
-#undef  LNAME_EN_WAERME_WW_TAG
-#define LNAME_EN_WAERME_WW_TAG                "Heat Hot Water Today"
-#undef  LNAME_EN_WAERME_2WE_HEIZ_TAG
-#define LNAME_EN_WAERME_2WE_HEIZ_TAG          "Heat Backup Heating Today"
-#undef  LNAME_EN_WAERME_2WE_WW_TAG
-#define LNAME_EN_WAERME_2WE_WW_TAG            "Heat Backup Hot Water Today"
 #undef  LNAME_CLIMATE_HEIZUNG
 #define LNAME_CLIMATE_HEIZUNG                  "Heating"
 #undef  LNAME_CLIMATE_HEIZUNG_HK2
 #define LNAME_CLIMATE_HEIZUNG_HK2              "Heating HC2"
 #undef  LNAME_CLIMATE_WARMWASSER
 #define LNAME_CLIMATE_WARMWASSER               "Hot Water"
-#undef  LNAME_PUMPENSTATUS_ROH
-#define LNAME_PUMPENSTATUS_ROH                 "Pump status (bit field)"
-#undef  LNAME_WW_SOLLTEMPERATUR
-#define LNAME_WW_SOLLTEMPERATUR                "DHW Target Temperature"
-#undef  LNAME_WW_ISTTEMPERATUR
-#define LNAME_WW_ISTTEMPERATUR                 "DHW Actual Temperature"
-#undef  LNAME_EVU_FREIGABE
-#define LNAME_EVU_FREIGABE                     "Grid Enable"
 #endif // HA_LANGUAGE_EN

@@ -38,13 +38,8 @@
 #define LNAME_SAMMLERISTTEMP                   "Sammler Ist Temperatur"
 #define LNAME_SPEICHERISTTEMP                  "Speicher Ist Temperatur"
 #define LNAME_VORLAUFISTTEMP                   "Vorlauf Ist Temperatur"
-#if defined(HA_CONTROLLER_WPLA)
-#define LNAME_EINSTELL_SPEICHERSOLLTEMP        "Warmwasser Komfort Temperatur"
-#define LNAME_EINSTELL_SPEICHERSOLLTEMP2       "Warmwasser Eco Temperatur"
-#else
 #define LNAME_EINSTELL_SPEICHERSOLLTEMP        "Einstellung Speicher Soll Temperatur"
 #define LNAME_EINSTELL_SPEICHERSOLLTEMP2       "Einstellung Speicher Soll Temperatur 2"
-#endif
 #define LNAME_VERDAMPFERTEMP                   "Verdampfer Temperatur"
 #define LNAME_RUECKLAUFISTTEMP                 "Rücklauf Ist Temperatur"
 #define LNAME_ABTAUUNGAKTIV                    "Abtauung Aktiv"
@@ -122,8 +117,31 @@
 #define LNAME_ANZEIGE_NIEDERDRUCK              "Niederdruck"
 #define LNAME_BETRIEBSART_WP                   "Betriebsart Wärmepumpe"
 
+// WPMW II: IWS values and parameters, checked against the display (#52)
+#define LNAME_HYSTERESEZEIT                    "Hysterese Warmwasser"
+#define LNAME_TN                               "Dynamik Mischer"
+#define LNAME_VERSTELLTE_RAUMSOLLTEMP          "Raumsoll aktuell"
+#define LNAME_MAX_HYSTERESE                    "Maximum Hysterese"
+#define LNAME_HZK_PUMPE                        "Heizkreispumpe"
+#define LNAME_KESSELSTATUS                     "Anforderung Wärmepumpe"
+#define LNAME_BETRIEBS_STATUS                  "Betriebsstatus Regler"
+#define LNAME_STILLSTANDZEIT_0                 "Stillstand Restzeit"
+#define LNAME_PUMPENSTATUS                     "Pumpe Status"
+#define LNAME_PUFFERSOLL                       "Puffer Soll Temperatur"
+#define LNAME_LEISTUNGSREDUZIERUNG_KUEHLEN     "Zwischeneinspritzung Temperatur"
+#define LNAME_SCHALTFKT_QUELLE_IWS             "Schaltfunktion Quelle IWS"
+#define LNAME_REKUPERATORISTTEMP               "Verdichter Eintritt Temperatur"
+#define LNAME_MESSSTROM_HOCHDRUCK              "Messstrom Hochdruck"
+#define LNAME_MESSSTROM_NIEDERDRUCK            "Messstrom Niederdruck"
+#define LNAME_VERDAMPFERISTTEMP_KOMPENSIERT    "Verdampfer Austritt Temperatur"
+#define LNAME_VORLAUFISTTEMP_WP_IWS            "Verflüssiger Austritt Temperatur"
+#define LNAME_LUEFTERDREHZAHL                  "Lüfterleistung"
+#define LNAME_SCHALTWERKDYNAMIKZEIT            "Reglerdynamik"
+#define LNAME_STILLSTANDZEIT                   "Stillstandzeit Verdichter"
+#define LNAME_ZWEITER_WE_STATUS                "Zweiter WE Status"
+
 // ============================================================================
-// Calculated sensor names (ha-stiebel-control.h calculatedSensors[])
+// Calculated sensor names (calculated.h calculatedSensors[])
 // ============================================================================
 #define LNAME_CALC_DATE                        "Datum"
 #define LNAME_CALC_TIME                        "Uhrzeit"
@@ -140,12 +158,6 @@
 #define LNAME_CALC_WAERME_WW_TOTAL_KWH         "Waerme Ertrag Warmwasser Gesamt kWh"
 #define LNAME_CALC_EL_LEISTUNG_W                "Aktuelle elektrische Leistung"
 #define LNAME_CALC_BETRIEBSSTATUS               "Betriebsstatus"
-#define LNAME_CALC_VERDICHTER_STARTS           "Verdichter Starts gesamt"
-#define LNAME_CALC_STATUS_WPLA                 "Status WPL-A"
-#define LNAME_CALC_PUMPENSTATUS                "Pumpenstatus"
-#define LNAME_CALC_VERDICHTER_STATUS           "Verdichter-Status"
-#define LNAME_CALC_WP_STATUS_4EDA              "WP-Status (0x4eda)"
-#define LNAME_CALC_WP_RESTARTS                 "WP-Neustarts"
 #define LNAME_CALC_ENERGIE_HEIZ_TAG_KWH         "Energie Heizung heute"
 #define LNAME_CALC_ENERGIE_WW_TAG_KWH           "Energie Warmwasser heute"
 #define LNAME_CALC_WAERME_HEIZ_TAG_KWH          "Waerme Ertrag Heizung heute"
@@ -168,13 +180,8 @@
 // ============================================================================
 // Writable number friendly names (writableNumbers[])
 // ============================================================================
-#if defined(HA_CONTROLLER_WPLA)
-#define LNAME_NUM_SPEICHERSOLLTEMP             "Warmwasser Komfort Temperatur Einstellung"
-#define LNAME_NUM_SPEICHERSOLLTEMP2            "Warmwasser Eco Temperatur Einstellung"
-#else
 #define LNAME_NUM_SPEICHERSOLLTEMP             "Speicher Soll Temperatur Einstellung"
 #define LNAME_NUM_SPEICHERSOLLTEMP2            "Speicher Soll Temperatur 2 Einstellung"
-#endif
 #define LNAME_NUM_SG_READY_BOOST3              "SG Ready Boost Zustand 3"
 #define LNAME_NUM_SG_READY_BOOST4              "SG Ready Boost Zustand 4"
 #define LNAME_NUM_SG_READY_ROOM_BOOST3         "SG Ready Raum-Boost Zustand 3"
@@ -203,8 +210,9 @@
 #define LNAME_HK2_RAUMSOLL_TAG                 "Raumsoll HK2 Tag"
 #define LNAME_HK2_RAUMSOLL_NACHT               "Raumsoll HK2 Nacht"
 #define LNAME_HK2_HEIZKURVE                    "Heizkurve HK2"
-#define LNAME_HK1_RAUMIST                       "Raum-Ist HK1"
-#define LNAME_HK2_RAUMIST                       "Raum-Ist HK2"
+#define LNAME_RAUMIST_FE                        "Raum-Ist Fernbedienung"
+#define LNAME_RAUMSOLL_WIRKSAM_FE               "Raumsoll wirksam Fernbedienung"
+#define LNAME_FE_ZUORDNUNG                      "Fernbedienung Heizkreis"
 
 // DHW time program, one text per day (#82)
 #define LNAME_WWPROG_MO                        "Warmwasser-Programm Montag"
@@ -236,8 +244,8 @@
 // Select option strings (programmschalterOptions[], sgReadyOptions[])
 // ============================================================================
 #define LNAME_OPT_NOTBETRIEB                   "Notbetrieb"
-#if defined(HA_CONTROLLER_WPM3) || defined(HA_CONTROLLER_WPLA)
-// WPL 10 AC / WPL-A + WPM3 operating mode names (differ from the old WPM2 naming)
+#ifdef HA_CONTROLLER_WPM3
+// WPL 10 AC + WPM3 operating mode names (differ from the old WPM2 naming)
 #define LNAME_OPT_BEREITSCHAFT                 "Bereitschaftsbetrieb"
 #define LNAME_OPT_AUTOMATIK                    "Programmierbetrieb"
 #define LNAME_OPT_TAGBETRIEB                   "Komfortbetrieb"
@@ -262,24 +270,3 @@
 #define LNAME_COP_WW                           "COP Warmwasser"
 #define LNAME_COP_HEIZ                         "COP Heizung"
 #define LNAME_COP_GESAMT                       "COP Gesamt"
-#define LNAME_COP_HEIZ_TAG                     "COP Heizung Tag"
-#define LNAME_COP_WW_TAG                       "COP Warmwasser Tag"
-#define LNAME_COP_GESAMT_TAG                   "COP Gesamt Tag"
-#define LNAME_EN_EL_HEIZ_SUM                   "Strom Heizung Summe"
-#define LNAME_EN_EL_WW_SUM                     "Strom Warmwasser Summe"
-#define LNAME_EN_WAERME_HEIZ_SUM               "Wärme Heizung Summe"
-#define LNAME_EN_WAERME_WW_SUM                 "Wärme Warmwasser Summe"
-#define LNAME_EN_WAERME_2WE_HEIZ_SUM           "Wärme 2. WE Heizung Summe"
-#define LNAME_EN_WAERME_2WE_WW_SUM             "Wärme 2. WE Warmwasser Summe"
-#define LNAME_EN_EL_HEIZ_TAG                   "Strom Heizung Tag"
-#define LNAME_EN_EL_WW_TAG                     "Strom Warmwasser Tag"
-#define LNAME_EN_WAERME_HEIZ_TAG               "Wärme Heizung Tag"
-#define LNAME_EN_WAERME_WW_TAG                 "Wärme Warmwasser Tag"
-#define LNAME_EN_WAERME_2WE_HEIZ_TAG           "Wärme 2. WE Heizung Tag"
-#define LNAME_EN_WAERME_2WE_WW_TAG             "Wärme 2. WE Warmwasser Tag"
-#define LNAME_PUMPENSTATUS_ROH                 "Pumpenstatus (Bitfeld)"
-#define LNAME_BETRIEBS_STATUS_ROH              "Betriebsstatus (Bitfeld)"
-#define LNAME_WW_SOLLTEMPERATUR                "Warmwasser Soll Temperatur"
-#define LNAME_WW_ISTTEMPERATUR                 "Warmwasser Ist Temperatur"
-#define LNAME_EVU_FREIGABE                     "EVU Freigabe"
-#define LNAME_STATUS_WPLA_ROH                  "Statuswort WPL-A (Bitfeld)"
