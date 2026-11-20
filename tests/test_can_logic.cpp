@@ -1234,6 +1234,7 @@ TEST_CASE("compressor stats are published with the compressor state", "[calc][co
     fake_millis() = 0;
 }
 
+#if !defined(HA_CONTROLLER_WPLA)   // WPL-A: abtauung_laeuft comes from STATUS_WPLA bit 9 (see wpla_abtau)
 TEST_CASE("defrost running: last defrost duration 0 means a defrost is running (#48)", "[calc]") {
     resetDiscoveryState();
     const ElsterIndex* ei = GetElsterIndex("ZEITDAUER_LETZTE_ABTAUUNG");
@@ -1250,6 +1251,7 @@ TEST_CASE("defrost running: last defrost duration 0 means a defrost is running (
     updateSensor(CanMembers[cm_heizmodul], ei, "-255"); // not provided: no state
     CHECK(mqttFindPayload("calculated/abtauung_laeuft/state").empty());
 }
+#endif
 
 TEST_CASE("publishCompressorActive: value > 2 → on", "[calc]") {
     resetDiscoveryState();
@@ -3684,6 +3686,36 @@ TEST_CASE("wpla_meta: FESTWERT on KESSEL is AUS text sensor without device_class
     resetDiscoveryState();
     processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x01, 0xC0, 0x80, 0x00});  // raw 0x8000 = no sensor
     CHECK_FALSE(mqttTopicPublished("heatingpump/KESSEL/FESTWERT/state"));
+}
+
+// Defrost running on WPL-A = STATUS_WPLA (0x4eef) bit 9 ("Abtauen"). Display confirmed 2026-11-20.
+TEST_CASE("wpla_abtau: publishStatusWpla sets abtauung_laeuft from bit 9", "[wpla_abtau]") {
+    resetDiscoveryState();
+    resetStateCache(); mqtt_client_instance().clear();
+    publishStatusWpla(0x0251);  // 593, bit 9 set
+    CHECK(mqttFindPayload("abtauung_laeuft/state") == "on");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    publishStatusWpla(0x0051);  // 81, bit 9 clear
+    CHECK(mqttFindPayload("abtauung_laeuft/state") == "off");
+}
+
+TEST_CASE("wpla_abtau: STATUS_WPLA from MANAGER drives abtauung_laeuft", "[wpla_abtau]") {
+    resetDiscoveryState();
+    resetStateCache(); mqtt_client_instance().clear();
+    processAndUpdate(0x480, {0xD2, 0x00, 0xFA, 0x4E, 0xEF, 0x02, 0x51});  // 593 = 0x0251
+    CHECK(mqttFindPayload("abtauung_laeuft/state") == "on");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    processAndUpdate(0x480, {0xD2, 0x00, 0xFA, 0x4E, 0xEF, 0x00, 0x51});  // 81 = 0x0051
+    CHECK(mqttFindPayload("abtauung_laeuft/state") == "off");
+}
+
+TEST_CASE("wpla_abtau: ZEITDAUER_LETZTE_ABTAUUNG no longer sets abtauung_laeuft on WPL-A", "[wpla_abtau]") {
+    resetDiscoveryState();
+    resetStateCache(); mqtt_client_instance().clear();
+    processAndUpdate(0x500, {0xD2, 0x00, 0xFA, 0x08, 0x07, 0x00, 0x00});  // raw 0 would be "on" on other models
+    CHECK_FALSE(mqttTopicPublished("abtauung_laeuft/state"));
 }
 
 TEST_CASE("WPL-A DHW setpoints use KESSEL_CANB, other registers keep the fallback", "[routes]") {

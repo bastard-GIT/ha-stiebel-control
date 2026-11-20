@@ -360,11 +360,15 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
             // The IWS resets the last defrost duration to 0 when a defrost starts and
             // writes the new duration when it ends, so 0 marks a running defrost (#48).
             // ABTAUUNGAKTIV stayed off through three defrosts on a WPL13E.
+            // On WPL-A abtauung_laeuft comes from STATUS_WPLA bit 9 (status_bits.h): ZEITDAUER
+            // reads 1 min after a defrost, not 0.
+#if !defined(HA_CONTROLLER_WPLA)
             if (strcmp(cm.Name, "HEIZMODUL") == 0 && value != "-255") {
                 publishCalculatedSensorDiscovery(calculatedSensors[CALC_IDX_ABTAUUNG_LAEUFT], false);
                 publishCalculatedState(calculatedSensors[CALC_IDX_ABTAUUNG_LAEUFT].stateTopic,
                                        atoi(value.c_str()) == 0 ? "on" : "off");
             }
+#endif
             break;
 
         case HASH_EINSTELL_SPEICHERSOLLTEMP:

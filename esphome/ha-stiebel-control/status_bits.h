@@ -78,6 +78,11 @@ void publishStatusWpla(long raw) {
     if (text.empty()) text = "-";
     publishCalculatedSensorDiscovery(calculatedSensors[CALC_IDX_STATUS_WPLA]);
     publishCalculatedState(calculatedSensors[CALC_IDX_STATUS_WPLA].stateTopic, text.c_str());
+
+    // Defrost running = bit 9 ("Abtauen"). Display confirmed 2026-11-20, 0x4eef bit 9.
+    publishCalculatedSensorDiscovery(calculatedSensors[CALC_IDX_ABTAUUNG_LAEUFT], false);
+    publishCalculatedState(calculatedSensors[CALC_IDX_ABTAUUNG_LAEUFT].stateTopic,
+                           (raw & (1L << 9)) ? "on" : "off");
 }
 
 // PUMPENSTATUS 0x01d2 (KESSEL) as text. Seen on our unit: 0x0000, 0x0010 (Bereit), 0x0011 (heating),

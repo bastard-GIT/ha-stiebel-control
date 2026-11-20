@@ -135,7 +135,7 @@ static const CalculatedSensorConfig calculatedSensors[] = {
     {"stiebel_calculated_verdichter_laufzeit_mittel", LNAME_CALC_VERDICHTER_LAUFZEIT_MITTEL, HA_TOPIC_ROOT "/calculated/verdichter_laufzeit_mittel/state",
      "sensor", "duration", "min", "measurement", "mdi:timer-sand", "", "", "", true, true},
 
-    // Defrost running, from ZEITDAUER_LETZTE_ABTAUUNG (0 while a defrost runs, #48)
+    // Defrost running, from ZEITDAUER_LETZTE_ABTAUUNG (0 while a defrost runs, #48); WPL-A: from STATUS_WPLA bit 9 (status_bits.h)
     {"stiebel_calculated_abtauung_laeuft", LNAME_CALC_ABTAUUNG_LAEUFT, HA_TOPIC_ROOT "/calculated/abtauung_laeuft/state",
      "binary_sensor", "running", "", "", "mdi:snowflake-melt", "on", "off", "", true, true},
 
