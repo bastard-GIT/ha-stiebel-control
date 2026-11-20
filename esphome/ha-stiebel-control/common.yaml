@@ -38,21 +38,24 @@ esphome:
   project:
     name: "bullitt186.ha-stiebel-control"
     version: "${fw_version}"
+  # List form: other packages (e.g. esphome-lwz-180) define on_boot as a list too. ESPHome
+  # concatenates two lists, but a list replaces a single mapping, which dropped this block
+  # (set-command subscription, SG Ready prefs) on the Mk1.
   on_boot:
-    priority: 600
-    then:
-      - lambda: |-
-          initBoostStatePrefs();
-          loadBoostState();
-          initSummerPrefs();
-          // One subscription for all set commands (#92)
-          id(mqtt_client).subscribe(HA_TOPIC_ROOT "/+/+/set",
-              [](const std::string &topic, const std::string &payload) { handleSetCommand(topic, payload); });
-          onSgReadyChanged = []() {
-            id(SG_READY_CURRENT_STATE).update();
-            id(sg_ready_boost_state3_sensor).update();
-            id(sg_ready_boost_state4_sensor).update();
-          };
+    - priority: 600
+      then:
+        - lambda: |-
+            initBoostStatePrefs();
+            loadBoostState();
+            initSummerPrefs();
+            // One subscription for all set commands (#92)
+            id(mqtt_client).subscribe(HA_TOPIC_ROOT "/+/+/set",
+                [](const std::string &topic, const std::string &payload) { handleSetCommand(topic, payload); });
+            onSgReadyChanged = []() {
+              id(SG_READY_CURRENT_STATE).update();
+              id(sg_ready_boost_state3_sensor).update();
+              id(sg_ready_boost_state4_sensor).update();
+            };
   # Paths are relative to this file, so local copies and remote packages both resolve them.
   includes:
     - elster/ElsterTable.h
