@@ -85,6 +85,7 @@ constexpr uint32_t HASH_STARTS_VERDICHTER_L = hash("STARTS_VERDICHTER_L");
 constexpr uint32_t HASH_WP_STATUS_4EDA = hash("WAERMEPUMPEN_STATUS_WPLA");
 constexpr uint32_t HASH_WW_SOLLTEMPERATUR = hash("WW_SOLLTEMPERATUR");
 constexpr uint32_t HASH_WW_LEG_SOLLTEMPERATUR = hash("WW_LEG_SOLLTEMPERATUR");
+constexpr uint32_t HASH_ANTILEGIONELLEN_PROGRAMM_4F29 = hash("ANTILEGIONELLEN_PROGRAMM_4F29");
 #endif
 constexpr uint32_t HASH_EINSTELL_SPEICHERSOLLTEMP = hash(HA_NAME_DHW_SET);
 constexpr uint32_t HASH_RAUMSOLLTEMP_I = hash("RAUMSOLLTEMP_I");
@@ -484,6 +485,17 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
             } else if (strcmp(cm.Name, "KESSEL") == 0) {
                 noteWwLegSoll(v);
             }
+            break;
+        }
+
+        // WPL-A 07: anti-legionella program, MANAGER = start time, KESSEL = weekday mask (status_bits.h)
+        case HASH_ANTILEGIONELLEN_PROGRAMM_4F29: {
+            if (value == "-255" || value == "-32768") break;
+            char* endPtr;
+            const long v = strtol(value.c_str(), &endPtr, 10);
+            if (endPtr == value.c_str() || *endPtr != '\0') break;
+            if (strcmp(cm.Name, "MANAGER") == 0) publishAntilegionellenStartzeit(v);
+            else if (strcmp(cm.Name, "KESSEL") == 0) publishAntilegionellenTage(v);
             break;
         }
 #endif

@@ -50,6 +50,7 @@ extern const SignalRequest signalRequests[] = {
     {"WARMWASSERHYSTERESE",                   FREQ_10MIN, cm_kessel},   // 0x4f25 K
     {"ANTILEGIONELLENBEHANDLUNG",             FREQ_10MIN, cm_kessel},   // 0x4f28 on/off
     {"WW_LEG_SOLLTEMPERATUR",                 FREQ_10MIN, cm_kessel},   // 0x4ef9 anti-legionella setpoint °C
+    {"ANTILEGIONELLEN_PROGRAMM_4F29",          FREQ_10MIN, cm_kessel},   // 0x4f29 weekday bit mask, Mo 1 .. So 64
     {"STILLSTANDSZEIT",                       FREQ_10MIN, cm_kessel},   // 0x4f2e min
     {"SAMMEL_RELAISSTATUS",                   FREQ_1MIN,  cm_kessel},   // 0x0a20 relay status bit field
     {"PROGRAMMSCHALTER",                      FREQ_10MIN, cm_kessel},   // 0x0112 operating mode switch
@@ -70,6 +71,7 @@ extern const SignalRequest signalRequests[] = {
 
     {"STATUS_WPLA",                           FREQ_30S,   cm_manager},   // WPL-A status word (bit field)
     {"WAERMEPUMPEN_STATUS_WPLA",              FREQ_1MIN,  cm_manager},   // meaning open
+    {"ANTILEGIONELLEN_PROGRAMM_4F29",          FREQ_10MIN, cm_manager},   // 0x4f29 start time in quarter hours
     {"EINGESCHALTETE_STUFEN",                 FREQ_10MIN, cm_manager},   // 0x4efa
     {"ZEITINTERVALL",                         FREQ_1MIN,  cm_manager},   // raw +-165 seen
     {"MINIMALE_PUMPLEISTUNG",                 FREQ_10MIN, cm_manager},   // 0x4f98 %

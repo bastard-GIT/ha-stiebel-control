@@ -311,4 +311,6 @@
 #define LNAME_CALC_VERDICHTER_STATUS           "Verdichter-Status"
 #define LNAME_CALC_WP_STATUS_4EDA              "WP-Status (0x4eda)"
 #define LNAME_CALC_ANTILEGIONELLEN_AKTIV       "Antilegionellenlauf aktiv"
+#define LNAME_CALC_ANTILEGIONELLEN_STARTZEIT   "Antilegionellen Startzeit (WP-Zeit)"
+#define LNAME_CALC_ANTILEGIONELLEN_TAGE        "Antilegionellen Wochentage"
 #endif

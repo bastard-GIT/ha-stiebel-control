@@ -529,5 +529,9 @@
 #define LNAME_CALC_WP_STATUS_4EDA              "HP status (0x4eda)"
 #undef  LNAME_CALC_ANTILEGIONELLEN_AKTIV
 #define LNAME_CALC_ANTILEGIONELLEN_AKTIV       "Anti-legionella run active"
+#undef  LNAME_CALC_ANTILEGIONELLEN_STARTZEIT
+#define LNAME_CALC_ANTILEGIONELLEN_STARTZEIT   "Anti-legionella start time (HP clock)"
+#undef  LNAME_CALC_ANTILEGIONELLEN_TAGE
+#define LNAME_CALC_ANTILEGIONELLEN_TAGE        "Anti-legionella weekdays"
 #endif
 #endif // HA_LANGUAGE_EN

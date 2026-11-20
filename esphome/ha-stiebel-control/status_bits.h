@@ -180,6 +180,35 @@ void noteWwLegSoll(float v) {
     publishAntilegionellenAktiv();
 }
 
+// Anti-legionella program (WPL-A 07), register 0x4f29 ANTILEGIONELLEN_PROGRAMM_4F29: one register,
+// two meanings, the frame member decides. MANAGER (0x480) = start time in quarter hours since 00:00.
+// KESSEL (0x180) = weekday bit mask (Mo 1, Di 2, Mi 4, Do 8, Fr 16, Sa 32, So 64).
+// The start time is heat pump clock time (WP-Uhr). The WP clock runs about 1 min fast or slow
+// (2026-11-20), so it can differ slightly from the HA clock.
+void publishAntilegionellenStartzeit(long quarters) {
+    if (quarters < 0 || quarters > 95) return;
+    char buf[8];
+    snprintf(buf, sizeof(buf), "%02ld:%02ld", quarters / 4, (quarters % 4) * 15);
+    const CalculatedSensorConfig &cfg = calculatedSensors[CALC_IDX_ANTILEGIONELLEN_STARTZEIT];
+    publishCalculatedSensorDiscovery(cfg, false);
+    publishCalculatedState(cfg.stateTopic, buf);
+}
+
+void publishAntilegionellenTage(long mask) {
+    if (mask < 0 || mask > 127) return;
+    static const char *const names[7] = {"Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"};
+    std::string text;
+    for (int b = 0; b < 7; b++) {
+        if (!(mask & (1L << b))) continue;
+        if (!text.empty()) text += ", ";
+        text += names[b];
+    }
+    if (text.empty()) text = "-";
+    const CalculatedSensorConfig &cfg = calculatedSensors[CALC_IDX_ANTILEGIONELLEN_TAGE];
+    publishCalculatedSensorDiscovery(cfg, false);
+    publishCalculatedState(cfg.stateTopic, text.c_str());
+}
+
 void publishCompressorStartsIfChanged() {
     // Publish only when BOTH words were refreshed since the last publish. H and L are polled
     // in the same cycle; waiting for both avoids a mixed pair at the 999 -> 0 carry

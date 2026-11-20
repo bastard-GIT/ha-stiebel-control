@@ -3792,6 +3792,79 @@ TEST_CASE("wpla_leg: a lower legionella setpoint switches the state to on", "[wp
     CHECK(mqttFindPayload("antilegionellen_aktiv/state") == "on");
 }
 
+// Anti-legionella program, register 0x4f29 (ANTILEGIONELLEN_PROGRAMM_4F29). One register, two meanings:
+// MANAGER (0x480) = start time in quarter hours since 00:00, KESSEL (0x180) = weekday bit mask.
+TEST_CASE("wpla_prog: MANAGER 0x4f29 is the start time in quarter hours", "[wpla_prog]") {
+    resetDiscoveryState();
+    mqtt_client_instance().clear();
+    processAndUpdate(0x480, {0xD2, 0x00, 0xFA, 0x4F, 0x29, 0x00, 59});  // 14:45
+    CHECK(mqttFindPayload("antilegionellen_startzeit/state") == "14:45");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    processAndUpdate(0x480, {0xD2, 0x00, 0xFA, 0x4F, 0x29, 0x00, 42});  // 10:30
+    CHECK(mqttFindPayload("antilegionellen_startzeit/state") == "10:30");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    processAndUpdate(0x480, {0xD2, 0x00, 0xFA, 0x4F, 0x29, 0x00, 58});  // 14:30
+    CHECK(mqttFindPayload("antilegionellen_startzeit/state") == "14:30");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    processAndUpdate(0x480, {0xD2, 0x00, 0xFA, 0x4F, 0x29, 0x00, 0});  // 00:00
+    CHECK(mqttFindPayload("antilegionellen_startzeit/state") == "00:00");
+}
+
+TEST_CASE("wpla_prog: KESSEL 0x4f29 is the weekday bit mask", "[wpla_prog]") {
+    resetDiscoveryState();
+    mqtt_client_instance().clear();
+    processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x4F, 0x29, 0x00, 16});  // Fr
+    CHECK(mqttFindPayload("antilegionellen_tage/state") == "Fr");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x4F, 0x29, 0x00, 80});  // Fr + So
+    CHECK(mqttFindPayload("antilegionellen_tage/state") == "Fr, So");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x4F, 0x29, 0x00, 48});  // Fr + Sa
+    CHECK(mqttFindPayload("antilegionellen_tage/state") == "Fr, Sa");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x4F, 0x29, 0x00, 0});  // no day
+    CHECK(mqttFindPayload("antilegionellen_tage/state") == "-");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x4F, 0x29, 0x00, 127});  // all days
+    CHECK(mqttFindPayload("antilegionellen_tage/state") == "Mo, Di, Mi, Do, Fr, Sa, So");
+}
+
+TEST_CASE("wpla_prog: MANAGER frame does not touch the weekday sensor and KESSEL does not touch the start time", "[wpla_prog]") {
+    resetDiscoveryState();
+    mqtt_client_instance().clear();
+    processAndUpdate(0x480, {0xD2, 0x00, 0xFA, 0x4F, 0x29, 0x00, 59});  // 14:45
+    CHECK_FALSE(mqttTopicPublished("antilegionellen_tage/state"));
+
+    resetStateCache(); mqtt_client_instance().clear();
+    processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x4F, 0x29, 0x00, 16});  // Fr
+    CHECK_FALSE(mqttTopicPublished("antilegionellen_startzeit/state"));
+}
+
+TEST_CASE("wpla_prog: MANAGER 96 is out of range and publishes no start time", "[wpla_prog]") {
+    resetDiscoveryState();
+    mqtt_client_instance().clear();
+    processAndUpdate(0x480, {0xD2, 0x00, 0xFA, 0x4F, 0x29, 0x00, 96});  // above 95 quarter hours
+    CHECK_FALSE(mqttTopicPublished("antilegionellen_startzeit/state"));
+}
+
+TEST_CASE("wpla_prog: raw 0x4f29 is published per member under the table name", "[wpla_prog]") {
+    resetDiscoveryState();
+    mqtt_client_instance().clear();
+    processAndUpdate(0x480, {0xD2, 0x00, 0xFA, 0x4F, 0x29, 0x00, 59});  // MANAGER
+    CHECK(mqttFindPayload("heatingpump/MANAGER/ANTILEGIONELLEN_PROGRAMM_4F29/state") == "59");
+
+    resetStateCache(); mqtt_client_instance().clear();
+    processAndUpdate(0x180, {0xD2, 0x00, 0xFA, 0x4F, 0x29, 0x00, 80});  // KESSEL
+    CHECK(mqttFindPayload("heatingpump/KESSEL/ANTILEGIONELLEN_PROGRAMM_4F29/state") == "80");
+}
+
 TEST_CASE("WPL-A DHW setpoints use KESSEL_CANB, other registers keep the fallback", "[routes]") {
     for (uint16_t index : {0x0013, 0x0a06}) {
         auto r = resolveSignalRoute(kProfileWpla7, index, cm_manager);

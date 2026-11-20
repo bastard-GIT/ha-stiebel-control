@@ -170,6 +170,11 @@ static const CalculatedSensorConfig calculatedSensors[] = {
     // Anti-legionella run active, from WW_SOLLTEMPERATUR >= WW_LEG_SOLLTEMPERATUR (status_bits.h)
     {"stiebel_calculated_antilegionellen_aktiv", LNAME_CALC_ANTILEGIONELLEN_AKTIV, HA_TOPIC_ROOT "/calculated/antilegionellen_aktiv/state",
      "binary_sensor", "", "", "", "mdi:bacteria-outline", "on", "off", "", true},
+    // Anti-legionella program from register 0x4f29 (status_bits.h): start time (MANAGER), weekdays (KESSEL)
+    {"stiebel_calculated_antilegionellen_startzeit", LNAME_CALC_ANTILEGIONELLEN_STARTZEIT, HA_TOPIC_ROOT "/calculated/antilegionellen_startzeit/state",
+     "sensor", "", "", "", "mdi:clock-outline", "", "", "", true},
+    {"stiebel_calculated_antilegionellen_tage", LNAME_CALC_ANTILEGIONELLEN_TAGE, HA_TOPIC_ROOT "/calculated/antilegionellen_tage/state",
+     "sensor", "", "", "", "mdi:calendar-week", "", "", "", true},
 #endif
 };
 
@@ -220,6 +225,8 @@ enum CalcIdx : size_t {
     CALC_IDX_VERDICHTER_STATUS,
     CALC_IDX_WP_STATUS_4EDA,
     CALC_IDX_ANTILEGIONELLEN_AKTIV,
+    CALC_IDX_ANTILEGIONELLEN_STARTZEIT,
+    CALC_IDX_ANTILEGIONELLEN_TAGE,
 #endif
     CALC_IDX_COUNT
 };
