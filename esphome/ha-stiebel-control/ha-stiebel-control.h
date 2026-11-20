@@ -406,7 +406,17 @@ void processAndUpdate(uint32_t can_id, const std::vector<uint8_t> &msg)
     // Elster telegram type = low nibble of byte 0 (0 write, 1 read request, 2 response).
     // A read request carries no value: decoding it attributed a fake 0 to the
     // requesting node (e.g. the WPMW II polling the IWS -> "MANAGER VERDICHTER 0.0").
+#if defined(HA_CONTROLLER_WPLA)
+    // WPL-A 07 as the running firmware: only frames that carry a real value pass: write (0),
+    // response (2), write-ack (4), write-respond (5). Read requests (1), ack (3) and system
+    // frames (6/7) carry value=0 placeholders that would be misdecoded as readings.
+    {
+        const uint8_t msgTypeId = msg[0] & 0x0F;
+        if (msgTypeId != 0 && msgTypeId != 2 && msgTypeId != 4 && msgTypeId != 5) return;
+    }
+#else
     if ((msg[0] & 0x0F) == 1) return;
+#endif
 #if defined(HA_CONTROLLER_WPLA)
     // Energy registers 0x091a-0x0931 are handled only by energy_counters.h
     // (combined MWh+kWh values); no separate entities per register part.
@@ -426,10 +436,14 @@ void processAndUpdate(uint32_t can_id, const std::vector<uint8_t> &msg)
     // Skip nodes that are not mapped in CanMembers and only broadcast
     // placeholder/unknown values (e.g. WPM3 display FES 0x100, mixer module 2
     // 0x601, redundant DHW duplicates). They fall back to the OTHER member.
+    // WPL-A 07: the running firmware publishes these frames as heatingpump/OTHER/...
+    // (relay and stepper motor signals of an unmapped node), so they are kept there.
+#if !defined(HA_CONTROLLER_WPLA)
     if (cm->CanId == 0x000)
     {
         return;
     }
+#endif
 
     // FES (0x100) is a CAN member only for the WPL-A 07. For all other models its
     // frames are still dropped as before (it used to fall back to OTHER above).

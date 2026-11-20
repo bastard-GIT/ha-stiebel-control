@@ -3395,3 +3395,26 @@ TEST_CASE("wp_restart: first foreign frame after start is not a silence", "[wp_r
     CHECK(!restartPending);
 }
 #endif
+
+#if defined(HA_CONTROLLER_WPLA)
+// WPL-A 07 receive path as the running firmware: type filter and OTHER member
+TEST_CASE("wpla receive path: only value frames (types 0, 2, 4, 5) are published", "[wpla_rx]") {
+    resetDiscoveryState();
+    const char* topic = "heatingpump/HEIZMODUL/VERDICHTER/state";
+    processAndUpdate(0x500, {0xD1, 0x00, 0xFA, 0x07, 0xA8, 0x00, 0x08});  // type 1: read request
+    CHECK_FALSE(mqttTopicPublished(topic));
+    processAndUpdate(0x500, {0xD3, 0x00, 0xFA, 0x07, 0xA8, 0x00, 0x08});  // type 3: not a value
+    CHECK_FALSE(mqttTopicPublished(topic));
+    processAndUpdate(0x500, {0xD6, 0x00, 0xFA, 0x07, 0xA8, 0x00, 0x08});  // type 6: system frame
+    CHECK_FALSE(mqttTopicPublished(topic));
+    processAndUpdate(0x500, {0xD2, 0x00, 0xFA, 0x07, 0xA8, 0x00, 0x08});  // type 2: response
+    CHECK(mqttTopicPublished(topic));
+}
+
+TEST_CASE("wpla receive path: frames from unmapped senders are published under OTHER", "[wpla_rx]") {
+    resetDiscoveryState();
+    // 0x0777 is not in CanMembers: lookupCanMember falls back to OTHER (CanId 0x000)
+    processAndUpdate(0x0777, {0xD2, 0x00, 0xFA, 0x00, 0x0F, 0x00, 0xB4});
+    CHECK(mqttFindPayload("heatingpump/OTHER/VORLAUFISTTEMP/state") == "18.0");
+}
+#endif
