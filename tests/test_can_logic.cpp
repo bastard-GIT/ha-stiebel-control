@@ -572,7 +572,11 @@ TEST_CASE("publishMqttDiscovery: binary sensor with explicit payloads includes p
     // EVU_SPERRE_AKTIV has explicit payloadOn/Off in ElsterTable
     resetDiscoveryState();
     const CanMember& mgr = CanMembers[cm_manager];
+#if defined(HA_CONTROLLER_WPLA)
+    const ElsterIndex* ei = GetElsterIndex("EVU_FREIGABE");
+#else
     const ElsterIndex* ei = GetElsterIndex("EVU_SPERRE_AKTIV");
+#endif
     REQUIRE(ei != nullptr);
     publishMqttDiscovery(mgr, ei);
     std::string payload = mqttFindPayload("homeassistant/binary_sensor");
@@ -767,19 +771,35 @@ TEST_CASE("processAndUpdate: short frame is ignored without crash", "[can]") {
 TEST_CASE("updateSensor: EVU_SPERRE_AKTIV inverts on → off", "[mqtt]") {
     resetDiscoveryState();
     const CanMember& mgr = CanMembers[cm_manager];
+#if defined(HA_CONTROLLER_WPLA)
+    // WPL-A 07 has EVU_FREIGABE instead, which updateSensor does not invert
+    const ElsterIndex* ei = GetElsterIndex("EVU_FREIGABE");
+    REQUIRE(ei != nullptr);
+    updateSensor(mgr, ei, "on");
+    CHECK(mqttFindPayload("EVU_FREIGABE/state") == "on");
+#else
     const ElsterIndex* ei = GetElsterIndex("EVU_SPERRE_AKTIV");
     REQUIRE(ei != nullptr);
     updateSensor(mgr, ei, "on");
     CHECK(mqttFindPayload("EVU_SPERRE_AKTIV/state") == "off");
+#endif
 }
 
 TEST_CASE("updateSensor: EVU_SPERRE_AKTIV inverts off → on", "[mqtt]") {
     resetDiscoveryState();
     const CanMember& mgr = CanMembers[cm_manager];
+#if defined(HA_CONTROLLER_WPLA)
+    // WPL-A 07 has EVU_FREIGABE instead, which updateSensor does not invert
+    const ElsterIndex* ei = GetElsterIndex("EVU_FREIGABE");
+    REQUIRE(ei != nullptr);
+    updateSensor(mgr, ei, "off");
+    CHECK(mqttFindPayload("EVU_FREIGABE/state") == "off");
+#else
     const ElsterIndex* ei = GetElsterIndex("EVU_SPERRE_AKTIV");
     REQUIRE(ei != nullptr);
     updateSensor(mgr, ei, "off");
     CHECK(mqttFindPayload("EVU_SPERRE_AKTIV/state") == "on");
+#endif
 }
 
 TEST_CASE("updateSensor: skips empty value", "[mqtt]") {
@@ -1651,7 +1671,11 @@ TEST_CASE("i18n: named ElsterTable signals have non-empty friendlyName via LNAME
     static const char* named[] = {
         "AUSSENTEMP", HA_NAME_DHW_ACTUAL, "RUECKLAUFISTTEMP", "VERDICHTER",
         "LZ_VERD_1_HEIZBETRIEB", "LZ_VERD_2_KUEHLBETRIEB", "ABTAUUNGAKTIV",
+#if defined(HA_CONTROLLER_WPLA)
+        "EVU_FREIGABE", "HEIZKURVE", "WW_ECO", "WW_HYSTERSE", "GEBAEUDEART",
+#else
         "EVU_SPERRE_AKTIV", "HEIZKURVE", "WW_ECO", "WW_HYSTERSE", "GEBAEUDEART",
+#endif
         "PROGRAMMSCHALTER", "SOMMERBETRIEB", "WP_STATUS",
     };
     for (const char* name : named) {

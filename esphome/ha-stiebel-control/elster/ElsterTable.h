@@ -306,7 +306,11 @@ const ElsterIndex ElsterTable[] =
   { "DREHZAHLREG_JA_NEIN"                         , 0x0070, 0               , false, false },
   { "ANFORDERUNG_LEISTUNGSZWANG"                  , 0x0071, 0               , true , false },
   { "ANTILEG_AKTIV"                               , 0x0072, et_bool         , false, false },
+#if defined(HA_CONTROLLER_WPLA)
+  { "EVU_FREIGABE"                                , 0x0074, et_bool         , false, true  },
+#else
   { "EVU_SPERRE_AKTIV"                            , 0x0074, et_bool         , false, true  },
+#endif
   { "PUFFERTEMP_OBEN1"                            , 0x0076, et_dec_val      , false, false },
   { "PUFFERTEMP_MITTE1"                           , 0x0077, et_dec_val      , false, false },
   { "PUFFERTEMP_UNTEN1"                           , 0x0078, et_dec_val      , false, false },
@@ -4462,7 +4466,11 @@ const ElsterMeta ElsterMetaTable[] =
   { 0x0063, "KESSELSTATUS", LNAME_KESSELSTATUS, NULL, NULL, NULL, NULL, NULL, NULL, NULL },
 #else
 #endif
+#if defined(HA_CONTROLLER_WPLA)
+  { 0x0074, "EVU_FREIGABE", LNAME_EVU_FREIGABE, "binary_sensor", "", "", "", "mdi:flash", "on", "off" },
+#else
   { 0x0074, "EVU_SPERRE_AKTIV", LNAME_EVU_SPERRE_AKTIV, "binary_sensor", "", "", "", "mdi:lock", "on", "off" },
+#endif
   { 0x0084, "SOLAR_AKT_LEISTUNG_W", LNAME_SOLAR_AKT_LEISTUNG_W, "sensor", "power", "W", "measurement", "mdi:solar-power", NULL, NULL },
   { 0x0085, "SOLAR_TAGESERTRAG_WH", LNAME_SOLAR_TAGESERTRAG_WH, "sensor", "energy", "Wh", "total_increasing", "mdi:solar-power", NULL, NULL },
   { 0x0086, "SOLAR_TAGESERTRAG_KWH", LNAME_SOLAR_TAGESERTRAG_KWH, "sensor", "energy", "kWh", "total_increasing", "mdi:solar-power", NULL, NULL },

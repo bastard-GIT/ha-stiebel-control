@@ -483,5 +483,7 @@
 #define LNAME_WW_ISTTEMPERATUR                 "DHW Actual Temperature"
 #undef  LNAME_PUMPENSTATUS_ROH
 #define LNAME_PUMPENSTATUS_ROH                 "Pump status (bit field)"
+#undef  LNAME_EVU_FREIGABE
+#define LNAME_EVU_FREIGABE                     "Grid Enable"
 #endif
 #endif // HA_LANGUAGE_EN

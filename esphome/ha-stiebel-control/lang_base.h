@@ -288,4 +288,5 @@
 #define LNAME_PUMPENSTATUS_ROH                 "Pumpenstatus (Bitfeld)"
 #define LNAME_BETRIEBS_STATUS_ROH              "Betriebsstatus (Bitfeld)"
 #define LNAME_STATUS_WPLA_ROH                  "Statuswort WPL-A (Bitfeld)"
+#define LNAME_EVU_FREIGABE                     "EVU Freigabe"
 #endif
