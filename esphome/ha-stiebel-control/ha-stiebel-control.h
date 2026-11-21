@@ -77,8 +77,8 @@ constexpr uint32_t HASH_WPVORLAUFIST = hash("WPVORLAUFIST");
 constexpr uint32_t HASH_RUECKLAUFISTTEMP = hash("RUECKLAUFISTTEMP");
 constexpr uint32_t HASH_VERDICHTER = hash("VERDICHTER");
 constexpr uint32_t HASH_PUMPENSTATUS = hash("PUMPENSTATUS");
-#if defined(HA_CONTROLLER_WPLA)
 constexpr uint32_t HASH_BETRIEBS_STATUS = hash("BETRIEBS_STATUS");
+#if defined(HA_CONTROLLER_WPLA)
 constexpr uint32_t HASH_STATUS_WPLA = hash("STATUS_WPLA");
 constexpr uint32_t HASH_STARTS_VERDICHTER_H = hash("STARTS_VERDICHTER_H");
 constexpr uint32_t HASH_STARTS_VERDICHTER_L = hash("STARTS_VERDICHTER_L");
@@ -130,6 +130,11 @@ static bool isIgnoredOnWpl13e(const char* name) {
 #if defined(HA_CONTROLLER_WPLA)
 #include "status_bits.h"
 #endif
+
+// Synthetic VERDICHTER value for a running compressor (TTL 33, kModel.compressorFromKessel):
+// above the > 2 (compressor_active) and > 1.5 (betriebsstatus) thresholds that the
+// VERDICHTER-based models use (#83).
+static constexpr float COMPRESSOR_ON_VALUE = 3.0f;
 
 void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string &value)
 {
@@ -409,7 +414,32 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
 #endif
             break;
 
+        case HASH_BETRIEBS_STATUS: {
+#if defined(HA_CONTROLLER_WPLA)
+            // WPL-A: bit field as text (no compressor source, see compressorFromKessel)
+            if (value != "-255" && value != "-32768") {
+                char* endPtrW;
+                const long intValueW = strtol(value.c_str(), &endPtrW, 10);
+                if (endPtrW != value.c_str() && *endPtrW == '\0' && intValueW >= 0 && intValueW <= 0xFFFF) {
+                    publishBetriebsstatus(intValueW);
+                } else {
+                    ESP_LOGW("CALC", "Invalid %s value: %s", signalName, value.c_str());
+                }
+            }
+#endif
+            // TTL 33 (compressorFromKessel): bit 0x0001 / 0x0002 = compressor 1 / 2 running (#131).
+            // WP_PUMPENSTATUS is no source: 0x0200 / 0x0300 while running, other bits at rest.
+            // et_default decodes as signed short, so bit 15 gives a negative number.
+            if (!kModel.compressorFromKessel || strcmp(cm.Name, "KESSEL") != 0 || value == "-255") break;
+            char* endPtr;
+            const long raw = strtol(value.c_str(), &endPtr, 10);
+            if (endPtr == value.c_str() || *endPtr != '\0' || raw < -32768 || raw > 0xFFFF) break;
+            lastVerdichterValue = (static_cast<unsigned long>(raw) & 0x3UL) ? COMPRESSOR_ON_VALUE : 0.0f;
+            break;
+        }
+
         case HASH_VERDICHTER: {
+            if (kModel.compressorFromKessel) break;   // placeholders, see BETRIEBS_STATUS
             char* endPtr;
             float floatValue = strtof(value.c_str(), &endPtr);
             if (endPtr != value.c_str() && *endPtr == '\0') {
@@ -428,14 +458,12 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
         }
         
 #if defined(HA_CONTROLLER_WPLA)
-        case HASH_BETRIEBS_STATUS:
         case HASH_STATUS_WPLA: {
             if (value == "-255" || value == "-32768") break;
             char* endPtr;
             long intValue = strtol(value.c_str(), &endPtr, 10);
             if (endPtr != value.c_str() && *endPtr == '\0' && intValue >= 0 && intValue <= 0xFFFF) {
-                if (signalHash == HASH_BETRIEBS_STATUS) publishBetriebsstatus(intValue);
-                else publishStatusWpla(intValue);
+                publishStatusWpla(intValue);
             } else {
                 ESP_LOGW("CALC", "Invalid %s value: %s", signalName, value.c_str());
             }
