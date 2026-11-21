@@ -180,7 +180,7 @@ mqtt:
     topic: ${topic_root}/debug
     level: WARN
   # Keepalive for connection monitoring
-  keepalive: 15s
+  keepalive: 60s
   # Disable reboot on MQTT disconnect - will keep trying to reconnect indefinitely
   reboot_timeout: 0s
   on_connect:
