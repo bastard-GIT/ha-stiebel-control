@@ -24,7 +24,7 @@ substitutions:
   read_only: "false"          # "true": never write to the heat pump (no setpoints/modes/clock; reading and bus scan only)
   # Network package from this folder: network_wifi.yaml (default) or network_ethernet_w5500.yaml
   network_package: "network_wifi.yaml"
-  fw_version: "2.7.0"                   # firmware version; shown as project version and in the Firmware Version sensor (boot_info.h)
+  fw_version: "2.8.0"                   # firmware version; shown as project version and in the Firmware Version sensor (boot_info.h)
   ntp_server: "pool.ntp.org"            # SNTP server (e.g. your router in an isolated network)
   api_reboot_timeout: "15min"           # reboot if no API client connects for this long; "0s" disables (e.g. when only MQTT is used, no API client)
 
