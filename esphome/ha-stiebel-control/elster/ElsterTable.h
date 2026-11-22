@@ -4372,6 +4372,10 @@ const ElsterIndex ElsterTable[] =
 #else
   { "IST_UEBERHITZUNG_SAUGGAS_VERDICHTER"         , 0x4fa2, et_dec_val      , false, false },
 #endif
+  // Process data page of the WPL-A display (Info > Waermepumpe > Prozessdaten, 2026-11-22): the display reads
+  // both from 0x514; the values on the photo equal the replies (-6.8 and -4.0 C).
+  { "VERDAMPFEREINTRITTSTEMP"                     , 0x4fa3, et_dec_val      , false, true  },
+  { "EXPANSIONSVENTILEINTRITTSTEMP"               , 0x4fa5, et_dec_val      , false, true  },
   { "RUECKLAUFTEMP_QUELLE"                        , 0x4fa6, et_dec_val      , false, false },
   { "VORLAUFTEMP_QUELLE"                          , 0x4fa7, et_dec_val      , false, false },
   { "QUELLENDRUCK_4FA8"                           , 0x4fa8, et_dec_val      , false, false },
@@ -4772,6 +4776,8 @@ const ElsterMeta ElsterMetaTable[] =
   { 0x4f9e, "ADAPTION_UEBERHITZUNG", "Adaption Überhitzung", "sensor", "", "K", "measurement", "mdi:thermometer-lines", NULL, NULL },
   { 0x4fa1, "SOLL_UEBERHITZUNG_SAUGGAS_VENTIL", "Soll Überhitzung Sauggas Ventil", "sensor", "", "K", "measurement", "mdi:thermometer-lines", NULL, NULL },
   { 0x4fa2, "IST_UEBERHITZUNG_SAUGGAS_VENTIL", "Ist Überhitzung Sauggas Ventil", "sensor", "", "K", "measurement", "mdi:thermometer-lines", NULL, NULL },
+  { 0x4fa3, "VERDAMPFEREINTRITTSTEMP", "Verdampfereintrittstemperatur", "sensor", "temperature", "°C", "measurement", "mdi:thermometer", NULL, NULL },
+  { 0x4fa5, "EXPANSIONSVENTILEINTRITTSTEMP", "Expansionsventileintrittstemperatur", "sensor", "temperature", "°C", "measurement", "mdi:thermometer", NULL, NULL },
   { 0xabe1, "EVU_SPERRE", "EVU Sperre (roh)", "sensor", "", "", "", "mdi:transmission-tower-off", NULL, NULL },
   { 0xc2c3, "OEFFNUNGSGRAD_BYPASSVENTIL", "Öffnungsgrad Bypassventil", "sensor", "", "%", "measurement", "mdi:valve", NULL, NULL },
   { 0xfdad, "WP_PUMPENSTATUS", "Wärmepumpe Pumpenstatus", "binary_sensor", "running", "", "", "mdi:pump", "on", "off" },

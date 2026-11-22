@@ -126,6 +126,8 @@ extern const SignalRequest signalRequests[] = {
     {"BETRIEBSART_KAELTEKREISREGLER",         FREQ_1MIN,  cm_heizmodul_wpl},   // 0x4fa0 raw 0/3, meaning open
     {"SOLL_UEBERHITZUNG_SAUGGAS_VENTIL",      FREQ_1MIN,  cm_heizmodul_wpl},   // 0x4fa1
     {"IST_UEBERHITZUNG_SAUGGAS_VENTIL",       FREQ_1MIN,  cm_heizmodul_wpl},   // 0x4fa2
+    {"VERDAMPFEREINTRITTSTEMP",               FREQ_1MIN,  cm_heizmodul_wpl},   // 0x4fa3 C, display process data page 4
+    {"EXPANSIONSVENTILEINTRITTSTEMP",         FREQ_1MIN,  cm_heizmodul_wpl},   // 0x4fa5 C, display process data page 4
     {"VERDICHTERDREHZAHLGRENZE",              FREQ_1MIN,  cm_heizmodul_wpl},   // 0x4fac
     {"EXV_OEFFNUNGSGRAD",                     FREQ_1MIN,  cm_heizmodul_wpl},   // 0x07ca %
     {"SOLLWERT_UEBERHITZUNG",                 FREQ_1MIN,  cm_heizmodul_wpl},   // 0x07f3 K
