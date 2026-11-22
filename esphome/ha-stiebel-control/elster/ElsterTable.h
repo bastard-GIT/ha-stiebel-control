@@ -4407,8 +4407,10 @@ const ElsterIndex ElsterTable[] =
 #endif
   // Process data page of the WPL-A display (Info > Waermepumpe > Prozessdaten, 2026-11-22): the display reads
   // both from 0x514; the values on the photo equal the replies (-6.8 and -4.0 C).
+#if defined(HA_CONTROLLER_WPLA)  // the metadata rows below exist only for the WPL-A
   { "VERDAMPFEREINTRITTSTEMP"                     , 0x4fa3, et_dec_val      , false, true  },
   { "EXPANSIONSVENTILEINTRITTSTEMP"               , 0x4fa5, et_dec_val      , false, true  },
+#endif
   { "RUECKLAUFTEMP_QUELLE"                        , 0x4fa6, et_dec_val      , false, false },
   { "VORLAUFTEMP_QUELLE"                          , 0x4fa7, et_dec_val      , false, false },
   { "QUELLENDRUCK_4FA8"                           , 0x4fa8, et_dec_val      , false, false },
