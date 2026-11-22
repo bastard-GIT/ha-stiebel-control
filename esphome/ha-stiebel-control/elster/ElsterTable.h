@@ -752,7 +752,12 @@ const ElsterIndex ElsterTable[] =
   { "FEHLERSTATISTIK_FELDINDEX"                   , 0x027b, 0               , false, false },
   { "FEHLERSTATISTIK_FEHLERNUMMER"                , 0x027c, 0               , false, false },
   { "FEHLERSTATISTIK_FEHLERANZAHL"                , 0x027d, 0               , false, false },
+#if defined(HA_CONTROLLER_WPLA)
+  // WPL-A 07: display Einstellungen > Warmwasser > Grundeinstellung > WW Lernfunktion (AUS = 0, 2026-11-22)
+  { "WW_LERNFUNKTION_WPLA"                        , 0x027e, 0               , false, false },
+#else
   { "WW_ECO"                                      , 0x027e, et_bool         , false, true  },
+#endif
   { "ANZEIGE_HEIZPROG_NACH_HEIZKREIS"             , 0x027f, 0               , false, false },
   { "SAMMEL_SOLAR_STATUS"                         , 0x0280, 0               , false, false },
   { "MODULATION_SOLLWERT_SOLAR_1"                 , 0x0281, 0               , false, false },
@@ -1540,8 +1545,18 @@ const ElsterIndex ElsterTable[] =
   { "FORTLUFT_IST"                                , 0x059c, 0               , false, false },
   { "VERFLUESSIGER_TEMP"                          , 0x059d, 0               , false, false },
   { "ANTEIL_VORLAUF"                              , 0x059e, 0               , false, false },
+#if defined(HA_CONTROLLER_WPLA)
+  // WPL-A 07: display Einstellungen > Heizen > Elektrische Nacherwaermung > Anzahl Stufen = 3 (2026-11-22)
+  { "NHZ_ANZAHL_STUFEN_WPLA"                      , 0x059f, 0               , false, false },
+#else
   { "FUSSPUNKT_HEIZKURVE"                         , 0x059f, 0               , false, false },
+#endif
+#if defined(HA_CONTROLLER_WPLA)
+  // WPL-A 07: display ... Elektrische Nacherwaermung > Verzoegerungszeit = 60 min (2026-11-22)
+  { "NHZ_VERZOEGERUNG_WPLA"                       , 0x05a0, 0               , false, false },
+#else
   { "NHZ_ANZAHL_STUFEN"                           , 0x05a0, 0               , false, false },
+#endif
   { "NHZ_VERZOEGERUNG"                            , 0x05a1, 0               , false, false },
   { "NHZ_LEISTUNG1"                               , 0x05a2, 0               , false, false },
   { "HEIZGRENZE_HYST"                             , 0x05a3, 0               , false, false },
@@ -1970,8 +1985,18 @@ const ElsterIndex ElsterTable[] =
   { "FUNKTION_X1_16"                              , 0x0719, 0               , false, false },
   { "PUMPE_X1_16"                                 , 0x071a, 0               , false, false },
   { "LEISTUNG_PWM_X1_16"                          , 0x071b, 0               , false, false },
-  { "VERDICHTER_STARTS_K"                         , 0x071c, 0               , false, false }, // WPC7/TTF07c; was TEST_OBJEKT_219 — ported, unverified
-  { "VERDICHTER_STARTS"                           , 0x071d, 0               , false, true  }, // WPC7/TTF07c; was TEST_OBJEKT_220 — ported, unverified
+#if defined(HA_CONTROLLER_WPLA)
+  // WPL-A 07: 0x071b/0x071c = Leistung PWM/Volt von Ausgang X.1.16 (nach Abfragereihenfolge, 0x8000 = nicht verfuegbar)
+  { "LEISTUNG_VOLT_X1_16"                         , 0x071c, 0               , false, false },
+#else
+  { "VERDICHTER_STARTS_K"                         , 0x071c, 0               , false, false }, // WPC7/TTF07c; was TEST_OBJEKT_219 — ported
+#endif, unverified
+#if defined(HA_CONTROLLER_WPLA)
+  // WPL-A 07: display Ausgang X.1.17 > Funktion (AUS = 0, 2026-11-22)
+  { "FUNKTION_X1_17"                              , 0x071d, 0               , false, false },
+#else
+  { "VERDICHTER_STARTS"                           , 0x071d, 0               , false, true  }, // WPC7/TTF07c; was TEST_OBJEKT_220 — ported
+#endif, unverified
   { "PUMPE_X1_17"                                 , 0x071e, 0               , false, false },
   { "LEISTUNG_PWM_X1_17"                          , 0x071f, 0               , false, false },
   { "LEISTUNG_VOLT_X1_17"                         , 0x0720, et_dec_val      , false, false },
@@ -4275,6 +4300,7 @@ const ElsterIndex ElsterTable[] =
 #else
   { "WARMWASSERHYSTERESE"                         , 0x4f25, et_dec_val      , false, false },
 #endif
+  { "WARMWASSERSTUFEN"                            , 0x4f26, 0               , false, false },  // WPL-A 07: display Warmwasser > Grundeinstellung > Warmwasserstufen = 1 (2026-11-22)
 #if defined(HA_CONTROLLER_WPLA)
   { "ANTILEGIONELLENBEHANDLUNG"                   , 0x4f28, et_little_bool  , false, true  }, // WPL-A 05/07 (jojo18222/ha-stiebel-control), checked on a WPL-A 07
 #else
@@ -4326,11 +4352,18 @@ const ElsterIndex ElsterTable[] =
   { "RESTSTILLSTANDSZEIT"                         , 0x4f4e, 0               , false, false },
 #endif
   { "AUSSENTEMPERATUR_WP"                         , 0x4f4f, et_dec_val      , false, false },
+  { "ANLAGENTYP"                                  , 0x4f72, 0               , false, false },  // WPL-A 07: display Inbetriebnahme > Anlagentyp = 04 (2026-11-22)
 #if defined(HA_CONTROLLER_WPLA)
   { "EVU_SPERRE_CONFIG"                           , 0x4f84, 0               , false, true  },
 #else
   { "EVU_SPERRE_CONFIG"                           , 0x4f84, 0               , false, false },
 #endif
+  // WPL-A 07: display Inbetriebnahme > Ladepumpenregelung > Ansteuerungsart (2026-11-22): 4 = Einstellbare Pumpenleistung,
+  // 6 = Spreizungsregelung, 3 = Maximale Pumpenleistung (0x4f88 = Kuehlen, am Display nicht vorhanden)
+  { "ANSTEUERUNGSART_STANDBY"                     , 0x4f85, 0               , false, false },
+  { "ANSTEUERUNGSART_HEIZEN"                      , 0x4f86, 0               , false, false },
+  { "ANSTEUERUNGSART_WARMWASSER"                  , 0x4f87, 0               , false, false },
+  { "ANSTEUERUNGSART_ABTAUEN"                     , 0x4f89, 0               , false, false },
 #if defined(HA_CONTROLLER_WPLA)
   { "PUMPENLEISTUNG_STANDBY_WPLA"                 , 0x4f8a, 0               , false, true  },
 #else
@@ -4561,7 +4594,9 @@ const ElsterMeta ElsterMetaTable[] =
   { 0x025a, "LAUFZEIT_DHC2", "Laufzeit Nacherwärmung Stufe 2", "sensor", "duration", "h", "total_increasing", "mdi:timer", NULL, NULL },
 #endif
   { 0x0265, "HEISSGAS_TEMP", "Heißgastemperatur", "sensor", "temperature", "°C", "measurement", "mdi:thermometer-high", NULL, NULL },
+#if !defined(HA_CONTROLLER_WPLA)  // WPL-A: der Index heisst dort anders (siehe Tabelle oben)
   { 0x027e, "WW_ECO", LNAME_WW_ECO, NULL, NULL, NULL, NULL, NULL, NULL, NULL },
+#endif
   { 0x02e6, "SOLAR_WOCHENERTRAG_WH", LNAME_SOLAR_WOCHENERTRAG_WH, "sensor", "energy", "Wh", "", "mdi:solar-power", NULL, NULL },
   { 0x02e7, "SOLAR_WOCHENERTRAG_KWH", LNAME_SOLAR_WOCHENERTRAG_KWH, "sensor", "energy", "kWh", "", "mdi:solar-power", NULL, NULL },
   { 0x02e8, "SOLAR_WOCHENERTRAG_MWH", LNAME_SOLAR_WOCHENERTRAG_MWH, "sensor", "energy", "MWh", "total_increasing", "mdi:solar-power", NULL, NULL },
@@ -4592,7 +4627,9 @@ const ElsterMeta ElsterMetaTable[] =
   { 0x06eb, "ISTDREHZAHL_VERDICHTER", "Istdrehzahl Verdichter", "sensor", "", "Hz", "measurement", "mdi:speedometer", NULL, NULL },
   { 0x06ec, "SOLLDREHZAHL_VERDICHTER", "Solldrehzahl Verdichter", "sensor", "", "Hz", "measurement", "mdi:speedometer", NULL, NULL },
 #endif
+#if !defined(HA_CONTROLLER_WPLA)  // WPL-A: der Index heisst dort anders (siehe Tabelle oben)
   { 0x071d, "VERDICHTER_STARTS", "Verdichter Starts", "sensor", "", "", "total_increasing", "mdi:counter", NULL, NULL },
+#endif
 #ifdef HA_CONTROLLER_WPMW2
   { 0x07a3, "REKUPERATORISTTEMP", LNAME_REKUPERATORISTTEMP, "sensor", "temperature", "°C", "measurement", "mdi:thermometer", NULL, NULL },
 #else
