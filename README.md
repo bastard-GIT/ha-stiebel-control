@@ -264,7 +264,7 @@ Premium with HSBC 300 cylinder. Besides the upstream content it adds (details in
 - `energy_counters.h`: energy counters and COP of the WPL-A 07
 - Texts for the status bit fields
 - Heat pump restart counter
-- TX observer `canTxObserver` for the debug package `stiebel-debug` (boot info sensors and CAN stream live there)
+- Raw CAN frame stream `can_debug.h` (PR #138); boot info sensors and the CAN/TWAI status live in the debug package `stiebel-debug`
 - Substitutions `topic_root`, `ntp_server`
 - Handling of "not available" and sentinel values (AUS, `-255`, `-32768`)
 - CI compile job for the WPL-A with W5500 Ethernet

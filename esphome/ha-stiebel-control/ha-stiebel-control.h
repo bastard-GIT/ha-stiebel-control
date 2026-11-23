@@ -39,6 +39,7 @@
 #include "signal_route.h"
 #include "mqtt_publish.h"
 #include "can_io.h"
+#include "can_debug.h"
 #include "paced_writes.h"
 #include "discovery.h"
 #include "bus_scan.h"
@@ -577,6 +578,8 @@ void updateSensor(const CanMember &cm, const ElsterIndex *ei, const std::string 
 
 void processAndUpdate(uint32_t can_id, const std::vector<uint8_t> &msg)
 {
+    // Raw frame stream (can_debug.h): every frame, before the filters below
+    notifyCanRx(can_id, msg);
     // processCanMessage() leaves the member unset for short frames
     if (msg.size() < 7) return;
     // Restart detection runs before the type filter: the 0xFE round is a type-6 frame.

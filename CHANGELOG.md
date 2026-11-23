@@ -7,6 +7,16 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions: [Sem
 
 ## [Unreleased]
 
+### Added
+
+- Raw CAN frame stream for bus analysis (`can_debug.h`): `<root>/can_debug/set` `on`/`off` streams
+  every received and sent frame as JSON to `<root>/can_debug/frames`, state on
+  `<root>/can_debug/state`. Off by default and after a restart. Works with TWAI and MCP2515; RAM is
+  allocated only while on, size via substitution `can_debug_queue_size` (default 256 frames). See
+  docs/CONFIGURATION.md "CAN frame stream".
+- Frame observers `canRxObserver`/`canTxObserver` in `can_io.h`: raw frames before any filter of
+  `processAndUpdate()` and after every `send_data()`. Used by `can_debug.h`.
+
 ## [2.8.0] — 2026-11-21
 
 Firmware split into modules, writable numbers take their range from the heat pump, energy counters
@@ -173,8 +183,8 @@ Assistant. TTL 33 compressor state from SolderAndSyntax's bus analysis.
 - `LICENSE` (GPL-3.0) and a README note on AI assistance for the WPL-A 07 branches.
 - Substitutions `topic_root`, `ntp_server` and the id `ota_esphome`. The MQTT root follows
   `topic_root`; SNTP time block in `common.yaml` (used by `energy_counters.h`).
-- TX observer `canTxObserver` in `can_io.h`, called after every sent frame (pattern of #79).
-  Used by the debug package `stiebel-debug`.
+- Raw CAN frame stream `can_debug.h` with `canRxObserver`/`canTxObserver` from PR #138 (not yet in
+  upstream `main`), see Unreleased above.
 - WPL-A names of the running firmware: members `WPUMPE` and `SPEICHER`, signal names and `HA_NAME_*`
   macros. Type, flag and metadata rows for WPL-A under `HA_CONTROLLER_WPLA`, the FES member and rows
   0x4f30-0x4f34, `EVU_FREIGABE` on WPL-A.
@@ -196,8 +206,8 @@ Assistant. TTL 33 compressor state from SolderAndSyntax's bus analysis.
 
 - Boot info sensors `stiebel_mk1_*` (`boot_info.h`, `crash_trace.h`, `unix_time.h`), the debug hooks
   `STIEBEL_DEBUG_RX`/`STIEBEL_DEBUG_TX` and the substitutions `fw_version`, `api_reboot_timeout`
-  moved to package `stiebel-debug` or to the device YAML. The CAN stream receives via its own
-  `on_frame` and sends via `canTxObserver`.
+  moved to package `stiebel-debug` or to the device YAML. The CAN stream of `stiebel-debug` is
+  replaced by `can_debug.h` (`<root>/can_debug/set`).
 
 ## [2.7.0] — 2026-11-15
 
