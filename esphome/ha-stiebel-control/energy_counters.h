@@ -137,7 +137,7 @@ static void send_read(uint16_t member, uint16_t idx) {
   const CanIdBytes rid = generate_read_id(member);
   std::vector<uint8_t> data = {rid.first, rid.second, 0xFA, (uint8_t)(idx >> 8), (uint8_t)(idx & 0xFF), 0x00, 0x00};
   id(my_can).send_data(CanMembers[cm_pc].CanId, false, data);
-  STIEBEL_DEBUG_TX(CanMembers[cm_pc].CanId, data);
+  notifyCanTx(CanMembers[cm_pc].CanId, data);
   g_answered = false;
   g_sent_ms = millis();
 }

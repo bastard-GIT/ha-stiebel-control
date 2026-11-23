@@ -171,10 +171,10 @@ Assistant. TTL 33 compressor state from SolderAndSyntax's bus analysis.
 #### Added
 
 - `LICENSE` (GPL-3.0) and a README note on AI assistance for the WPL-A 07 branches.
-- Boot info sensors `stiebel_mk1_*` (`boot_info.h`, with `crash_trace.h` and `unix_time.h`).
-- Substitutions `topic_root`, `fw_version`, `ntp_server`, `api_reboot_timeout` and the id `ota_esphome`.
-  The MQTT root follows `topic_root`; SNTP time block in `common.yaml`.
-- Debug hooks `STIEBEL_DEBUG_RX` / `STIEBEL_DEBUG_TX` (package `stiebel-debug`).
+- Substitutions `topic_root`, `ntp_server` and the id `ota_esphome`. The MQTT root follows
+  `topic_root`; SNTP time block in `common.yaml` (used by `energy_counters.h`).
+- TX observer `canTxObserver` in `can_io.h`, called after every sent frame (pattern of #79).
+  Used by the debug package `stiebel-debug`.
 - WPL-A names of the running firmware: members `WPUMPE` and `SPEICHER`, signal names and `HA_NAME_*`
   macros. Type, flag and metadata rows for WPL-A under `HA_CONTROLLER_WPLA`, the FES member and rows
   0x4f30-0x4f34, `EVU_FREIGABE` on WPL-A.
@@ -191,6 +191,13 @@ Assistant. TTL 33 compressor state from SolderAndSyntax's bus analysis.
 #### Changed
 
 - WPM3 operating mode names also for WPL-A.
+
+#### Moved out
+
+- Boot info sensors `stiebel_mk1_*` (`boot_info.h`, `crash_trace.h`, `unix_time.h`), the debug hooks
+  `STIEBEL_DEBUG_RX`/`STIEBEL_DEBUG_TX` and the substitutions `fw_version`, `api_reboot_timeout`
+  moved to package `stiebel-debug` or to the device YAML. The CAN stream receives via its own
+  `on_frame` and sends via `canTxObserver`.
 
 ## [2.7.0] — 2026-11-15
 

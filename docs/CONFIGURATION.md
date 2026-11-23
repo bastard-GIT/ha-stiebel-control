@@ -44,9 +44,7 @@ The key must match what HA's ESPHome integration has stored for this device. If 
 | `can_bit_rate` | CAN bus speed: `20kbps` (CAN-A: WPL13E/WPF10/WPC7) or `50kbps` (CAN-B: WPL17/WPL23/WPL10AC/WPLA7) | `20kbps` |
 | `disable_sg_ready` | `"true"` hides all SG Ready entities (models without SG Ready input) | `"false"` |
 | `read_only` | `"true"`: never write to the heat pump — no setpoint/mode/climate entities, clock buttons hidden; reading and bus scan keep working | `"false"` |
-| `fw_version` | Firmware version, shown as project version and in the Firmware Version sensor | `"2.7.0"` |
 | `ntp_server` | SNTP server for the clock (e.g. your router in an isolated network) | `"pool.ntp.org"` |
-| `api_reboot_timeout` | Reboot if no API client connects for this long; `"0s"` disables it (e.g. when only MQTT is used) | `"15min"` |
 | `network_package` | Network package from `ha-stiebel-control/`: `network_wifi.yaml` (WiFi + captive portal) or `network_ethernet_w5500.yaml` (W5500 Ethernet) | `"network_wifi.yaml"` |
 | `eth_clk_pin` … `eth_rst_pin` | W5500 SPI pins (`eth_clk_pin`, `eth_mosi_pin`, `eth_miso_pin`, `eth_cs_pin`, `eth_int_pin`, `eth_rst_pin`), only with `network_ethernet_w5500.yaml` | Waveshare ESP32-S3-POE-ETH: GPIO13/11/12/14/10/9 |
 
