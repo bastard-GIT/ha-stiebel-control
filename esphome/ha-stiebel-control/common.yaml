@@ -230,7 +230,7 @@ mqtt:
         - lambda: stopScan();
 
     # Raw CAN frame stream for bus analysis (can_debug.h): payload "on" or "off"
-    - topic: ${device_name}/can_debug/set
+    - topic: ${topic_root}/can_debug/set
       then:
         - lambda: canDebugCommand(x);
 
@@ -273,7 +273,7 @@ interval:
     then:
       - lambda: scanStep();
 
-  # Raw CAN frame stream (idle unless switched on via <device_name>/can_debug/set)
+  # Raw CAN frame stream (idle unless switched on via <topic_root>/can_debug/set)
   - interval: 50ms
     then:
       - lambda: canDebugStep();
