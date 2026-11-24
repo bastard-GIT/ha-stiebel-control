@@ -2,7 +2,10 @@
 
 > **AI assistance (WPL-A 07 branches only):** The changes of these branches for the WPL-A 07 (signals, debug hooks, network packages) were created with AI assistance (Claude by Anthropic) and tested on the author's own device. The upstream content is not affected.
 
-Requires ESPHome 2026.7.0 or newer. CI uses ESPHome 2026.10.1.
+Requires ESPHome 2026.9.0 or newer. CI uses ESPHome 2026.10.1.
+OTA migration uses a password-compatible stepping-stone before encryption is required.
+For installed devices, follow the [release-based migration instructions](docs/INSTALLATION.md#ota-encryption-migration)
+before moving to an encryption-required release.
 
 ESPHome firmware for monitoring and controlling Stiebel Eltron heat pumps via CAN bus.
 Connects an ESP32 to the heat pump's internal Elster CAN bus and automatically publishes
@@ -31,7 +34,7 @@ community work by [roberreiters](https://community.home-assistant.io/t/configure
 
 ## Quick Start
 
-Requires ESPHome 2026.7.0 or newer (check with `esphome version`; dashboard add-on users
+Requires ESPHome 2026.9.0 or newer (check with `esphome version`; dashboard add-on users
 update the add-on).
 
 ```bash

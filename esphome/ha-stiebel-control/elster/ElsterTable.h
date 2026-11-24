@@ -513,11 +513,7 @@ const ElsterIndex ElsterTable[] =
   // Zirkulationspumpe: 0x0080
   { "SOLARDIFFERENZ"                              , 0x01b8, et_dec_val      , false, false },
   // Regelung / Festwertregelung
-#if defined(HA_CONTROLLER_WPLA)
   { "FESTWERT"                                    , 0x01c0, et_dec_val      , false, false },
-#else
-  { "FESTWERT"                                    , 0x01c0, et_little_endian, false, false },
-#endif
   { "UNTERE_GRENZE_MINKESSELTEMP"                 , 0x018b, 0               , false, false },
   { "SERVICE_MINUTEN"                             , 0x018c, 0               , false, false },
   { "KONFIG_KONTAKT_OHNE_SPF"                     , 0x018d, 0               , false, false },
@@ -2148,8 +2144,8 @@ const ElsterIndex ElsterTable[] =
 #else
   { "MESSSTROM_NIEDERDRUCK"                       , 0x07a5, 0               , false, false },
 #endif
-#ifdef HA_CONTROLLER_WPMW2
-  // WPL13E (WPMW II/IWS): hundredths of bar - verified: standstill 7.5 bar, run HP 13.1 / LP 4.1 bar
+#if defined(HA_CONTROLLER_WPMW2) || defined(HA_CONTROLLER_WPLA)
+  // hundredths of bar. WPL13E (WPMW II/IWS): standstill 7.5 bar, run HP 13.1 / LP 4.1 bar; WPL-A 07 display 21.44 bar at raw 2166
   { "ANZEIGE_HOCHDRUCK"                           , 0x07a6, et_cent_val     , false, true  },
 #else
 #if defined(HA_CONTROLLER_WPLA)
@@ -4681,7 +4677,7 @@ const ElsterMeta ElsterMetaTable[] =
   { 0x07f3, "SOLLWERT_UEBERHITZUNG", "Überhitzung Soll", "sensor", "temperature", "K", "measurement", "mdi:thermometer-alert", NULL, NULL },
 #else
 #endif
-#ifdef HA_CONTROLLER_WPMW2
+#if defined(HA_CONTROLLER_WPMW2) || defined(HA_CONTROLLER_WPLA)
   { 0x07f4, "ISTWERT_UEBERHITZUNG_VERDAMPFER", "Überhitzung Ist", "sensor", "temperature", "K", "measurement", "mdi:thermometer-alert", NULL, NULL },
 #else
 #endif
@@ -4776,7 +4772,6 @@ const ElsterMeta ElsterMetaTable[] =
   { 0x06b4, "STROM_MOTOR", "Strom Motor", "sensor", "current", "A", "measurement", "mdi:current-ac", NULL, NULL },
   { 0x07ca, "EXV_OEFFNUNGSGRAD", "EXV Öffnungsgrad", "sensor", "", "%", "measurement", "mdi:valve", NULL, NULL },
   { 0x07f3, "SOLLWERT_UEBERHITZUNG", "Sollwert Überhitzung", "sensor", "", "K", "measurement", "mdi:thermometer-chevron-up", NULL, NULL },
-  { 0x07f4, "ISTWERT_UEBERHITZUNG_VERDAMPFER", "Istwert Überhitzung Verdampfer", "sensor", "", "K", "measurement", "mdi:thermometer-chevron-up", NULL, NULL },
   { 0x07f6, "VORSTEUER_OEFFNUNGSGRAD", "Vorsteuer Öffnungsgrad", "sensor", "", "%", "measurement", "mdi:valve", NULL, NULL },
   { 0x07f7, "P_ANTEIL_EXV", "P-Anteil EXV", "sensor", "", "", "measurement", "mdi:tune-variant", NULL, NULL },
   { 0x07f8, "I_ANTEIL_EXV", "I-Anteil EXV", "sensor", "", "", "measurement", "mdi:tune-variant", NULL, NULL },

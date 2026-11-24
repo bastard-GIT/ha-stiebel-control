@@ -101,7 +101,7 @@ jobs:
       - run: esphome compile esphome/ci_heatingpump_wpl9.yaml
 
   compile-wpla7:
-    name: Compile WPL-A (ESP32-S3, W5500 Ethernet)
+    name: Compile WPL-A 07 (ESP32-S3)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

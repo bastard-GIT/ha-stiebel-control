@@ -32,7 +32,7 @@ packages:
   network: !include ${network_package}
 
 esphome:
-  min_version: 2026.7.0
+  min_version: 2026.9.0
   name: ${device_name}
   friendly_name: ${friendly_name}
   project:
@@ -177,7 +177,10 @@ mqtt:
   log_topic:
     topic: ${topic_root}/debug
     level: WARN
-  # Keepalive for connection monitoring
+  # Keepalive for connection monitoring. esp-mqtt drops the connection when a PINGREQ gets no
+  # PINGRESP within one interval ("No PING_RESP, disconnected"). With 15 s a short receive stall
+  # on WiFi disconnected the ESP about twice a day for 10-15 s; 60 s rides that out. The broker
+  # publishes the will message after 1.5 x keepalive (90 s) when the ESP is really gone.
   keepalive: 60s
   # Disable reboot on MQTT disconnect - will keep trying to reconnect indefinitely
   reboot_timeout: 0s
