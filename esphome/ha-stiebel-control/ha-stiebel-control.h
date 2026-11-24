@@ -43,6 +43,7 @@
 #include "paced_writes.h"
 #include "discovery.h"
 #include "bus_scan.h"
+#include "can_raw.h"
 #include "request_manager.h"
 #include "calculated.h"
 #include "energy.h"
@@ -599,6 +600,8 @@ void processAndUpdate(uint32_t can_id, const std::vector<uint8_t> &msg)
 #else
     if ((msg[0] & 0x0F) == 1) return;
 #endif
+    // Bus analysis answers (can_raw.h: raw read/write, then bus_scan.h) are consumed before the normal decoding
+    if (handleBusAnalysisFrame(can_id, msg)) return;
 #if defined(HA_CONTROLLER_WPLA)
     // Energy registers 0x091a-0x0931 are handled only by energy_counters.h
     // (combined MWh+kWh values); no separate entities per register part.
@@ -636,7 +639,6 @@ void processAndUpdate(uint32_t can_id, const std::vector<uint8_t> &msg)
     }
 #endif
 
-    if (handleScanFrame(*cm, ei, msg, value)) return;
     if (handleFaultListFrame(*cm, msg)) return;
 
     // Skip permanently blacklisted signals (flag of the decoded row, no name lookup)
